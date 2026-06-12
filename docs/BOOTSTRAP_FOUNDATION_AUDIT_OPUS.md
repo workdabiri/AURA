@@ -118,3 +118,53 @@ With RF-1 reconciled and the non-blocking nits addressed, there are no security,
 1. Re-review PR #1 with RF-1 resolved; merge manually into `main`.
 2. User generates `docs/TASKS_Project.md` per pack §19 (template §19.1 with the D-01→D-51 block + allowed/forbidden files + tests + rollback; phases §19.2 with **Phase 0 first**; first slice §19.3). Opus reviews the generated task plan before Sonnet executes.
 3. Sonnet 4.6 executes Phase 0 one task at a time (repo init, dependency install, CI wiring, gates green), escalating any architecture concern in the file 02 §2.3 format rather than changing architecture.
+
+---
+
+## Resolution Addendum — RF-1 Applied
+
+**Date:** 2026-06-13
+**Execution:** Documentation-only patch on `chore/bootstrap-foundation` resolving the audit findings above.
+
+### Outcome
+
+**RF-1 was resolved.** All required and non-blocking documentation findings from this audit have been applied.
+
+### Fixes applied
+
+- **RF-1 (preferred option a):** `docs/DECISION_LOG.md` `A-01–A-11` now matches `OPUS_REVIEW_HANDOFF.md` exactly (A-01 CI workflow · A-02 test DB · A-03 rate-limit thresholds · A-04 `preferred_contact_method` · A-05 `reference_number` prefix + padded sequence · A-06 slug · A-07 pagination cap 50 · A-08 lead export CSV · A-09 settings shape per P-05 · A-10 Q-defaults accepted · A-11 AED-only).
+- **Displaced ratifications preserved** under a new **Additional Ratifications (A-12–A-16)** section (frontend testing, email service, image formats, image size, rate-limit TTL) so no information was lost.
+- **`docs/BOOTSTRAP_FOUNDATION_AUDIT_OPUS.md`** was created as the recorded audit artifact (this file).
+- **`CURRENT_STATE.md`** docs count corrected to **23**.
+- **`NEXT_STEPS.md`** Lighthouse wording clarified — Phase 5 is performance *tuning* only; Lighthouse is advisory from Phase 2 and hard-gated at release (CF-4).
+- **Six agents received an explicit `## Quality Checks` section** (no authority expansion):
+  - `.claude/agents/code-review-agent.md`
+  - `.claude/agents/database-agent.md`
+  - `.claude/agents/deployment-agent.md`
+  - `.claude/agents/docs-agent.md`
+  - `.claude/agents/security-agent.md`
+  - `.claude/agents/test-agent.md`
+
+### Scope-violation check — CLEAN
+
+No forbidden artifacts were created or present:
+
+- no `src/`
+- no `app/`
+- no `components/`
+- no `pages/`
+- no migrations
+- no Supabase files
+- no `.env`
+- no lockfiles
+- no `node_modules`
+- no `docs/TASKS_Project.md`
+
+### Commit
+
+- **Commit hash:** `dd7f467abadf10d6b166a5964d7f1965f6c634e4`
+- **Commit message:** `docs: reconcile bootstrap audit findings`
+
+### Status
+
+**PR #1 is ready for re-review after push.** No product code, installs, secrets, migrations, task generation, architecture change, remote change, `main` merge, or force push occurred during the resolution.
