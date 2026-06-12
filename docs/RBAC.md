@@ -1,0 +1,153 @@
+# AURA — Role-Based Access Control (RBAC)
+
+**Source:** Pack §12 + §6  
+**Authority:** `AURA_OPTIMIZED_PROJECT_PACK_v1_4_PATCHED.md`
+
+---
+
+## MVP Roles
+
+Only two roles exist in MVP (D-30):
+
+| Role | Purpose |
+|---|---|
+| `super_admin` | Agency/internal owner. Full access including user management, destructive operations outside normal UI. |
+| `client_admin` | Client/admin user. Manage properties, leads, settings, legal pages, areas, dashboard. |
+
+**Non-MVP roles (do not implement):** `editor`, `agent`, `viewer`, `support`. These may be documented in Roadmap Parking Lot only.
+
+---
+
+## Admin Access Requirements
+
+Authentication alone is not sufficient. Admin access requires all of:
+1. Valid Supabase session (JWT not expired)
+2. Matching row in `user_profiles`
+3. `user_profiles.role IN ('super_admin', 'client_admin')`
+4. Route/API-level authorization check
+5. RLS policy compliance
+
+Failing any check: return `401` (not authenticated) or `403` (not authorized).
+
+---
+
+## Permission Matrix
+
+| Resource/Action | `super_admin` | `client_admin` | Public |
+|---|---|---|---|
+| **Properties** | | | |
+| Read all (draft/published/archived) | Yes | Yes | No |
+| Read published only | Yes | Yes | Yes |
+| Create draft | Yes | Yes | No |
+| Update | Yes | Yes | No |
+| Publish | Yes | Yes | No |
+| Archive | Yes | Yes | No |
+| Hard delete | Outside UI only | No | No |
+| Duplicate | Yes | Yes | No |
+| **Media** | | | |
+| Upload | Yes | Yes | No |
+| Delete | Yes | Yes (own workflow) | No |
+| Read (published property) | Yes | Yes | Yes |
+| Read (draft/archived property) | Yes | Yes | No |
+| **Leads** | | | |
+| Submit | No | No | Yes (insert only) |
+| Read/search | Yes | Yes | No |
+| Update status/notes | Yes | Yes | No |
+| Archive/soft-delete | Yes | Yes | No |
+| Export | Yes | Yes | No |
+| Hard delete | Outside UI only | No | No |
+| **Settings** | | | |
+| Read | Yes | Yes | No (safe server selector only) |
+| Update (any allowed key) | Yes | Yes | No |
+| **Legal Pages** | | | |
+| Create draft | Yes | Yes | No |
+| Update draft | Yes | Yes | No |
+| Publish | Yes | Yes | No |
+| Archive | Yes | Yes | No |
+| Read published | Yes | Yes | Yes |
+| **Areas** | | | |
+| Create | Yes | Yes | No |
+| Edit | Yes | Yes | No |
+| Deactivate (`is_active = false`) | Yes | Yes | No |
+| Read active | Yes | Yes | Yes |
+| **User Profiles** | | | |
+| Create/manage admin users | Yes | No | No |
+| Read own profile | Yes | Yes | No |
+| **Audit Logs** | | | |
+| Read | Yes | Limited if exposed (optional) | No |
+| Write | Server-side only | Server-side only | No |
+| **Dashboard Metrics** | | | |
+| Read | Yes | Yes | No |
+
+---
+
+## RLS Policy Guidance
+
+All sensitive tables require RLS policies. Public access is allowlisted, not default-open.
+
+**`properties` table:**
+- SELECT: `publish_status = 'published'` for anon; all rows for admin role
+- INSERT: admin role only
+- UPDATE: admin role only
+- DELETE: admin role only (outside normal UI)
+
+**`leads` table:**
+- SELECT: admin role only (never public)
+- INSERT: anon (rate-limited, validated)
+- UPDATE: admin role only
+
+**`whatsapp_clicks` table:**
+- SELECT: admin role only (never public)
+- INSERT: anon (rate-limited; PII fields rejected)
+
+**`user_profiles` table:**
+- SELECT: own row (authenticated users); full for `super_admin`
+- INSERT/UPDATE: `super_admin` or system only
+
+**`audit_logs` table:**
+- SELECT: `super_admin` only (or limited `client_admin` if UI exposed later)
+- INSERT: server-side service role only
+
+**`settings` table:**
+- SELECT: admin role only (public reads go through a safe server selector in Route Handlers)
+- UPDATE: admin role only; allowed keys only; per-key Zod validation
+
+**`legal_pages` table:**
+- SELECT: `status = 'published'` for anon; all for admin
+- INSERT/UPDATE: admin role only
+
+**`areas` table:**
+- SELECT: `is_active = true` for anon; all for admin
+- INSERT/UPDATE: admin role only
+
+---
+
+## WhatsApp Contact Routing Priority
+
+When determining the WhatsApp number to use for a property CTA:
+
+```
+1. property.agent_whatsapp
+2. property.agent_phone
+3. settings.whatsapp
+4. settings.phone
+```
+
+Stakeholder phone/email/WhatsApp must never be used for public routing unless the stakeholder is explicitly `visibility = public` and the route has been deliberately configured (D-14, D-16).
+
+---
+
+## Bootstrap Flow for First Admin
+
+No public admin self-signup in MVP (D-40).
+
+1. Create first user manually in Supabase Auth
+2. Run protected local/seed/admin script to create `user_profiles` row with `role = super_admin`
+3. `super_admin` creates or coordinates `client_admin` accounts
+4. Every admin access attempt requires session + profile role check
+
+**Forbidden:**
+- Public admin registration page
+- Automatic first-user-becomes-admin logic in production
+- Hardcoded admin credentials
+- Demo admin accounts reused for real client production
