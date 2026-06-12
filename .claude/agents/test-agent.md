@@ -78,3 +78,14 @@ Every PR touching these areas must include corresponding tests:
 | Stakeholder visibility | Internal stakeholders absent from public API response |
 | Rate limiting | Repeated submissions trigger 429 |
 | Audit logs | Sensitive actions create an audit log entry |
+
+## Quality Checks
+
+Before reporting test work as complete, confirm:
+
+- Required test layers for the change type exist (unit, DAL, integration, E2E, security negative) per `docs/TEST_STRATEGY.md`.
+- All AURA-Specific Required Tests for the touched areas are present.
+- DAL and integration tests run against the Supabase CLI local stack — the DB layer is not mocked (A-02).
+- Tests assert correct behavior; no test was weakened or product scope changed to force a pass.
+- Failing tests are reported with root-cause analysis, and the fix targets the code, not the assertion.
+- No unapproved dependency was added to support testing.

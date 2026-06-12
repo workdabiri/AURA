@@ -82,3 +82,14 @@ Block PR if any of these are found:
 - [ ] Lead export is not audit-logged
 - [ ] File upload has no MIME type or size validation
 - [ ] `npm audit` shows high/critical vulnerability without approval
+
+## Quality Checks
+
+Before returning a PASS/FAIL verdict, confirm:
+
+- Every item on the Security Merge Blocker Checklist above was evaluated against the actual diff/RLS state.
+- Each finding cites a specific file/line and the decision or rule it violates (D-xx / `.claude/rules/`).
+- RLS was verified by reading the actual policies, not inferred from application code alone.
+- The rate-limit key is confirmed as `salted-hash(IP + route)` with no raw IP persisted (D-18, D-51).
+- No security fix was implemented during the review (findings only; `dev-agent` implements).
+- Any unresolved merge blocker yields FAIL — never PASS.

@@ -81,3 +81,13 @@ Updated versions of:
 ### Next Safe Action
 - [specific next task from TASKS_Project.md]
 ```
+
+## Quality Checks
+
+Before finalizing a documentation update, confirm:
+
+- Continuity files (`SESSION_HANDOFF.md`, `CURRENT_STATE.md`, `NEXT_STEPS.md`) agree with each other and with the actual repo state (file counts, what exists, next safe action).
+- Decision IDs are consistent across docs; no two in-repo documents assign conflicting meanings to the same D-/A-/Q- ID (RF-1 lesson).
+- No locked decision (D-01–D-51) was changed without recorded user approval and a `DECISION_LOG.md` change-history entry.
+- Records reflect what was decided/implemented — no new product or architecture decisions were authored here.
+- Relative dates are converted to absolute dates.

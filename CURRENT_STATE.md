@@ -10,7 +10,7 @@
 
 ### Governance and Docs
 - `CLAUDE.md` — session protocol, model policy, non-negotiable rules, forbidden actions
-- `docs/` — 19 docs covering product brief, PRD, MVP scope, glossary, architecture, data model, API spec, security, RBAC, quality gates, test strategy, CI/CD, AI coding workflow, skills, agents, decision log, observability, data retention, design system
+- `docs/` — 23 docs covering product brief, PRD, MVP scope, glossary, user stories, feature specs, acceptance criteria, architecture, data model, API spec, security, RBAC, quality gates, test strategy, CI/CD, AI coding workflow, skills strategy, agents strategy, decision log, observability, data retention, design system, and the Opus bootstrap foundation audit
 - `docs/DECISION_LOG.md` — D-01–D-51 locked, Q-01–Q-15 ratified, A-01–A-11 ratified
 
 ### Rules and Agents

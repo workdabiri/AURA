@@ -109,3 +109,13 @@ Suggested Fix Prompts:
 - Raw IP in event tables → BLOCK
 - Missing RLS on sensitive table → BLOCK
 - Admin route auth-only (no role check) → BLOCK
+
+## Quality Checks
+
+Before returning a verdict, confirm:
+
+- Every section of the Review Checklist above was evaluated against the actual diff (not assumed).
+- Each blocking issue cites a specific file/line and the decision or rule it violates (D-xx / `.claude/rules/`).
+- The verdict matches the findings (any unresolved merge blocker → BLOCK; non-blocker concerns → REQUEST_CHANGES; clean → APPROVE).
+- No code was modified during the review (findings only; `dev-agent` implements fixes).
+- Required test coverage for the change type was checked, not just the implementation.

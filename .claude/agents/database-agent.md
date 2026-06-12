@@ -85,3 +85,14 @@ Designs, reviews, and validates Supabase database schemas, migrations, RLS polic
 - Scheduled cleanup (pg_cron or equivalent; 24-hour TTL)
 
 A migration missing any of the above is a merge blocker.
+
+## Quality Checks
+
+Before approving a migration or schema change, confirm:
+
+- All Critical Checks above (unique constraints, composite indexes, FK indexes, generated column, `rate_limits` schema) are present in the migration.
+- RLS is enabled on every sensitive table with explicit allowlisted policies (no default-open access).
+- No `clients` table or `client_id` column is introduced in any form (D-05).
+- `rate_limits` stores `key_hash` only — never a raw IP (D-18, D-51).
+- The canonical taxonomy (D-36) and lead enums (D-37) are used; no overloaded `status` field.
+- Destructive changes include a stated rollback plan and explicit approval.

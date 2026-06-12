@@ -87,3 +87,14 @@ Before any production release, all must pass:
 11. Complete handover documentation
 
 Client forks receive no automated upstream engine fixes after delivery (D-23).
+
+## Quality Checks
+
+Before confirming a deployment or release as READY, confirm:
+
+- Every item on the Production Release Checklist is checked with evidence (not assumed).
+- No auto-merge to `main` and no force-push occurred; merges to `main` are manual and human-approved.
+- No production secret or environment variable was changed without explicit approval.
+- Each client deployment is fully isolated (separate Supabase/Vercel/domain/DB/admins); no shared production DB (D-04, D-05).
+- AUTEX/demo deployments remain noindex with fake, non-PII data (D-42, D-33).
+- For real-client launches, the legal readiness checklist (D-50) is signed off before indexable release.

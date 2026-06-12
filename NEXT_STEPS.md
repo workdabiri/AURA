@@ -23,7 +23,7 @@ Requirements per pack §19 and bootstrap prompt §6:
    - **Phase 2:** Public website — `/en` route, layout, homepage shell, properties listing, property detail, areas, legal pages, SEO
    - **Phase 3:** Admin vertical slice — login, dashboard, property CRUD, media upload, areas, settings, legal
    - **Phase 4:** Lead and WhatsApp — inquiry forms, lead API, email, lead admin, WhatsApp tracking, dashboard metrics
-   - **Phase 5:** Sales Demo + Polish — homepage cinematic, luxury-dark, mobile CTAs, reduced motion, accessibility, Lighthouse
+   - **Phase 5:** Sales Demo + Polish — homepage cinematic, luxury-dark, mobile CTAs, reduced motion, accessibility, Lighthouse performance *tuning* (Lighthouse is already an advisory CI job from Phase 2 and a hard release gate per `docs/CI_CD_STRATEGY.md` CF-4; Phase 5 only tunes scores, it does not introduce Lighthouse)
    - **Phase 6:** Release readiness — full E2E, security tests, production env, Sentry, handover docs
 
 3. First vertical slice (§19.3) must prove:
