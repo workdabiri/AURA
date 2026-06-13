@@ -1,0 +1,7 @@
+# Governance and source-of-truth documentation — not subject to format:check
+**/*.md
+
+# Build artifacts
+.next/
+node_modules/
+out/

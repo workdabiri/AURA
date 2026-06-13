@@ -1,8 +1,8 @@
 # Current State
 
 **Updated:** 2026-06-13  
-**Branch:** `feat/aura-001-repo-scaffold`  
-**Phase:** Phase 0 — AURA-001 executed, awaiting commit approval
+**Branch:** `feat/aura-002-lint-format`  
+**Phase:** Phase 0 — AURA-002 executed, awaiting commit approval
 
 ---
 
@@ -20,10 +20,14 @@
 - `.claude/agents/` — 9 core agent definition files
 - `.claude/skills/README.md` — Stage 1 skills strategy (no gate skills created)
 
-### Quality Scripts
-- `package.json` — scripts block with all required quality commands declared
-- `package-lock.json` — created by AURA-001 npm install (758 packages)
-- Config stubs: `.dependency-cruiser.cjs`, `.eslintrc.json`, `.prettierrc.json`, `tsconfig.json`, `vitest.config.ts`, `playwright.config.ts`
+### Quality Scripts and Config (AURA-002)
+- `eslint.config.mjs` — ESLint 9 flat config; replaces `.eslintrc.json`; uses `FlatCompat` from `@eslint/eslintrc` to bridge `next/core-web-vitals` + `next/typescript`; type-aware rules scoped to `src/**/*.{ts,tsx}`
+- `.prettierrc.json` — Prettier config (unchanged)
+- `.prettierignore` — excludes `**/*.md` and build artifacts; fixes 44 governance doc false-positives from Prettier
+- `package.json` — `lint` script: `next lint` → `eslint .`; `@eslint/eslintrc` added to devDependencies
+- `package-lock.json` — updated with `@eslint/eslintrc` explicit dep
+- `next.config.js` — `eslint: { ignoreDuringBuilds: true }` added; `npm run lint` is the sole lint gate
+- Config stubs: `.dependency-cruiser.cjs` (Prettier-formatted), `vitest.config.ts` (Prettier-formatted), `tsconfig.json`
 
 ### Application Scaffold (AURA-001)
 - `next.config.js` — minimal Next.js App Router config
@@ -54,16 +58,15 @@
 
 ---
 
-## AURA-001 + AURA-001a Gate Results
+## AURA-002 Gate Results
 
 | Gate | Result |
 |---|---|
 | `npm run typecheck` | PASS — clean, no errors |
-| `npm run lint` | PASS — no ESLint warnings or errors |
-| `npm run build` | PASS — ✓ Compiled successfully, static pages generated |
-| `npm run audit` | PASS — 0 high/critical; 2 moderate (below threshold; documented exception) |
-| Folder architecture matches `docs/ARCHITECTURE.md` | PASS |
-| No Supabase/env/secret files | PASS |
+| `npm run lint` | PASS — no ESLint warnings or errors; no `next lint` deprecation notice |
+| `npm run format:check` | PASS — all matched files use Prettier code style |
+| `npm run build` | PASS — compiled cleanly; "Skipping linting" confirms `ignoreDuringBuilds: true` active |
+| `npm run audit` | PASS — 0 HIGH, 0 CRITICAL; 2 moderate carry-forward (postcss via next@15) |
 
 ---
 
@@ -77,12 +80,12 @@
 ### Carry-Forward: Test directory discrepancy (AURA-003 scope)
 - `vitest.config.ts` includes `tests/unit/**` (root-level), AURA-001 created `src/tests/unit/` (per spec)
 - `playwright.config.ts` uses `testDir: './tests/e2e'` (root-level)
-- `@vitejs/plugin-react` removed from vitest.config.ts; will be re-evaluated in AURA-003
 - Reconcile in AURA-003 (testing stack task)
 
-### Carry-Forward: `next lint` deprecation (AURA-002 scope)
-- `next lint` will be removed in Next.js 16; migrate to ESLint CLI
-- AURA-002 (ESLint wiring) is the correct place to address this
+### Resolved: `next build` ESLint plugin detection warning
+- Fixed by adding `eslint: { ignoreDuringBuilds: true }` to `next.config.js`
+- `npm run lint` is the sole lint authority; `next build` no longer runs a redundant ESLint pass
+- Build output now shows "Skipping linting" — warning is gone
 
 ---
 
