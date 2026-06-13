@@ -1,69 +1,63 @@
 # Next Steps
 
 **Updated:** 2026-06-13  
-**Current Phase:** Foundation bootstrapped — awaiting task generation
+**Current Phase:** Phase 0 — AURA-001 executed, awaiting commit approval
 
 ---
 
 ## Immediate Next Action
 
-**Generate `docs/TASKS_Project.md`** (user-approved step — do not generate without approval).
+**User approves AURA-001 commit**, then:
 
-Requirements per pack §19 and bootstrap prompt §6:
-
-1. Use the §19.1 task template for every task:
-   - Goal, Context, Requirements, Constraints (enforce D-01–D-51)
-   - Allowed Files, Forbidden Files, Files Likely Affected
-   - Acceptance Criteria, Test Plan (unit/DAL/integration/E2E/security)
-   - Required Commands, Migration/Rollback Note, Definition of Done, Out of Scope
-
-2. Phase sequence (§19.2) — **Phase 0 first**:
-   - **Phase 0:** Repo initialization, Next.js setup, TypeScript strict, ESLint/Prettier, testing stack, dependency-cruiser, Knip, CodeQL, GitHub Actions, base folder architecture, design tokens, environment schema
-   - **Phase 1:** Supabase setup, migrations, RLS, auth, admin role checks, storage bucket, DAL test harness
-   - **Phase 2:** Public website — `/en` route, layout, homepage shell, properties listing, property detail, areas, legal pages, SEO
-   - **Phase 3:** Admin vertical slice — login, dashboard, property CRUD, media upload, areas, settings, legal
-   - **Phase 4:** Lead and WhatsApp — inquiry forms, lead API, email, lead admin, WhatsApp tracking, dashboard metrics
-   - **Phase 5:** Sales Demo + Polish — homepage cinematic, luxury-dark, mobile CTAs, reduced motion, accessibility, Lighthouse performance *tuning* (Lighthouse is already an advisory CI job from Phase 2 and a hard release gate per `docs/CI_CD_STRATEGY.md` CF-4; Phase 5 only tunes scores, it does not introduce Lighthouse)
-   - **Phase 6:** Release readiness — full E2E, security tests, production env, Sentry, handover docs
-
-3. First vertical slice (§19.3) must prove:
-   - `/` redirects to `/en`
-   - `/en` renders homepage shell
-   - Supabase env schema exists
-   - Basic test stack works
-   - CI quality gate runs green
-   - Zero architecture-boundary violations
-
-   **Do not start cinematic homepage work before foundation gates exist.**
+1. Commit `feat/aura-001-repo-scaffold` with the scaffold files
+2. Open PR to `develop`
+3. Resolve the `npm run audit` vulnerability decision (see below)
 
 ---
 
-## After Task Generation
+## Audit Status — Resolved
 
-Sonnet 4.6 executes one approved task at a time:
-1. Pick the first Phase 0 task from `docs/TASKS_Project.md`
-2. Confirm the task and plan
-3. Implement (minimal, task-scoped changes)
-4. Run quality commands (`npm run quality`)
-5. Update session continuity files
-6. Report and pick the next task
+`npm run audit` now passes `--audit-level=high` (0 HIGH, 0 CRITICAL).
 
-Escalate architecture concerns to Opus 4.8 instead of changing architecture.
+Remaining 2 moderate findings are both via `next@15`'s internal postcss bundle; the only npm-suggested fix is a destructive Next downgrade to 9.3.3. Documented exception — no action required.
+
+**AURA-001 + AURA-001a are audit-clean and ready for commit approval.**
 
 ---
 
-## Blocked Until
+## After AURA-001 Commit + Merge
 
-- User approves and generates `docs/TASKS_Project.md`
-- `npm install` is run (Phase 0 task)
-- GitHub Actions CI is configured (Phase 0 task)
+Execute Phase 0 tasks in order:
+
+| Task | Description | Opus Review |
+|---|---|---|
+| **AURA-002** | ESLint + Prettier + quality script wiring | Not required |
+| **AURA-003** | Testing stack — Vitest + Playwright harness | Not required |
+| **AURA-004** | Architecture boundary enforcement — dependency-cruiser + Knip | Required |
+| **AURA-005** | Environment schema + `.env.example` (no secrets) | Required |
+| **AURA-006** | Design tokens + Tailwind + `luxury-dark` theme tokens | Not required |
+| **AURA-007** | GitHub Actions CI + CodeQL + branch protection documentation | Required |
+| **AURA-008** | First vertical slice — `/`→`/en` redirect + `/en` homepage shell + smoke test | Not required |
+
+---
+
+## Notes for AURA-002
+
+- The existing `.eslintrc.json` uses legacy format. With ESLint 9, `next lint` emits a deprecation notice but passes. AURA-002 should migrate to the flat config (`eslint.config.js`) or document the legacy format decision.
+- `@typescript-eslint/recommended-requiring-type-checking` is renamed in v8 to `recommended-type-checked` — verify in AURA-002.
+
+## Notes for AURA-003
+
+- `vitest.config.ts` `include` paths point to root-level `tests/` but AURA-001 created `src/tests/`. AURA-003 must reconcile this — either update `vitest.config.ts` to point to `src/tests/` or move the scaffold directories.
+- Same issue with `playwright.config.ts` `testDir: './tests/e2e'`.
+- Package.json scripts (`vitest tests/unit` etc.) also need to match the resolved location.
 
 ---
 
 ## Do Not Do Yet
 
-- Do not write any product/UI/implementation code
-- Do not run `npm install`
+- Do not start AURA-002 before AURA-001 commits
+- Do not fix audit without explicit dep-change approval
 - Do not create migrations
 - Do not create `.env` files
 - Do not create Stage 2 skills

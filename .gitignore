@@ -30,3 +30,9 @@ playwright-report/
 
 # Turbo
 .turbo/
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Next.js generated type shim (regenerated on build; references .next/ which is gitignored)
+next-env.d.ts
