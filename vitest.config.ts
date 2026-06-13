@@ -5,17 +5,17 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    setupFiles: ['./tests/setup.ts'],
+    setupFiles: ['./src/tests/setup.ts'],
     include: [
-      'tests/unit/**/*.{test,spec}.{ts,tsx}',
-      'tests/dal/**/*.{test,spec}.{ts,tsx}',
-      'tests/integration/**/*.{test,spec}.{ts,tsx}',
-      'tests/security/**/*.{test,spec}.{ts,tsx}',
+      'src/tests/unit/**/*.{test,spec}.{ts,tsx}',
+      'src/tests/dal/**/*.{test,spec}.{ts,tsx}',
+      'src/tests/integration/**/*.{test,spec}.{ts,tsx}',
+      'src/tests/security/**/*.{test,spec}.{ts,tsx}',
     ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      exclude: ['node_modules/', '.next/', 'tests/', '**/*.config.*', '**/*.d.ts'],
+      exclude: ['node_modules/', '.next/', 'src/tests/', '**/*.config.*', '**/*.d.ts'],
     },
   },
   resolve: {
