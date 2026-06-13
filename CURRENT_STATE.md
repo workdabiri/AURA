@@ -1,8 +1,8 @@
 # Current State
 
 **Updated:** 2026-06-13  
-**Branch:** `feat/aura-002-lint-format`  
-**Phase:** Phase 0 — AURA-002 executed, awaiting commit approval
+**Branch:** `feat/aura-003-testing-stack`  
+**Phase:** Phase 0 — AURA-003 executed, awaiting commit approval
 
 ---
 
@@ -21,16 +21,24 @@
 - `.claude/skills/README.md` — Stage 1 skills strategy (no gate skills created)
 
 ### Quality Scripts and Config (AURA-002)
-- `eslint.config.mjs` — ESLint 9 flat config; replaces `.eslintrc.json`; uses `FlatCompat` from `@eslint/eslintrc` to bridge `next/core-web-vitals` + `next/typescript`; type-aware rules scoped to `src/**/*.{ts,tsx}`
+- `eslint.config.mjs` — ESLint 9 flat config; uses `FlatCompat` to bridge `next/core-web-vitals` + `next/typescript`
 - `.prettierrc.json` — Prettier config (unchanged)
-- `.prettierignore` — excludes `**/*.md` and build artifacts; fixes 44 governance doc false-positives from Prettier
-- `package.json` — `lint` script: `next lint` → `eslint .`; `@eslint/eslintrc` added to devDependencies
-- `package-lock.json` — updated with `@eslint/eslintrc` explicit dep
-- `next.config.js` — `eslint: { ignoreDuringBuilds: true }` added; `npm run lint` is the sole lint gate
-- Config stubs: `.dependency-cruiser.cjs` (Prettier-formatted), `vitest.config.ts` (Prettier-formatted), `tsconfig.json`
+- `.prettierignore` — excludes `**/*.md` and build artifacts
+- `package.json` — lint script: `eslint .`; `@eslint/eslintrc` devDep; test scripts now point to `src/tests/`
+- `next.config.js` — `eslint: { ignoreDuringBuilds: true }`
+
+### Test Harness (AURA-003)
+- `vitest.config.ts` — `setupFiles` and `include` updated to canonical `src/tests/` paths; coverage exclude updated
+- `playwright.config.ts` — `testDir` updated to `./src/tests/e2e`
+- `src/tests/setup.ts` — Vitest global setup entry point
+- `src/tests/unit/harness.test.ts` — real passing unit harness test
+- `src/tests/dal/harness.test.ts` — real passing DAL harness test
+- `src/tests/integration/harness.test.ts` — real passing integration harness test
+- `src/tests/security/harness.test.ts` — real passing security harness test
+- `src/tests/e2e/smoke.spec.ts` — Playwright smoke placeholder (`test.describe.skip`); exercised in AURA-008
 
 ### Application Scaffold (AURA-001)
-- `next.config.js` — minimal Next.js App Router config
+- `next.config.js` — Next.js App Router config
 - `src/app/layout.tsx` — root layout (placeholder, no styling)
 - `src/app/page.tsx` — placeholder page
 - `src/` folder architecture per `docs/ARCHITECTURE.md`:
@@ -38,8 +46,7 @@
   - `src/config/`, `src/domain/`, `src/dal/`, `src/services/`
   - `src/lib/{supabase,validation,i18n,seo,utils}/`
   - `src/styles/`, `src/types/`
-  - `src/tests/{unit,dal,integration,e2e,security}/`
-  - All empty dirs have `.gitkeep` sentinels
+  - `src/tests/{unit,dal,integration,e2e,security}/` — harness tests present; `.gitkeep` files removed
 
 ### Continuity Files
 - `SESSION_HANDOFF.md`, `CURRENT_STATE.md` (this file), `NEXT_STEPS.md`
@@ -48,6 +55,7 @@
 
 ## What Does NOT Exist
 
+- No root-level `tests/` directory
 - No Supabase files or migrations
 - No `.env` file or real secrets (only `.env.example` when AURA-005 runs)
 - No product UI/features beyond the placeholder shell
@@ -58,34 +66,32 @@
 
 ---
 
-## AURA-002 Gate Results
+## AURA-003 Gate Results
 
 | Gate | Result |
 |---|---|
 | `npm run typecheck` | PASS — clean, no errors |
-| `npm run lint` | PASS — no ESLint warnings or errors; no `next lint` deprecation notice |
+| `npm run lint` | PASS — zero errors, zero warnings |
 | `npm run format:check` | PASS — all matched files use Prettier code style |
-| `npm run build` | PASS — compiled cleanly; "Skipping linting" confirms `ignoreDuringBuilds: true` active |
-| `npm run audit` | PASS — 0 HIGH, 0 CRITICAL; 2 moderate carry-forward (postcss via next@15) |
+| `npm run test` | PASS — 4 files, 4 tests passed (unit + dal + integration + security) |
+| `npm run test:unit` | PASS — 1 passed |
+| `npm run test:dal` | PASS — 1 passed |
+| `npm run test:integration` | PASS — 1 passed |
+| `npm run test:security` | PASS — 1 passed |
+| `npm run test:e2e` | PASS — 4 skipped (test.describe.skip; exercised AURA-008) |
+| `npm run test:smoke` | PASS — 4 skipped (same) |
+| `npm run build` | PASS — compiled cleanly; "Skipping linting" |
+| `npm run audit` | PASS — 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |
 
 ---
 
 ## Open Items
 
 ### Carry-Forward: `postcss` moderate (documented exception — not fixable)
-`npm run audit` passes the `--audit-level=high` gate. Two remaining moderate findings:
-- `postcss < 8.5.10` via `next@15` (Next.js bundles its own postcss)
-- "Fix" would require downgrading Next to 9.3.3 — nonsensical; not actionable
+Same as AURA-001/002. Passes `--audit-level=high`. Not actionable.
 
-### Carry-Forward: Test directory discrepancy (AURA-003 scope)
-- `vitest.config.ts` includes `tests/unit/**` (root-level), AURA-001 created `src/tests/unit/` (per spec)
-- `playwright.config.ts` uses `testDir: './tests/e2e'` (root-level)
-- Reconcile in AURA-003 (testing stack task)
-
-### Resolved: `next build` ESLint plugin detection warning
-- Fixed by adding `eslint: { ignoreDuringBuilds: true }` to `next.config.js`
-- `npm run lint` is the sole lint authority; `next build` no longer runs a redundant ESLint pass
-- Build output now shows "Skipping linting" — warning is gone
+### Note: Playwright Node.js deprecation warning
+`[DEP0205] DeprecationWarning: module.register() is deprecated` — emitted by Playwright 1.60 internals on Node.js 22+. Not from AURA code. Not a gate failure.
 
 ---
 
