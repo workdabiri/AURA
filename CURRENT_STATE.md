@@ -1,8 +1,8 @@
 # Current State
 
-**Updated:** 2026-06-14  
-**Branch:** `feat/aura-005-env-schema`  
-**Phase:** Phase 0 — AURA-005 executed, awaiting Opus review / commit approval
+**Updated:** 2026-06-15  
+**Branch:** `feat/aura-006-design-tokens`  
+**Phase:** Phase 0 — AURA-006 executed, awaiting commit approval
 
 ---
 
@@ -22,47 +22,38 @@
 
 ### Quality Scripts and Config (AURA-002)
 - `eslint.config.mjs` — ESLint 9 flat config; uses `FlatCompat` to bridge `next/core-web-vitals` + `next/typescript`
-- `.prettierrc.json` — Prettier config (unchanged)
+- `.prettierrc.json` — Prettier config; `prettier-plugin-tailwindcss` already wired in plugins array
 - `.prettierignore` — excludes `**/*.md` and build artifacts
-- `package.json` — lint script: `eslint .`; `@eslint/eslintrc` devDep; test scripts now point to `src/tests/`
+- `package.json` — lint script: `eslint .`; quality composite script; all test scripts pointing to `src/tests/`
 - `next.config.js` — `eslint: { ignoreDuringBuilds: true }`
 
 ### Test Harness (AURA-003)
-- `vitest.config.ts` — `setupFiles` and `include` updated to canonical `src/tests/` paths; coverage exclude updated
+- `vitest.config.ts` — `setupFiles` and `include` updated to canonical `src/tests/` paths
 - `playwright.config.ts` — `testDir` updated to `./src/tests/e2e`
 - `src/tests/setup.ts` — Vitest global setup entry point
-- `src/tests/unit/harness.test.ts` — real passing unit harness test
-- `src/tests/dal/harness.test.ts` — real passing DAL harness test
-- `src/tests/integration/harness.test.ts` — real passing integration harness test
-- `src/tests/security/harness.test.ts` — real passing security harness test
+- Harness tests passing: unit, dal, integration, security (harness level)
 - `src/tests/e2e/smoke.spec.ts` — Playwright smoke placeholder (`test.describe.skip`); exercised in AURA-008
 
 ### Architecture Boundary Enforcement (AURA-004)
-- `.dependency-cruiser.cjs` — finalized forbidden-import rules + `tsConfig` alias resolution so `@/*` imports are checked:
-  - Existing: `no-dal-to-ui`, `no-domain-to-ui`, `no-domain-to-dal`, `no-ui-to-dal`, `no-ui-to-services`, `no-lib-to-domain`, `no-circular`
-  - Added (Tier 1): `no-domain-to-react`, `no-ui-to-supabase`, `no-client-to-service-role`, and the `required` rule `api-route-requires-validation` (route handlers must import `zod` or `src/lib/validation`)
-- `knip.jsonc` — Knip config with an explicit, no-wildcard `ignoreDependencies` allowlist (26 approved-but-not-yet-wired deps, grouped with inline rationale). **Temporary governance debt — each entry is removed by the task that wires it.**
-- `npm run deps:check` and `npm run unused` both pass clean on the scaffold; boundary trip proven via temporary fixtures (not committed).
+- `.dependency-cruiser.cjs` — 12 rules covering all forbidden import directions + `api-route-requires-validation`
+- `knip.jsonc` — no-wildcard `ignoreDependencies` allowlist; shrinking as tasks wire deps
 
 ### Environment Schema (AURA-005)
-- `src/lib/validation/env.schema.ts` — pure Zod schemas: `publicEnvSchema` (4 `NEXT_PUBLIC_*` vars) + `serverEnvSchema` (6 server-only vars) + inferred types. No `server-only`, no `process.env` access, no top-level parsing → fully unit-testable.
-- `src/lib/config/env.ts` — server accessor `getServerEnv()`; `import 'server-only'` guard; lazy + memoized; fails fast at the server boundary on missing/invalid required vars.
-- `src/lib/config/env.public.ts` — client-safe accessor `getPublicEnv()`; exposes only `NEXT_PUBLIC_*` (statically referenced for Next inlining); no `server-only`; no server secret reachable.
-- `.env.example` — all 10 variables, grouped public vs server-only, **placeholders only** (no real secrets). No `.env`/`.env.local` created.
-- `.dependency-cruiser.cjs` — added `no-client-to-server-env` (`^src/components` → `^src/lib/config/env\.ts$`); scoped to `env.ts` exactly so `env.public.ts` stays allowed. Proven via temporary fixture (FAIL→PASS, not committed).
-- `knip.jsonc` — removed `zod` (now used by `env.schema.ts`) and `server-only` (now used by `env.ts`); added `entry: ["src/lib/config/env.ts"]` (no runtime caller until AURA-101; documented).
-- Tests: `src/tests/unit/env.test.ts` (schema parse/reject), `src/tests/security/env.test.ts` (no server-only key reachable via public surface).
+- `src/lib/validation/env.schema.ts` — pure Zod schemas; no `server-only`; no `process.env`; fully unit-testable
+- `src/lib/config/env.ts` — `getServerEnv()`; `import 'server-only'` guard; lazy + memoized
+- `src/lib/config/env.public.ts` — `getPublicEnv()`; client-safe; `NEXT_PUBLIC_*` only
+- `.env.example` — 10 variables, placeholders only
+
+### Design Tokens + Tailwind Pipeline (AURA-006) ← NEW
+- `tailwind.config.ts` — Tailwind v3.4.x; `theme.extend` only; `@tailwindcss/typography` plugin; token-backed colors (brand/surface/text/border), font families, font sizes (display–caption), border radii, shadows, motion duration/easing, container max-width, section spacing
+- `postcss.config.js` — `{ tailwindcss: {}, autoprefixer: {} }` for Next.js PostCSS pipeline
+- `src/styles/tokens.css` — All `luxury-dark` CSS custom properties on `:root`; bare HSL channels for Tailwind opacity support; brand, surface, text, border, radius, shadow, motion, layout, typography scale
+- `src/styles/globals.css` — Tailwind base/components/utilities directives; `@layer base` global resets using tokens; no hardcoded `left`/`right` directional rules introduced; future layout spacing must use logical CSS properties (`padding-inline`, `margin-inline`, etc.) for RTL-readiness (D-07); `prefers-reduced-motion` respected (D-26)
+- `src/app/layout.tsx` — Imports `@/styles/tokens.css` then `@/styles/globals.css`
 
 ### Application Scaffold (AURA-001)
-- `next.config.js` — Next.js App Router config
-- `src/app/layout.tsx` — root layout (placeholder, no styling)
-- `src/app/page.tsx` — placeholder page
-- `src/` folder architecture per `docs/ARCHITECTURE.md`:
-  - `src/components/{ui,real-estate,marketing,admin,layout}/`
-  - `src/config/`, `src/domain/`, `src/dal/`, `src/services/`
-  - `src/lib/{supabase,validation,i18n,seo,utils}/`
-  - `src/styles/`, `src/types/`
-  - `src/tests/{unit,dal,integration,e2e,security}/` — harness tests present; `.gitkeep` files removed
+- `next.config.js`, `src/app/layout.tsx`, `src/app/page.tsx` (placeholder)
+- Full `src/` folder architecture per `docs/ARCHITECTURE.md`
 
 ### Continuity Files
 - `SESSION_HANDOFF.md`, `CURRENT_STATE.md` (this file), `NEXT_STEPS.md`
@@ -73,44 +64,73 @@
 
 - No root-level `tests/` directory
 - No Supabase files or migrations
-- No `.env` or `.env.local` file, and no real secrets (`.env.example` placeholders only, added in AURA-005)
+- No `.env` or `.env.local` file (`.env.example` placeholders only)
 - No product UI/features beyond the placeholder shell
-- No routing, i18n, redirects, styling, data layer, auth, admin, GSAP
-- No Stage 2 skills (six review-gate skills)
-- No MCPs, hooks, or plugins
+- No routing, i18n, redirects, data layer, auth, admin, GSAP, business logic
+- No UI components (Button, Card, etc.) — component layer is AURA-008+
+- No `cn()` utility (deferred to when first component needs it)
+- No Stage 2 skills, MCPs, hooks, or plugins
 - No GitHub Actions CI (AURA-007)
 
 ---
 
-## AURA-005 Gate Results
+## AURA-006 Gate Results
 
 | Gate | Result |
 |---|---|
-| `npm run lint` | PASS — zero errors, zero warnings |
-| `npm run typecheck` | PASS — clean, no errors |
-| `npm run format:check` | PASS — all matched files use Prettier code style |
-| `npm run test` | PASS — 6 files, 14 tests (harness + env unit/security) |
+| `npm run lint` | PASS — zero errors |
+| `npm run typecheck` | PASS — clean |
+| `npm run format:check` | PASS — all files use Prettier code style |
+| `npm run test` | PASS — 6 files, 14 tests |
 | `npm run test:unit` | PASS — 2 files, 8 tests |
-| `npm run test:dal` | PASS — 1 passed |
-| `npm run test:integration` | PASS — 1 passed |
+| `npm run test:dal` | PASS — 1 |
+| `npm run test:integration` | PASS — 1 |
 | `npm run test:security` | PASS — 2 files, 4 tests |
-| `npm run test:e2e` | PASS — 4 skipped (test.describe.skip; exercised AURA-008) |
-| `npm run test:smoke` | PASS — 4 skipped (same) |
-| `npm run deps:check` | PASS — zero violations (8 modules); `no-client-to-server-env` proven via temporary fixture (FAIL→PASS) |
-| `npm run unused` | PASS — zero issues; `zod`/`server-only` removed from allowlist, `env.ts` declared entry |
-| `npm run build` | PASS — compiled cleanly; "Skipping linting" |
-| `npm run quality` | PASS — composite (lint→typecheck→format→test→unused→deps:check→build) |
+| `npm run deps:check` | PASS — 0 violations (10 modules) |
+| `npm run unused` | PASS — 0 issues; 4 entries removed from allowlist |
+| `npm run build` | PASS — compiled cleanly; "no utility classes" warning expected (placeholder page) |
+| `npm run quality` | PASS — composite exit 0 |
 | `npm run audit` | PASS — 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |
 
 ---
 
 ## Open Items
 
-### Carry-Forward: `postcss` moderate (documented exception — not fixable)
-Same as AURA-001/002. Passes `--audit-level=high`. Not actionable.
+### Carry-Forward: `postcss` moderate (documented exception)
+Same as AURA-001/002/005. Passes `--audit-level=high`. Not actionable.
+
+### Note: Tailwind "no utility classes" build warning
+Expected — the placeholder `page.tsx` has no Tailwind utility classes. Warning disappears once AURA-008 adds real JSX. Not a gate failure.
+
+### Note: Font families using system fallbacks
+`--font-serif: ui-serif, 'Georgia', serif` etc. are MVP placeholders. Next/font loading for the actual luxury typeface (e.g. Cormorant Garamond) is deferred to AURA-008; the CSS variable makes it swappable without changing tailwind config.
 
 ### Note: Playwright Node.js deprecation warning
-`[DEP0205] DeprecationWarning: module.register() is deprecated` — emitted by Playwright 1.60 internals on Node.js 22+. Not from AURA code. Not a gate failure.
+Playwright 1.60 internal; not a gate failure.
+
+---
+
+## Knip Allowlist Status
+
+| Entry | Status |
+|---|---|
+| ~~`tailwindcss`~~ | ✅ Removed AURA-006 (used by `tailwind.config.ts` + `postcss.config.js`) |
+| ~~`@tailwindcss/typography`~~ | ✅ Removed AURA-006 (imported in `tailwind.config.ts`) |
+| ~~`autoprefixer`~~ | ✅ Removed AURA-006 (used in `postcss.config.js`) |
+| ~~`postcss`~~ | ✅ Removed AURA-006 (PostCSS runner, detected via config file) |
+| `class-variance-authority` | Retained — no components yet |
+| `clsx` | Retained — no components yet |
+| `tailwind-merge` | Retained — no components yet |
+| `lucide-react` | Retained — no icons yet |
+| `next-intl` | Wired in AURA-008 |
+| `@supabase/ssr`, `@supabase/supabase-js` | Wired in AURA-101 |
+| `resend` | Wired in AURA-106 |
+| `@hookform/resolvers`, `react-hook-form`, `libphonenumber-js` | Wired in Phase 2–3 |
+| `@tanstack/react-query`, `zustand` | Wired in Phase 2+ |
+| `gsap`, `framer-motion` | Wired in Phase 5 |
+| `@sentry/nextjs`, `@vercel/analytics` | Wired in Phase 6 |
+| `eslint-config-next`, `@typescript-eslint/{parser,eslint-plugin}` | FlatCompat string-based; keep |
+| `entry: ["src/lib/config/env.ts"]` | Remove in AURA-101 |
 
 ---
 
@@ -123,3 +143,4 @@ All locked decisions D-01–D-51 are in force. Key non-negotiables:
 - No raw IP in event tables (D-18, D-51 — merge blocker)
 - No raw legal HTML (D-12 — merge blocker)
 - Auto-merge only into `develop`, never `main`
+- Admin cannot mutate design tokens / template architecture (D-21, D-25)

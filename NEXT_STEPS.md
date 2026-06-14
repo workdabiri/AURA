@@ -1,16 +1,16 @@
 # Next Steps
 
-**Updated:** 2026-06-14  
-**Current Phase:** Phase 0 — AURA-005 executed, awaiting Opus review / commit approval
+**Updated:** 2026-06-15  
+**Current Phase:** Phase 0 — AURA-006 executed, awaiting commit approval
 
 ---
 
 ## Immediate Next Action
 
-**User/Opus reviews AURA-005 and approves commit**, then:
+**User approves AURA-006 commit**, then:
 
-1. Commit `feat/aura-005-env-schema`
-2. Open PR to `develop` (Opus review required before merge — secrets boundary + service-role rule)
+1. Commit `feat/aura-006-design-tokens`
+2. Open PR to `develop`
 3. Squash merge to `develop`
 
 ---
@@ -23,14 +23,13 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 ---
 
-## After AURA-005 Merge
+## After AURA-006 Merge
 
-Execute Phase 0 tasks in order:
+Execute remaining Phase 0 tasks in order:
 
 | Task | Description | Opus Review |
 |---|---|---|
-| **AURA-006** | Design tokens + Tailwind + `luxury-dark` theme tokens | Not required |
-| **AURA-007** | GitHub Actions CI + CodeQL + branch protection documentation | Required |
+| **AURA-007** | GitHub Actions CI + CodeQL + branch protection documentation | **Required** |
 | **AURA-008** | First vertical slice — `/`→`/en` redirect + `/en` homepage shell + smoke test | Not required |
 
 ---
@@ -39,8 +38,9 @@ Execute Phase 0 tasks in order:
 
 `knip.jsonc` `ignoreDependencies` is a temporary, no-wildcard allowlist. **Each task that wires a dependency must remove its entry** so the list shrinks to empty:
 
-- ~~**AURA-005** → remove `zod`, `server-only`~~ ✅ **done** (`zod` used by `env.schema.ts`, `server-only` by `env.ts`)
-- **AURA-006** → remove `tailwindcss`, `@tailwindcss/typography`, `autoprefixer`, `postcss`, `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`
+- ~~**AURA-005** → remove `zod`, `server-only`~~ ✅ done
+- ~~**AURA-006** → remove `tailwindcss`, `@tailwindcss/typography`, `autoprefixer`, `postcss`~~ ✅ done (all 4 genuinely wired)
+- **AURA-006 deferred** → `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` — keep until first component that uses them (Phase 2 or AURA-008)
 - **AURA-008** → remove `next-intl`
 - **AURA-101** → remove `@supabase/ssr`, `@supabase/supabase-js`
 - **AURA-106 / Phase 3** → remove `resend`
@@ -48,18 +48,30 @@ Execute Phase 0 tasks in order:
 - **Phase 2+ (data/state)** → remove `@tanstack/react-query`, `zustand`
 - **Phase 5 (motion)** → remove `gsap`, `framer-motion`
 - **Observability (Phase 6)** → remove `@sentry/nextjs`, `@vercel/analytics`
-- `eslint-config-next`, `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin` — used now via FlatCompat but untraceable by Knip; keep until the ESLint config no longer hides them.
+- `eslint-config-next`, `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin` — used via FlatCompat but untraceable by Knip; keep until ESLint config is updated.
 
 ### Knip `entry` debt (AURA-005)
-- `knip.jsonc` declares `entry: ["src/lib/config/env.ts"]` because the server env accessor has no runtime caller yet (and cannot be test-imported — it pulls in `server-only`). **AURA-101 must remove this entry** once a server module imports `getServerEnv()`.
+- `knip.jsonc` declares `entry: ["src/lib/config/env.ts"]` because the server env accessor has no runtime caller yet. **AURA-101 must remove this entry** once a server module imports `getServerEnv()`.
 
 ---
 
-## Notes for AURA-006
+## Notes for AURA-007
 
-- Wires the Tailwind/PostCSS pipeline + design tokens (`luxury-dark`) — remove the 8 Tailwind/PostCSS deps above from the Knip allowlist as each is actually imported/used.
-- Token-based design system only; no component implementation. Admin cannot mutate template architecture (D-21).
-- Keep `deps:check`, `unused`, and all preservation gates green.
+- Opus review required (CI/security gate + merge-policy enforcement).
+- Creates `.github/workflows/ci.yml` (lint, typecheck, format, tests, deps:check, unused, build, audit).
+- Creates `.github/workflows/codeql.yml` (PR + scheduled).
+- Lighthouse advisory job: defined but disabled until Phase 2 (CF-4).
+- Documents required branch protection (status checks, ≥1 review, no force-push, no auto-merge to main).
+
+---
+
+## Notes for AURA-008
+
+- Depends on AURA-007 (CI green on PR).
+- Removes `test.describe.skip` from `src/tests/e2e/smoke.spec.ts`.
+- Wires `next-intl` → removes from Knip allowlist.
+- `/` → `/en` redirect; `/en` homepage shell using `luxury-dark` tokens.
+- Good opportunity to swap system font fallbacks for next/font loaded typeface (update CSS variable `--font-serif`).
 
 ---
 
@@ -71,18 +83,13 @@ Execute Phase 0 tasks in order:
 
 ---
 
-## Notes for AURA-008
-
-- `src/tests/e2e/smoke.spec.ts` is wired with `test.describe.skip` — enable by removing skip and implementing the actual test assertions once `/en` routing exists.
-- Playwright webServer config in `playwright.config.ts` already set to start `npm run dev` locally.
-
----
-
 ## Do Not Do Yet
 
-- Do not start AURA-006 before AURA-005 merges
+- Do not start AURA-007 before AURA-006 merges
 - Do not fix audit without explicit dep-change approval
 - Do not create migrations
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`
+- Do not implement UI components (deferred to Phase 2)
+- Do not load fonts via next/font (deferred to AURA-008)

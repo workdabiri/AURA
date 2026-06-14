@@ -1,0 +1,67 @@
+/*
+ * AURA design tokens — luxury-dark theme
+ *
+ * All values are defined on :root for the flagship luxury-dark theme.
+ * Colors use bare HSL channels (no hsl() wrapper) so Tailwind can apply
+ * opacity modifiers, e.g. bg-brand-primary/50.
+ *
+ * These are architecture tokens (D-21 / D-25). Admin cannot mutate them.
+ */
+
+:root {
+  /* --- Brand --- */
+  --brand-primary: 43 65% 65%; /* warm gold */
+  --brand-secondary: 35 30% 75%; /* champagne */
+  --brand-accent: 40 80% 55%; /* bright amber */
+
+  /* --- Surface --- */
+  --surface-page: 220 15% 8%; /* deep charcoal — page background */
+  --surface-card: 220 12% 12%; /* dark card — panel/card background */
+  --surface-overlay: 220 15% 6%; /* darkest — modal backdrops */
+
+  /* --- Text --- */
+  --text-primary: 45 20% 95%; /* off-white — primary readable text */
+  --text-secondary: 45 10% 65%; /* warm gray — secondary/supporting text */
+  --text-inverse: 220 15% 10%; /* near-black — text on light surfaces */
+
+  /* --- Border --- */
+  --border-default: 220 10% 20%; /* subtle dividers and input borders */
+
+  /* --- Border radius --- */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* --- Shadows --- */
+  --shadow-card: 0 4px 24px hsl(220 15% 4% / 0.4);
+  --shadow-modal: 0 8px 48px hsl(220 15% 4% / 0.6);
+  --shadow-hero: 0 16px 64px hsl(220 15% 4% / 0.8);
+
+  /* --- Motion --- */
+  --motion-duration-fast: 150ms;
+  --motion-duration-normal: 300ms;
+  --motion-duration-slow: 600ms;
+  --motion-easing-premium: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* --- Layout --- */
+  --layout-container: 90rem; /* 1440px max container width */
+  --layout-section-spacing: 6rem; /* vertical section padding */
+
+  /* --- Typography scale — fluid sizing via clamp --- */
+  --font-display-size: clamp(2.5rem, 5vw, 4.5rem);
+  --font-h1-size: clamp(2rem, 4vw, 3.5rem);
+  --font-h2-size: clamp(1.5rem, 3vw, 2.5rem);
+  --font-h3-size: clamp(1.25rem, 2.5vw, 2rem);
+  --font-body-size: 1rem;
+  --font-small-size: 0.875rem;
+  --font-caption-size: 0.75rem;
+
+  /* --- Font families — system fallbacks for MVP ---
+   * Replace var(--font-serif) with a next/font CSS variable in AURA-008
+   * when the actual typeface is loaded (e.g. Cormorant Garamond).
+   */
+  --font-serif: ui-serif, 'Georgia', serif;
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-serif); /* headings default to serif */
+}
