@@ -44,6 +44,33 @@ module.exports = {
       to: { path: '^src/(domain|dal|services|components|app)' },
     },
     {
+      name: 'no-domain-to-react',
+      comment:
+        'Domain is pure business logic — it must not import React or React DOM (CLAUDE.md, dependency-direction.md)',
+      severity: 'error',
+      from: { path: '^src/domain' },
+      to: { path: 'node_modules/(react|react-dom)/', dependencyTypes: ['npm'] },
+    },
+    {
+      name: 'no-ui-to-supabase',
+      comment:
+        'UI components must not query Supabase directly — go through the DAL (ARCHITECTURE.md "No UI querying Supabase directly")',
+      severity: 'error',
+      from: { path: '^src/components' },
+      to: {
+        path: ['^src/lib/supabase', 'node_modules/@supabase/'],
+        dependencyTypes: ['local', 'npm'],
+      },
+    },
+    {
+      name: 'no-client-to-service-role',
+      comment:
+        'The service-role helper bypasses RLS and is server-only; UI components must never import it (security merge blocker)',
+      severity: 'error',
+      from: { path: '^src/components' },
+      to: { path: '^src/lib/supabase/service-role' },
+    },
+    {
       name: 'no-circular',
       comment: 'Circular dependencies are forbidden',
       severity: 'error',
@@ -51,9 +78,24 @@ module.exports = {
       to: { circular: true },
     },
   ],
+  required: [
+    {
+      name: 'api-route-requires-validation',
+      comment:
+        'Every API route handler must import validation explicitly — Zod or the shared src/lib/validation schemas — before any business logic (QUALITY_GATES architecture blocker). Statically enforced as an import requirement; the presence of validation logic in the handler body is verified in code review.',
+      severity: 'error',
+      module: { path: '^src/app/api/.+/route\\.tsx?$' },
+      to: { path: ['^src/lib/validation', 'node_modules/zod/'] },
+    },
+  ],
   options: {
     doNotFollow: {
       path: 'node_modules',
+    },
+    // Resolve the `@/*` -> `./src/*` path alias so boundary rules see aliased imports,
+    // which are the project's standard import style (dependency-direction.md examples use `@/...`).
+    tsConfig: {
+      fileName: 'tsconfig.json',
     },
     moduleSystems: ['es6', 'cjs'],
     tsPreCompilationDeps: true,

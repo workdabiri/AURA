@@ -1,8 +1,8 @@
 # Current State
 
 **Updated:** 2026-06-13  
-**Branch:** `feat/aura-003-testing-stack`  
-**Phase:** Phase 0 — AURA-003 executed, awaiting commit approval
+**Branch:** `feat/aura-004-architecture-boundaries`  
+**Phase:** Phase 0 — AURA-004 executed, awaiting Opus review / commit approval
 
 ---
 
@@ -37,6 +37,13 @@
 - `src/tests/security/harness.test.ts` — real passing security harness test
 - `src/tests/e2e/smoke.spec.ts` — Playwright smoke placeholder (`test.describe.skip`); exercised in AURA-008
 
+### Architecture Boundary Enforcement (AURA-004)
+- `.dependency-cruiser.cjs` — finalized forbidden-import rules + `tsConfig` alias resolution so `@/*` imports are checked:
+  - Existing: `no-dal-to-ui`, `no-domain-to-ui`, `no-domain-to-dal`, `no-ui-to-dal`, `no-ui-to-services`, `no-lib-to-domain`, `no-circular`
+  - Added (Tier 1): `no-domain-to-react`, `no-ui-to-supabase`, `no-client-to-service-role`, and the `required` rule `api-route-requires-validation` (route handlers must import `zod` or `src/lib/validation`)
+- `knip.jsonc` — Knip config with an explicit, no-wildcard `ignoreDependencies` allowlist (26 approved-but-not-yet-wired deps, grouped with inline rationale). **Temporary governance debt — each entry is removed by the task that wires it.**
+- `npm run deps:check` and `npm run unused` both pass clean on the scaffold; boundary trip proven via temporary fixtures (not committed).
+
 ### Application Scaffold (AURA-001)
 - `next.config.js` — Next.js App Router config
 - `src/app/layout.tsx` — root layout (placeholder, no styling)
@@ -66,12 +73,12 @@
 
 ---
 
-## AURA-003 Gate Results
+## AURA-004 Gate Results
 
 | Gate | Result |
 |---|---|
-| `npm run typecheck` | PASS — clean, no errors |
 | `npm run lint` | PASS — zero errors, zero warnings |
+| `npm run typecheck` | PASS — clean, no errors |
 | `npm run format:check` | PASS — all matched files use Prettier code style |
 | `npm run test` | PASS — 4 files, 4 tests passed (unit + dal + integration + security) |
 | `npm run test:unit` | PASS — 1 passed |
@@ -80,7 +87,10 @@
 | `npm run test:security` | PASS — 1 passed |
 | `npm run test:e2e` | PASS — 4 skipped (test.describe.skip; exercised AURA-008) |
 | `npm run test:smoke` | PASS — 4 skipped (same) |
+| `npm run deps:check` | PASS — zero violations; new rules proven via temporary fixtures |
+| `npm run unused` | PASS — zero issues (knip.jsonc allowlist) |
 | `npm run build` | PASS — compiled cleanly; "Skipping linting" |
+| `npm run quality` | PASS — composite (lint→typecheck→format→test→unused→deps:check→build) |
 | `npm run audit` | PASS — 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |
 
 ---

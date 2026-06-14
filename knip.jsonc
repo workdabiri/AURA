@@ -1,0 +1,49 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema-jsonc.json",
+  // AURA-004 — architecture boundary enforcement.
+  // `ignoreDependencies` is an explicit, temporary governance allowlist: every entry is an
+  // approved AURA-001 dependency that is not yet imported by source. It is NOT a way to weaken
+  // the gate — Knip still reports unused files, exports, types, and any UNEXPECTED dependency.
+  // No wildcards. Each entry must be REMOVED from this list by the task that wires it, so the
+  // allowlist shrinks to empty as the engine is built out.
+  "ignoreDependencies": [
+    // --- Wired in AURA-005 (env schema + validation) ---
+    "zod",
+    // --- Wired in AURA-006 (design tokens + Tailwind/PostCSS pipeline) ---
+    "tailwindcss",
+    "@tailwindcss/typography",
+    "autoprefixer",
+    "postcss",
+    "class-variance-authority",
+    "clsx",
+    "tailwind-merge",
+    "lucide-react",
+    // --- Wired in AURA-008 (first vertical slice / i18n) ---
+    "next-intl",
+    // --- Wired in AURA-101 (Supabase client/server/service-role helpers) ---
+    "@supabase/ssr",
+    "@supabase/supabase-js",
+    "server-only",
+    // --- Wired in AURA-106 / Phase 3 (email notifications) ---
+    "resend",
+    // --- Wired in Phase 2-3 (lead forms + phone validation) ---
+    "@hookform/resolvers",
+    "react-hook-form",
+    "libphonenumber-js",
+    // --- Wired in Phase 2+ (data fetching + client state) ---
+    "@tanstack/react-query",
+    "zustand",
+    // --- Wired in Phase 5 (cinematic homepage + UI motion) ---
+    "gsap",
+    "framer-motion",
+    // --- Wired in observability work (Phase 6 / production readiness) ---
+    "@sentry/nextjs",
+    "@vercel/analytics",
+    // --- Used NOW by eslint.config.mjs via FlatCompat.extends('next/core-web-vitals',
+    //     'next/typescript'); Knip cannot trace these string-based extends, so they are
+    //     ignored to avoid a false positive (not future debt — already in use). ---
+    "eslint-config-next",
+    "@typescript-eslint/parser",
+    "@typescript-eslint/eslint-plugin",
+  ],
+}
