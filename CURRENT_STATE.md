@@ -1,8 +1,8 @@
 # Current State
 
-**Updated:** 2026-06-13  
-**Branch:** `feat/aura-004-architecture-boundaries`  
-**Phase:** Phase 0 — AURA-004 executed, awaiting Opus review / commit approval
+**Updated:** 2026-06-14  
+**Branch:** `feat/aura-005-env-schema`  
+**Phase:** Phase 0 — AURA-005 executed, awaiting Opus review / commit approval
 
 ---
 
@@ -44,6 +44,15 @@
 - `knip.jsonc` — Knip config with an explicit, no-wildcard `ignoreDependencies` allowlist (26 approved-but-not-yet-wired deps, grouped with inline rationale). **Temporary governance debt — each entry is removed by the task that wires it.**
 - `npm run deps:check` and `npm run unused` both pass clean on the scaffold; boundary trip proven via temporary fixtures (not committed).
 
+### Environment Schema (AURA-005)
+- `src/lib/validation/env.schema.ts` — pure Zod schemas: `publicEnvSchema` (4 `NEXT_PUBLIC_*` vars) + `serverEnvSchema` (6 server-only vars) + inferred types. No `server-only`, no `process.env` access, no top-level parsing → fully unit-testable.
+- `src/lib/config/env.ts` — server accessor `getServerEnv()`; `import 'server-only'` guard; lazy + memoized; fails fast at the server boundary on missing/invalid required vars.
+- `src/lib/config/env.public.ts` — client-safe accessor `getPublicEnv()`; exposes only `NEXT_PUBLIC_*` (statically referenced for Next inlining); no `server-only`; no server secret reachable.
+- `.env.example` — all 10 variables, grouped public vs server-only, **placeholders only** (no real secrets). No `.env`/`.env.local` created.
+- `.dependency-cruiser.cjs` — added `no-client-to-server-env` (`^src/components` → `^src/lib/config/env\.ts$`); scoped to `env.ts` exactly so `env.public.ts` stays allowed. Proven via temporary fixture (FAIL→PASS, not committed).
+- `knip.jsonc` — removed `zod` (now used by `env.schema.ts`) and `server-only` (now used by `env.ts`); added `entry: ["src/lib/config/env.ts"]` (no runtime caller until AURA-101; documented).
+- Tests: `src/tests/unit/env.test.ts` (schema parse/reject), `src/tests/security/env.test.ts` (no server-only key reachable via public surface).
+
 ### Application Scaffold (AURA-001)
 - `next.config.js` — Next.js App Router config
 - `src/app/layout.tsx` — root layout (placeholder, no styling)
@@ -64,7 +73,7 @@
 
 - No root-level `tests/` directory
 - No Supabase files or migrations
-- No `.env` file or real secrets (only `.env.example` when AURA-005 runs)
+- No `.env` or `.env.local` file, and no real secrets (`.env.example` placeholders only, added in AURA-005)
 - No product UI/features beyond the placeholder shell
 - No routing, i18n, redirects, styling, data layer, auth, admin, GSAP
 - No Stage 2 skills (six review-gate skills)
@@ -73,22 +82,22 @@
 
 ---
 
-## AURA-004 Gate Results
+## AURA-005 Gate Results
 
 | Gate | Result |
 |---|---|
 | `npm run lint` | PASS — zero errors, zero warnings |
 | `npm run typecheck` | PASS — clean, no errors |
 | `npm run format:check` | PASS — all matched files use Prettier code style |
-| `npm run test` | PASS — 4 files, 4 tests passed (unit + dal + integration + security) |
-| `npm run test:unit` | PASS — 1 passed |
+| `npm run test` | PASS — 6 files, 14 tests (harness + env unit/security) |
+| `npm run test:unit` | PASS — 2 files, 8 tests |
 | `npm run test:dal` | PASS — 1 passed |
 | `npm run test:integration` | PASS — 1 passed |
-| `npm run test:security` | PASS — 1 passed |
+| `npm run test:security` | PASS — 2 files, 4 tests |
 | `npm run test:e2e` | PASS — 4 skipped (test.describe.skip; exercised AURA-008) |
 | `npm run test:smoke` | PASS — 4 skipped (same) |
-| `npm run deps:check` | PASS — zero violations; new rules proven via temporary fixtures |
-| `npm run unused` | PASS — zero issues (knip.jsonc allowlist) |
+| `npm run deps:check` | PASS — zero violations (8 modules); `no-client-to-server-env` proven via temporary fixture (FAIL→PASS) |
+| `npm run unused` | PASS — zero issues; `zod`/`server-only` removed from allowlist, `env.ts` declared entry |
 | `npm run build` | PASS — compiled cleanly; "Skipping linting" |
 | `npm run quality` | PASS — composite (lint→typecheck→format→test→unused→deps:check→build) |
 | `npm run audit` | PASS — 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |

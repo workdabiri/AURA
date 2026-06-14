@@ -71,6 +71,14 @@ module.exports = {
       to: { path: '^src/lib/supabase/service-role' },
     },
     {
+      name: 'no-client-to-server-env',
+      comment:
+        'UI components must not import the server-only env accessor (src/lib/config/env.ts) — it is guarded by `server-only` and exposes server secrets. Client code must read public values via src/lib/config/env.public instead (AURA-005 secrets boundary). Scoped to env.ts exactly so env.public.ts stays allowed.',
+      severity: 'error',
+      from: { path: '^src/components' },
+      to: { path: '^src/lib/config/env\\.ts$' },
+    },
+    {
       name: 'no-circular',
       comment: 'Circular dependencies are forbidden',
       severity: 'error',

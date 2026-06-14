@@ -7,8 +7,6 @@
   // No wildcards. Each entry must be REMOVED from this list by the task that wires it, so the
   // allowlist shrinks to empty as the engine is built out.
   "ignoreDependencies": [
-    // --- Wired in AURA-005 (env schema + validation) ---
-    "zod",
     // --- Wired in AURA-006 (design tokens + Tailwind/PostCSS pipeline) ---
     "tailwindcss",
     "@tailwindcss/typography",
@@ -21,9 +19,10 @@
     // --- Wired in AURA-008 (first vertical slice / i18n) ---
     "next-intl",
     // --- Wired in AURA-101 (Supabase client/server/service-role helpers) ---
+    //     (`server-only` was removed from this list in AURA-005 — it is now imported
+    //      by src/lib/config/env.ts.)
     "@supabase/ssr",
     "@supabase/supabase-js",
-    "server-only",
     // --- Wired in AURA-106 / Phase 3 (email notifications) ---
     "resend",
     // --- Wired in Phase 2-3 (lead forms + phone validation) ---
@@ -46,4 +45,11 @@
     "@typescript-eslint/parser",
     "@typescript-eslint/eslint-plugin",
   ],
+  // AURA-005 — `src/lib/config/env.ts` is the server-only env accessor. It imports
+  // `server-only` (so it cannot be imported by Vitest) and has no runtime caller until
+  // AURA-101 wires the Supabase server client via `getServerEnv()`. Declaring it an
+  // explicit entry prevents a false "unused file" report while keeping Knip's analysis
+  // of its imports intact. REMOVE this entry in AURA-101 once a server module imports it.
+  // (env.public.ts and env.schema.ts are covered by tests and need no declaration.)
+  "entry": ["src/lib/config/env.ts"],
 }
