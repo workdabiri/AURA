@@ -30,12 +30,13 @@ So these rules must be applied **once, manually**, after the AURA-007 workflows 
 
 ## Required status checks
 
-These names must exactly match the GitHub Actions **job names** so they can be selected as required checks.
+> **Note on check names:** For a matrix job (like CodeQL's `strategy.matrix.language`), GitHub reports the check context as `<job-name> (<matrix-value>)`, not the bare job name. The three checks visible on this PR are `quality`, `analyze (javascript-typescript)`, and `CodeQL`. Use the exact strings below when configuring required checks.
 
-| Check (job name) | Workflow file | Required? |
+| Check name (as reported by GitHub) | Source | Required? |
 |---|---|---|
-| `quality` | `.github/workflows/ci.yml` | **Yes** — merge blocker |
-| `analyze` | `.github/workflows/codeql.yml` | **Yes** — CodeQL; merge blocker |
+| `quality` | `.github/workflows/ci.yml` — `jobs.quality` | **Yes** — merge blocker |
+| `analyze (javascript-typescript)` | `.github/workflows/codeql.yml` — `jobs.analyze` (matrix: javascript-typescript) | **Yes** — CodeQL Actions job; merge blocker |
+| `CodeQL` | GitHub code-scanning results (auto-reported alongside `analyze`) | **Yes** — code-scanning gate; merge blocker |
 | `e2e` | `.github/workflows/ci.yml` (currently **disabled**) | Not yet — add when **AURA-008** enables Playwright |
 | `lighthouse-advisory` | `.github/workflows/lighthouse.yml` (currently **disabled**) | **No** — advisory only; never a required check (enabled non-blocking in **AURA-206**) |
 
@@ -52,7 +53,7 @@ Configure a branch protection rule (or Ruleset) targeting `develop` with:
   - [ ] **Dismiss stale pull request approvals when new commits are pushed**
 - [ ] **Require status checks to pass before merging**
   - [ ] **Require branches to be up to date before merging**
-  - [ ] Required checks: **`quality`**, **`analyze`**
+  - [ ] Required checks: **`quality`**, **`analyze (javascript-typescript)`**, **`CodeQL`**
 - [ ] **Require conversation resolution before merging** (recommended)
 - [ ] **Do not allow force pushes**
 - [ ] **Do not allow deletions**
@@ -69,20 +70,20 @@ Configure a branch protection rule (or Ruleset) targeting `develop` with:
 - [ ] **Require a pull request before merging** (manual merge only; no auto-merge)
   - [ ] Require **at least 1 approving review**
   - [ ] **Dismiss stale approvals on new commits**
-- [ ] **Require status checks to pass before merging**
-  - [ ] Required checks: **`quality`**, **`analyze`**
 - [ ] **Do not allow force pushes**
 - [ ] **Do not allow deletions**
 - [ ] **Restrict who can push** to release managers (recommended)
 - [ ] **Disable auto-merge** for `main` (manual promotion from `release/<version>` only)
 
+> **`main` status checks:** The current AURA-007 workflows (`ci.yml`, `codeql.yml`) only trigger on PRs/pushes to `develop`. Do **not** configure `quality`, `analyze (javascript-typescript)`, or `CodeQL` as required checks on `main` until a future release-promotion workflow adds `main`/`release/**` triggers — selecting those check names now would permanently block `main` merges (expected-but-never-reported check). A future release workflow task will add the triggers and document the `main` required checks at that time.
+
 ---
 
 ## One-time setup order
 
-1. Open a PR from `feat/aura-007-ci-codeql` → `develop` so `ci.yml` and `codeql.yml` run once and their job names (`quality`, `analyze`) become selectable.
-2. Add the `develop` protection rule above; select `quality` and `analyze` as required checks.
-3. Add the `main` protection rule above.
+1. Open a PR from `feat/aura-007-ci-codeql` → `develop` so `ci.yml` and `codeql.yml` run once and their check names (`quality`, `analyze (javascript-typescript)`, `CodeQL`) become selectable in GitHub Settings.
+2. Add the `develop` protection rule above; select `quality`, `analyze (javascript-typescript)`, and `CodeQL` as required checks.
+3. Add the `main` protection rule above (no required status checks yet — see caveat above).
 4. Only now enable auto-merge into `develop` (squash). `main` stays manual.
 
 ---
