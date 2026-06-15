@@ -1,81 +1,76 @@
 # Session Handoff
 
-**Last Updated:** 2026-06-14  
-**Branch:** `feat/aura-005-env-schema`
+**Last Updated:** 2026-06-15  
+**Branch:** `feat/aura-006-design-tokens`
 
 ---
 
 ## Completed This Session
 
-**AURA-005: Environment schema + `.env.example` (no secrets)**
+**AURA-006: Design tokens + Tailwind + `luxury-dark` theme tokens**
 
 Files created:
 
-- `src/lib/validation/env.schema.ts` — pure Zod schemas (`publicEnvSchema`, `serverEnvSchema`) + inferred types (`PublicEnv`, `ServerEnv`). No `server-only`, no `process.env` access, no top-level parsing → importable from Vitest and fully testable.
-- `src/lib/config/env.ts` — `getServerEnv()`; `import 'server-only'` guard; lazy + memoized parse of `serverEnvSchema`; throws a clear aggregated error (fail-fast) on missing/invalid required vars at the first server-side call.
-- `src/lib/config/env.public.ts` — `getPublicEnv()`; exposes only `NEXT_PUBLIC_*` (each var statically referenced so Next.js inlines it client-side); no `server-only`; no server secret reachable.
-- `.env.example` — all 10 variables, grouped public vs server-only, **placeholders only**.
-- `src/tests/unit/env.test.ts` — schema accepts valid env; rejects missing required var; rejects bad URL/email; analytics flag coercion.
-- `src/tests/security/env.test.ts` — public schema exposes only `NEXT_PUBLIC_*`; no server-only key present in the public schema or in `getPublicEnv()` output even when a server secret is set in the environment.
+- `tailwind.config.ts` — Tailwind v3.4.x config; `theme.extend` only (no replacement of defaults); imports `@tailwindcss/typography` plugin via ES default import; content scanning for `src/app/**/*.{ts,tsx}` and `src/components/**/*.{ts,tsx}`; token-backed colors, font families, font sizes, border radii, shadows, motion duration/easing, container max-width, section spacing.
+- `postcss.config.js` — Standard v3 PostCSS config (`tailwindcss: {}` + `autoprefixer: {}`). JSDoc annotation removed to avoid Knip flagging `postcss-load-config` (a peer dep, not a direct dep).
+- `src/styles/tokens.css` — All CSS custom properties for `luxury-dark` on `:root`. Covers brand, surface, text, border, radius, shadow, motion, layout, and typography scale. Colors use bare HSL channels (no `hsl()` wrapper) to enable Tailwind opacity modifiers (`bg-brand-primary/50`). No GSAP code — motion tokens only.
+- `src/styles/globals.css` — Tailwind directives (`@tailwind base/components/utilities`) + `@layer base` global resets using `luxury-dark` tokens. No hardcoded `left`/`right` directional rules introduced; future layout spacing rules must use logical CSS properties (`padding-inline`, `margin-inline`, etc.) for RTL-readiness (D-07). `prefers-reduced-motion` respected (D-26).
 
 Files modified:
 
-- `.dependency-cruiser.cjs` — added `no-client-to-server-env` (`^src/components` → `^src/lib/config/env\.ts$`). Scoped to `env.ts` exactly so `env.public.ts` remains importable by client code. All prior rules unchanged.
-- `knip.jsonc` — removed `zod` (now imported by `env.schema.ts`) and `server-only` (now imported by `env.ts`) from `ignoreDependencies`; added `entry: ["src/lib/config/env.ts"]` so the not-yet-consumed server accessor is not flagged as an unused file (removed in AURA-101).
+- `src/app/layout.tsx` — Added two CSS imports: `@/styles/tokens.css` then `@/styles/globals.css` (tokens before globals, per approval). No other changes to layout.
+- `knip.jsonc` — Removed `tailwindcss`, `@tailwindcss/typography`, `autoprefixer`, `postcss` from `ignoreDependencies` (all four genuinely wired); retained `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` (no components created in AURA-006).
 
 Files deleted:
 
-- `src/lib/validation/.gitkeep` (directory now contains `env.schema.ts`). Other empty-dir `.gitkeep`s left intact. (`src/lib/config/.gitkeep` was never tracked.)
+- `src/styles/.gitkeep` (directory now contains `tokens.css` and `globals.css`).
 
-Continuity files updated: `CURRENT_STATE.md`, `SESSION_HANDOFF.md` (this file), `NEXT_STEPS.md`.
+Continuity files updated: `SESSION_HANDOFF.md` (this file), `CURRENT_STATE.md`, `NEXT_STEPS.md`.
 
-**No dependencies installed. No `package.json` / `package-lock.json` change. No `.env` / `.env.local` created. No real secrets.**
-
----
-
-## Decisions Applied (per approval)
-
-- **File locations:** `src/lib/config/` (accessors) + `src/lib/validation/` (schemas).
-- **Sentry DSN excluded:** only `SENTRY_AUTH_TOKEN` retained from the security baseline; no `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_DSN` added (deferred to observability wiring if docs are updated).
-- **`no-client-to-server-env` added** (approved `.dependency-cruiser.cjs` change for this secrets-boundary task), narrowly scoped to `env.ts` only.
-- **Lazy + memoized validation:** nothing parses at import time → scaffold build/test/quality pass without a real `.env`; required vars fail fast when `getServerEnv()` is first called.
-- **`zod` and `server-only` removed from the Knip allowlist** because both are now genuinely imported by AURA-005.
+**No dependencies installed. No `package.json` / `package-lock.json` change. No `.env` / `.env.local` created. No real secrets. No components, routing, i18n, auth, admin, Supabase, GSAP, or business logic.**
 
 ---
 
-## Variable Classification
+## Carry-Forward Fix Applied
 
-**Public / client-safe (`NEXT_PUBLIC_*`):**
-| Var | Required? |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | required |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | required |
-| `NEXT_PUBLIC_SITE_URL` | required |
-| `NEXT_PUBLIC_VERCEL_ANALYTICS_ENABLED` | optional (default false) |
+**Lint failure — `require()` in `tailwind.config.ts`:**
+- Initial `require('@tailwindcss/typography')` was blocked by `@typescript-eslint/no-require-imports`.
+- Fixed to `import typography from '@tailwindcss/typography'` (ES default import). Valid because `esModuleInterop: true` + `@tailwindcss/typography` v0.5.20 ships types.
 
-**Server-only:**
-| Var | Required? |
-|---|---|
-| `SUPABASE_SERVICE_ROLE_KEY` (service-role / privileged) | required |
-| `RATE_LIMIT_SALT` (D-51) | required |
-| `RESEND_API_KEY` | optional (Phase 3) |
-| `RESEND_FROM_EMAIL` | optional (Phase 3) |
-| `ADMIN_NOTIFICATION_EMAIL` (Q-06) | optional (Phase 3) |
-| `SENTRY_AUTH_TOKEN` | optional (Phase 6) |
+**Knip `postcss-load-config` false positive:**
+- `/** @type {import('postcss-load-config').Config} */` in `postcss.config.js` caused Knip to flag `postcss-load-config` as an unlisted dependency (it's a peer dep of PostCSS, not a direct dep).
+- Fixed by removing the JSDoc type annotation. The file is functional without it.
 
 ---
 
-## Boundary Trip Proof (fixture, not committed)
+## Decisions Applied
 
-Temporary fixture `src/components/__fixture_env_boundary.ts` imported **both** `@/lib/config/env` (server) and `@/lib/config/env.public`:
+- **Two CSS files:** `tokens.css` (CSS variables only) and `globals.css` (Tailwind directives + global base). Matches TASKS_Project.md "Files Likely Affected."
+- **Import order:** `tokens.css` before `globals.css` in `layout.tsx`. Globals references token values; tokens must be defined first.
+- **HSL channel pattern:** Colors defined as `43 65% 65%` (channels only) referenced as `hsl(var(--brand-primary) / <alpha-value>)` in tailwind config. Enables Tailwind opacity modifier syntax (`/50`, `/75`).
+- **System font fallbacks:** `--font-serif: ui-serif, 'Georgia', serif` etc. for MVP. Next/font loading deferred to AURA-008 when the homepage shell is built; fonts swappable via the CSS variable.
+- **Knip removals — 4 only:** `tailwindcss`, `@tailwindcss/typography`, `autoprefixer`, `postcss`. The remaining 4 (`cva`, `clsx`, `tailwind-merge`, `lucide-react`) are not imported anywhere in AURA-006 — no `cn()` helper or icons were created.
+- **`docs/TASKS_Project.md` not modified** — per correction #1; execution status is carried in continuity docs.
 
-| Check | Result |
-|---|---|
-| `deps:check` with fixture | **FAIL** — exactly 1 violation: `no-client-to-server-env: src/components/__fixture_env_boundary.ts → src/lib/config/env.ts` |
-| `env.public` import in same fixture | **No violation** — proves the rule is scoped to `env.ts`, not `env.public.ts` |
-| `deps:check` after fixture removal | **PASS** — 0 violations (8 modules) |
+---
 
-Fixture deleted; `git status` clean of fixture artifacts.
+## Token Classification
+
+**Colors (bare HSL channels for Tailwind opacity support):**
+| Token | CSS Variable | Value | Meaning |
+|---|---|---|---|
+| brand.primary | `--brand-primary` | `43 65% 65%` | Warm gold |
+| brand.secondary | `--brand-secondary` | `35 30% 75%` | Champagne |
+| brand.accent | `--brand-accent` | `40 80% 55%` | Bright amber |
+| surface.page | `--surface-page` | `220 15% 8%` | Deep charcoal |
+| surface.card | `--surface-card` | `220 12% 12%` | Dark card |
+| surface.overlay | `--surface-overlay` | `220 15% 6%` | Darkest overlay |
+| text.primary | `--text-primary` | `45 20% 95%` | Off-white |
+| text.secondary | `--text-secondary` | `45 10% 65%` | Warm gray |
+| text.inverse | `--text-inverse` | `220 15% 10%` | Near-black |
+| border.default | `--border-default` | `220 10% 20%` | Subtle dividers |
+
+**Tailwind classes generated:** `bg-brand-primary`, `text-brand-accent`, `bg-surface-card`, `text-text-secondary`, `bg-surface-overlay`, `border-border-default`, etc. Opacity modifiers work: `bg-surface-overlay/80`.
 
 ---
 
@@ -91,32 +86,33 @@ Fixture deleted; `git status` clean of fixture artifacts.
 | `npm run test:dal` | PASS — 1 |
 | `npm run test:integration` | PASS — 1 |
 | `npm run test:security` | PASS — 2 files, 4 tests |
-| `npm run deps:check` | PASS — 0 violations; `no-client-to-server-env` proven |
-| `npm run unused` | PASS — 0 issues |
-| `npm run build` | PASS |
-| `npm run quality` | PASS — composite green |
-| `npm run audit` | PASS — 0 HIGH, 0 CRITICAL |
+| `npm run deps:check` | PASS — 0 violations (10 modules) |
+| `npm run unused` | PASS — 0 issues (4 Knip entries removed) |
+| `npm run build` | PASS — compiled cleanly; "no utility classes" warning expected (placeholder page has none) |
+| `npm run quality` | PASS — composite exit 0 |
+| `npm run audit` | PASS — exit 0; 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |
 
 ---
 
 ## Open Issues (Carry-Forward)
 
-1. **`postcss` moderate** — documented exception, carry-forward; not actionable.
+1. **`postcss` moderate** — documented exception; carry-forward; not actionable.
 2. **Playwright Node.js deprecation warning** — Playwright internal; not a gate failure.
-3. **Knip `entry` for `src/lib/config/env.ts`** — temporary; `env.ts` has no runtime caller until AURA-101 wires the Supabase server client via `getServerEnv()`. **Remove the entry in AURA-101.**
-4. **Knip `ignoreDependencies` allowlist** — `zod` and `server-only` removed in AURA-005. Remaining entries pay down per task (tailwind/postcss → AURA-006, next-intl → AURA-008, supabase → AURA-101, etc.).
-5. **Sentry DSN vars deferred** — only `SENTRY_AUTH_TOKEN` present; add `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_DSN` when Sentry is wired and docs updated.
+3. **Knip `entry` for `src/lib/config/env.ts`** — temporary; remove in AURA-101.
+4. **Remaining Knip allowlist entries** — `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` retained until components are built. `next-intl` (AURA-008), Supabase packages (AURA-101), Resend (AURA-106), etc.
+5. **Tailwind "no utility classes" build warning** — expected; placeholder page has no classes. Disappears once AURA-008 adds real JSX.
+6. **Font families** — system fallbacks only; next/font loading for actual typeface deferred to AURA-008.
 
 ---
 
 ## Validation Status
 
-AURA-005 acceptance criteria pass: env validated at the server boundary (fail-fast via `getServerEnv()`), `.env.example` lists all vars with no secrets, service-role/salt unreachable from the client bundle (`server-only` guard + `no-client-to-server-env` + security test). Awaiting Opus review + commit approval.
+AURA-006 acceptance criteria met: tokens compile (build PASS), `luxury-dark` CSS variables present in `src/styles/tokens.css`, all 14 tests still pass, all quality gates green. Awaiting commit approval.
 
 ---
 
 ## Next Safe Action
 
-1. User/Opus reviews AURA-005 on `feat/aura-005-env-schema` and approves commit.
-2. After commit approval: commit, open PR to `develop`, Opus review (secrets boundary + service-role rule), squash merge.
-3. After AURA-005 merge: proceed to **AURA-006** (design tokens + Tailwind + `luxury-dark`) — wires `tailwindcss`, `@tailwindcss/typography`, `autoprefixer`, `postcss`, `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`; remove each from the Knip allowlist as it is wired.
+1. User approves AURA-006 commit.
+2. Commit + open PR to `develop` + squash merge.
+3. After AURA-006 merge: proceed to **AURA-007** (GitHub Actions CI + CodeQL + branch protection documentation) — Opus review required.

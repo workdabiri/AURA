@@ -8,10 +8,10 @@
   // allowlist shrinks to empty as the engine is built out.
   "ignoreDependencies": [
     // --- Wired in AURA-006 (design tokens + Tailwind/PostCSS pipeline) ---
-    "tailwindcss",
-    "@tailwindcss/typography",
-    "autoprefixer",
-    "postcss",
+    //     tailwindcss, @tailwindcss/typography, autoprefixer, postcss were
+    //     removed here in AURA-006 — all four are now genuinely used by
+    //     tailwind.config.ts and postcss.config.js.
+    // --- Remaining AURA-006 deps (not yet wired — no components yet) ---
     "class-variance-authority",
     "clsx",
     "tailwind-merge",
