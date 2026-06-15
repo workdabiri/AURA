@@ -1,8 +1,8 @@
 # Current State
 
 **Updated:** 2026-06-16
-**Branch:** `feat/aura-008-homepage-shell` (PR #9 open → `develop`; pending squash merge)
-**Phase:** Phase 0 — AURA-008 executed; PR #9 all checks green; awaiting squash merge
+**Branch:** `develop` (AURA-008 squash-merged; merge commit `be43dab`)
+**Phase:** Phase 0 — complete. AURA-008 merged to `develop`. Ready for AURA-009.
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 
@@ -112,7 +112,7 @@
 | `npm run quality` | PASS — composite exit 0 |
 | `npm run audit` | PASS — exit 0; 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |
 
-### GitHub CI (PR #9)
+### GitHub CI (PR #9 — merged)
 
 | Check | Result |
 |---|---|
@@ -120,6 +120,8 @@
 | `e2e` | PASS — 1m 19s |
 | `analyze (javascript-typescript)` | PASS — 1m 1s |
 | `CodeQL` | PASS — 2s |
+
+PR #9 was squash-merged to `develop` at merge commit `be43dab feat: add localized homepage shell and smoke test`. Feature branch `feat/aura-008-homepage-shell` deleted. `develop` is current source of truth.
 
 ---
 
