@@ -1,37 +1,43 @@
 # Session Handoff
 
-**Last Updated:** 2026-06-15  
-**Branch:** `feat/aura-007-ci-codeql`
+**Last Updated:** 2026-06-16
+**Branch:** `feat/aura-008-homepage-shell` (PR #9 open → `develop`; awaiting squash merge)
 
 ---
 
 ## Completed This Session
 
-**AURA-007: GitHub Actions CI + CodeQL + branch protection documentation**
+**AURA-008: First vertical slice — `/` → `/en` redirect, `/en` homepage shell, Playwright smoke**
 
 Files created:
 
-- `.github/workflows/ci.yml` — Quality-gate CI. Triggers: `pull_request` → `develop` and `push` → `develop` (never targets `main`). One `quality` job on `ubuntu-latest`, Node 20 LTS via `actions/setup-node` with npm cache; `npm ci` then decomposed named steps: lint, typecheck, format:check, test:unit, test:dal, test:integration, test:security, deps:check, unused, build, `npm audit --audit-level=high`. `concurrency` cancels superseded runs; `permissions: contents: read`. A deferred Playwright `e2e` job is present as a commented stub with an "enable in AURA-008" marker.
-- `.github/workflows/codeql.yml` — CodeQL SAST. Language `javascript-typescript`, `build-mode: none`. Triggers: PR → `develop`, push → `develop`, weekly schedule (`cron: '17 3 * * 1'`). `analyze` job; `permissions: security-events: write` (+ contents/actions read). No secrets — uses built-in `GITHUB_TOKEN`.
-- `.github/workflows/lighthouse.yml` — Disabled advisory stub. `on: workflow_dispatch` only + job-level `if: false`, so it never runs on PRs and is never a required check. Header documents that AURA-206 enables it as a non-blocking advisory job (CF-4).
-- `docs/BRANCH_PROTECTION.md` — Manual GitHub branch-protection runbook. Required status checks `quality` + `analyze`; ≥1 approving review; dismiss stale reviews; no force-push/deletions; require branches up to date. Auto-merge into `develop` only after protection exists; `main` manual/production-only. One-time setup order + phasing notes (e2e at AURA-008, Lighthouse at AURA-206, Dockerized Supabase at AURA-107).
+- `src/middleware.ts` — Explicit HTTP 301 redirect from `/` → `/en` via `NextResponse.redirect(new URL('/en', request.url), 301)`. Delegates all other paths to `next-intl` locale middleware (`createMiddleware(routing)`). Matcher excludes `api`, `_next`, `_vercel`, and static asset paths. `NextRequest` is a type-only import to satisfy `@typescript-eslint/consistent-type-imports`.
+- `src/lib/i18n/routing.ts` — next-intl routing config; `defineRouting({ locales: ['en'], defaultLocale: 'en' })`. Wires `next-intl` so it can be removed from Knip allowlist.
+- `src/app/[locale]/layout.tsx` — Minimal nested locale layout. Does NOT render `<html>`/`<body>` (root layout owns those). RTL-aware lang/dir attributes deferred to AURA-201.
+- `src/app/[locale]/page.tsx` — Minimal luxury-dark homepage shell. Uses all AURA design token Tailwind classes. No data fetching, Supabase, auth, GSAP, CRM, or lead capture.
 
-Files modified (continuity only):
+Files modified:
 
-- `CURRENT_STATE.md`, `SESSION_HANDOFF.md` (this file), `NEXT_STEPS.md` — updated to AURA-007 state and corrected the stale AURA-006 branch/phase references (AURA-006 had already merged to `develop` as `7215152`).
+- `src/app/page.tsx` — Replaced placeholder with defensive `permanentRedirect('/en')` fallback (308). Fires only if a request bypasses the middleware; middleware handles the canonical 301.
+- `src/tests/e2e/smoke.spec.ts` — Removed `test.describe.skip`. Added 301 status + `location` header assertions using `request.get('/', { maxRedirects: 0 })`. Added `/en` loads without error test.
+- `.github/workflows/ci.yml` — Replaced commented e2e stub with active `e2e` job: checkout → Node 20 → pin npm@11.12.1 → `npm ci` → `npx playwright install --with-deps chromium` → `npm run build` → `npm run start &` → curl wait loop (30×2s) → `npm run test:smoke -- --project=chromium` (`--project=chromium` ensures WebKit is not required in CI).
+- `knip.jsonc` — Removed `"next-intl"` from `ignoreDependencies` (now genuinely imported).
 
-**No dependencies installed. No `package.json` / `package-lock.json` change. No `.env` / `.env.local`. No secrets. No `src/**` application/product/UI code. No design-token, env-schema, or migration changes. No production deploy config. No `main` automation.**
+Continuity files updated:
+
+- `CURRENT_STATE.md`, `SESSION_HANDOFF.md` (this file), `NEXT_STEPS.md` — updated to AURA-008 state.
+
+**No dependencies installed. No `package.json` / `package-lock.json` change. No `.env` / `.env.local`. No secrets. No Supabase, migrations, auth, admin, CRM, GSAP, deployment config, or AURA-009 work.**
 
 ---
 
 ## Decisions Applied (this session, user-approved)
 
-- **One CI workflow, decomposed steps** (not job-per-gate): single required status check `quality` with readable per-gate step names; reconciles A-01 ("`npm run quality` + Playwright on PR") with the per-step list in `docs/CI_CD_STRATEGY.md`. Avoids re-installing deps N times.
-- **Node 20 LTS** pinned in CI for reproducibility (local is v26, not LTS; Next 15 supports 18.18+/20/22).
-- **Playwright/e2e deferred to AURA-008** (disabled stub). The smoke spec is `test.describe.skip` and `/`→`/en` does not exist yet; AURA-008's merge gate is "smoke green." A-01's "Playwright on PR" is satisfied by phasing.
-- **Lighthouse disabled stub, deferred to AURA-206** (CF-4) — `workflow_dispatch` + `if: false`; never a required check.
-- **Branch protection in a dedicated `docs/BRANCH_PROTECTION.md`** runbook (with `main` + `develop` rules and exact required-check names), rather than extending `CI_CD_STRATEGY.md`.
-- **DAL/integration/security run as plain Vitest now** (placeholders, no DB). AURA-107 attaches the Dockerized Supabase local stack (A-02); the `quality` check name does not change.
+- **Explicit 301 via `NextResponse.redirect(..., 301)`** — required by user. `permanentRedirect` (which emits 308) retained as defensive fallback only. `next-intl` middleware-only setup; no `createNextIntlPlugin` needed (no translations used in AURA-008).
+- **Chromium-only in CI e2e job** — `npx playwright install --with-deps chromium` + `--project=chromium` flag on smoke step. Local smoke still runs all projects (Chromium + Mobile Safari). CI avoids WebKit download failure.
+- **No `createNextIntlPlugin` in `next.config.js`** — middleware-only wiring is sufficient for AURA-008; plugin not needed until message translations are used (Phase 2+).
+- **Root layout retains static `lang="en"`** — locale-aware `lang`/`dir` attributes on `<html>` deferred to AURA-201 (RTL support). Correct and safe for Phase 0.
+- **`[locale]/layout.tsx` does not wrap `<html>`/`<body>`** — Next.js App Router requires those in the outermost layout only.
 
 ---
 
@@ -41,17 +47,41 @@ Files modified (continuity only):
 |---|---|
 | `npm run lint` | PASS |
 | `npm run typecheck` | PASS |
-| `npm run format:check` | PASS (YAML checked; `**/*.md` excluded) |
+| `npm run format:check` | PASS |
 | `npm run test` | PASS — 6 files, 14 tests |
-| `npm run test:unit` | PASS — 2 files, 8 tests |
-| `npm run test:dal` | PASS — 1 |
-| `npm run test:integration` | PASS — 1 |
-| `npm run test:security` | PASS — 2 files, 4 tests |
-| `npm run deps:check` | PASS — 0 violations (10 modules) |
-| `npm run unused` | PASS — 0 issues |
-| `npm run build` | PASS — 4 static routes |
-| `npm run audit` | PASS — exit 0; 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |
+| `npm run test:unit` | PASS |
+| `npm run test:dal` | PASS |
+| `npm run test:integration` | PASS |
+| `npm run test:security` | PASS |
+| `npm run deps:check` | PASS — 0 violations (15 modules) |
+| `npm run unused` | PASS |
+| `npm run build` | PASS — 4 routes; middleware 44.1 kB |
+| `npm run test:smoke` | PASS — 4/4 (Chromium + Mobile Safari) |
+| `npm run test:smoke -- --project=chromium` | PASS — 2/2 |
 | `npm run quality` | PASS — composite exit 0 |
+| `npm run audit` | PASS — exit 0; 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |
+
+### GitHub CI (PR #9)
+
+| Check | Result |
+|---|---|
+| `quality` | PASS |
+| `e2e` | PASS |
+| `analyze (javascript-typescript)` | PASS |
+| `CodeQL` | PASS |
+
+### Branch Protection (`develop`)
+
+Required checks now enforced:
+
+```
+quality
+e2e
+analyze (javascript-typescript)
+CodeQL
+```
+
+GitHub required approvals are disabled for solo-operator mode; status checks remain enforced.
 
 ---
 
@@ -60,22 +90,21 @@ Files modified (continuity only):
 1. **`postcss` moderate** — documented exception via `next@15` internal postcss; passes `--audit-level=high`. Not actionable.
 2. **Playwright Node.js deprecation warning** — Playwright internal; not a gate failure.
 3. **Knip `entry` for `src/lib/config/env.ts`** — temporary; remove in AURA-101.
-4. **Remaining Knip allowlist entries** — `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`, `next-intl` (AURA-008), Supabase packages (AURA-101), etc.
-5. **CI cannot be verified green on GitHub from this session** — workflows are static-validated locally (parsed by Prettier; gate commands run locally). The first real CI run happens when the AURA-007 PR is opened. Acceptance criterion "CI runs green on the scaffold PR" completes at PR time.
-6. **Branch protection is not yet applied in GitHub** — manual admin step per `docs/BRANCH_PROTECTION.md`; must be done before any auto-merge into `develop`.
+4. **Remaining Knip allowlist entries** — `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`, Supabase packages (AURA-101), etc.
+5. **`e2e` not yet a required branch-protection check** — ✅ RESOLVED. Updated after PR #9 checks ran green.
+6. **PR #9 awaiting squash merge** — All CI checks pass. GitHub required approvals are disabled for solo-operator mode. `mergeStateStatus: CLEAN`; no GitHub review requirement is active.
 
 ---
 
 ## Validation Status
 
-AURA-007 acceptance criteria: CI workflow created (runs the full quality gate); CodeQL configured (JS/TS, PR + scheduled); Lighthouse advisory present-but-disabled; branch protection documented. All local gates green. **Awaiting commit approval; Opus 4.8 review required before merge** (`docs/TASKS_Project.md` Model Assignment).
+AURA-008 is fully implemented. Commit `6df46d0` on `feat/aura-008-homepage-shell`. PR #9 (`https://github.com/workdabiri/AURA/pull/9`) has all four checks green. `develop` branch protection updated to require `e2e`. GitHub required approvals are disabled for solo-operator mode. **PR #9 is ready for squash merge — `mergeStateStatus: CLEAN`.**
 
 ---
 
 ## Next Safe Action
 
-1. **Opus 4.8 review** of AURA-007 (CI/security gate + merge-policy enforcement).
-2. User approves commit → commit `feat/aura-007-ci-codeql` → open PR to `develop` (this is the first run of `ci.yml` + `codeql.yml`).
-3. After workflows run once: apply `develop` + `main` branch protection per `docs/BRANCH_PROTECTION.md`, selecting `quality` + `analyze` as required checks.
-4. Squash merge to `develop` after checks pass + ≥1 review.
-5. Then proceed to **AURA-008** (first vertical slice — `/`→`/en` + `/en` shell + unskip smoke; enables the `e2e` job).
+1. **Squash merge PR #9** to `develop` (`mergeStateStatus: CLEAN`; all checks pass; no GitHub review requirement active in solo-operator mode).
+2. After merge: update `SESSION_HANDOFF.md`, `CURRENT_STATE.md`, `NEXT_STEPS.md` to record AURA-008 as fully merged.
+3. Update `docs/TASKS_Project.md` — set AURA-008 status to **done**.
+4. Then proceed to **AURA-009** (next approved Phase 0 or Phase 1 task per `docs/TASKS_Project.md`).

@@ -16,8 +16,6 @@
     "clsx",
     "tailwind-merge",
     "lucide-react",
-    // --- Wired in AURA-008 (first vertical slice / i18n) ---
-    "next-intl",
     // --- Wired in AURA-101 (Supabase client/server/service-role helpers) ---
     //     (`server-only` was removed from this list in AURA-005 — it is now imported
     //      by src/lib/config/env.ts.)
