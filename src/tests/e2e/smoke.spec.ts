@@ -1,9 +1,12 @@
 import { expect, test } from '@playwright/test'
 
-// docs/TASKS_Project.md AURA-003 Test Plan: "E2E: skipped placeholder spec"
-// Exercised in AURA-008 once /en routing and homepage shell exist
-test.describe.skip('smoke', () => {
-  test('/ redirects to /en', async ({ page }) => {
+test.describe('smoke', () => {
+  test('/ redirects to /en with 301', async ({ request, page }) => {
+    const response = await request.get('/', { maxRedirects: 0 })
+
+    expect(response.status()).toBe(301)
+    expect(response.headers().location).toContain('/en')
+
     await page.goto('/')
     await expect(page).toHaveURL('/en')
   })

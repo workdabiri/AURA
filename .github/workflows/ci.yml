@@ -99,22 +99,53 @@ jobs:
         run: npm run audit
 
   # ---------------------------------------------------------------------------
-  # DEFERRED: Playwright e2e/smoke. Enabled in AURA-008, which removes
-  # `test.describe.skip` from src/tests/e2e/smoke.spec.ts and adds the
-  # `/`→`/en` redirect + `/en` shell the smoke test exercises. Until then this
-  # job is intentionally not active (no trigger reaches it). Do not make it a
-  # required status check before AURA-008.
-  #
-  # e2e:
-  #   name: e2e
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 20
-  #         cache: npm
-  #     - run: npm ci
-  #     - run: npx playwright install --with-deps
-  #     - run: npm run test:smoke
+  # AURA-008: Playwright smoke — enabled now that /→/en redirect and /en shell
+  # exist. Builds the production bundle, starts `next start`, waits for the
+  # server, then runs the smoke spec. This job is NOT yet a required branch-
+  # protection check; once it runs green on this PR the `develop` protection
+  # rule will be updated to require `e2e` (docs/BRANCH_PROTECTION.md).
   # ---------------------------------------------------------------------------
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Pin npm version
+        run: npm install -g npm@11.12.1
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server
+        run: npm run start &
+
+      - name: Wait for server to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+              echo "Server ready after ${i}s"
+              break
+            fi
+            echo "Waiting for server... ($i/30)"
+            sleep 2
+          done
+
+      - name: Run smoke tests
+        run: npm run test:smoke -- --project=chromium
+        env:
+          BASE_URL: http://localhost:3000
+          CI: true
