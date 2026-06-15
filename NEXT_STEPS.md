@@ -1,20 +1,29 @@
 # Next Steps
 
-**Updated:** 2026-06-15  
-**Current Phase:** Phase 0 — AURA-007 executed, awaiting commit approval (Opus review required before merge)
+**Updated:** 2026-06-16
+**Current Phase:** Phase 0 — AURA-008 executed; PR #9 all checks green; awaiting squash merge
 
 ---
 
 ## Immediate Next Action
 
-**Opus 4.8 review of AURA-007**, then **user approves AURA-007 commit**, then:
+**Squash merge PR #9** (`feat/aura-008-homepage-shell` → `develop`).
 
-1. Commit `feat/aura-007-ci-codeql`
-2. Open PR to `develop` (first run of `ci.yml` + `codeql.yml`)
-3. Apply branch protection in GitHub per `docs/BRANCH_PROTECTION.md` (required checks: `quality`, `analyze`) once the checks have appeared
-4. Squash merge to `develop` after checks pass + ≥1 review
+Merge is blocked until ≥1 GitHub approving review is submitted. All CI checks are green:
 
-> AURA-006 (`feat/aura-006-design-tokens`) is already merged to `develop` (`7215152`).
+- `quality` — PASS
+- `e2e` — PASS
+- `analyze (javascript-typescript)` — PASS
+- `CodeQL` — PASS
+
+After merge:
+
+1. Update continuity files to record AURA-008 as fully merged.
+2. Update `docs/TASKS_Project.md` — set AURA-008 status to **done**.
+3. Proceed to **AURA-009**.
+
+> AURA-007 (`feat/aura-007-ci-codeql`) is already merged to `develop`.
+> AURA-008 commit `6df46d0` is on `feat/aura-008-homepage-shell`, PR #9.
 
 ---
 
@@ -26,14 +35,19 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 ---
 
-## After AURA-007 Merge
+## Phase 0 Task Status
 
-Remaining Phase 0 task:
-
-| Task | Description | Opus Review |
+| Task | Description | Status |
 |---|---|---|
-| ~~**AURA-007**~~ | ~~GitHub Actions CI + CodeQL + branch protection documentation~~ ✅ executed (awaiting Opus review + commit) | **Required** |
-| **AURA-008** | First vertical slice — `/`→`/en` redirect + `/en` homepage shell + smoke test | Not required |
+| ~~**AURA-001**~~ | Next.js scaffold | ✅ merged |
+| ~~**AURA-002**~~ | ESLint + Prettier quality gates | ✅ merged |
+| ~~**AURA-003**~~ | Vitest + Playwright test harness | ✅ merged |
+| ~~**AURA-004**~~ | Architecture boundary enforcement | ✅ merged |
+| ~~**AURA-005**~~ | Environment schema + config | ✅ merged |
+| ~~**AURA-006**~~ | Design tokens + Tailwind pipeline | ✅ merged |
+| ~~**AURA-007**~~ | GitHub Actions CI + CodeQL + branch protection | ✅ merged |
+| **AURA-008** | First vertical slice — `/`→`/en` redirect + `/en` homepage shell + smoke test | PR #9 open — awaiting merge |
+| **AURA-009** | Next approved task | Not started |
 
 ---
 
@@ -42,9 +56,9 @@ Remaining Phase 0 task:
 `knip.jsonc` `ignoreDependencies` is a temporary, no-wildcard allowlist. **Each task that wires a dependency must remove its entry** so the list shrinks to empty:
 
 - ~~**AURA-005** → remove `zod`, `server-only`~~ ✅ done
-- ~~**AURA-006** → remove `tailwindcss`, `@tailwindcss/typography`, `autoprefixer`, `postcss`~~ ✅ done (all 4 genuinely wired)
-- **AURA-006 deferred** → `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` — keep until first component that uses them (Phase 2 or AURA-008)
-- **AURA-008** → remove `next-intl`
+- ~~**AURA-006** → remove `tailwindcss`, `@tailwindcss/typography`, `autoprefixer`, `postcss`~~ ✅ done
+- ~~**AURA-008** → remove `next-intl`~~ ✅ done
+- **AURA-006 deferred** → `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` — keep until first component that uses them (Phase 2+)
 - **AURA-101** → remove `@supabase/ssr`, `@supabase/supabase-js`
 - **AURA-106 / Phase 3** → remove `resend`
 - **Phase 2–3 (forms)** → remove `@hookform/resolvers`, `react-hook-form`, `libphonenumber-js`
@@ -58,24 +72,23 @@ Remaining Phase 0 task:
 
 ---
 
-## Notes for AURA-007 (executed — awaiting Opus review + commit)
+## Notes for AURA-008 (executed — PR #9 open)
 
-- Opus review required (CI/security gate + merge-policy enforcement) — **pending**.
-- Created `.github/workflows/ci.yml` — `quality` job (Node 20 LTS): lint, typecheck, format:check, unit/dal/integration/security tests, deps:check, unused, build, audit. Deferred `e2e` stub for AURA-008.
-- Created `.github/workflows/codeql.yml` — JS/TS, PR + push + weekly schedule.
-- Created `.github/workflows/lighthouse.yml` — disabled stub; enabled non-blocking in AURA-206 (CF-4).
-- Created `docs/BRANCH_PROTECTION.md` — required checks `quality` + `analyze`, ≥1 review, dismiss stale, no force-push, auto-merge `develop`-only, `main` manual.
-- Follow-ups owned by later tasks: AURA-008 enables the `e2e` check; AURA-107 attaches the Dockerized Supabase stack to DAL/integration/security steps; AURA-206 enables Lighthouse advisory.
+- Commit: `6df46d0 feat: add localized homepage shell and smoke test`
+- PR: `https://github.com/workdabiri/AURA/pull/9`
+- `/` → `/en` redirect via explicit 301 in `src/middleware.ts` (`NextResponse.redirect(..., 301)`).
+- `/en` homepage shell uses all AURA luxury-dark design token classes.
+- Playwright smoke unskipped; 2 tests: 301 status + location header check; `/en` loads without error.
+- CI `e2e` job active; installs Chromium only; runs `--project=chromium`.
+- `develop` branch protection updated: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL` all required.
+- `next-intl` removed from Knip allowlist (now genuinely imported).
 
 ---
 
-## Notes for AURA-008
+## Notes for AURA-009
 
-- Depends on AURA-007 (CI green on PR).
-- Removes `test.describe.skip` from `src/tests/e2e/smoke.spec.ts`.
-- Wires `next-intl` → removes from Knip allowlist.
-- `/` → `/en` redirect; `/en` homepage shell using `luxury-dark` tokens.
-- Good opportunity to swap system font fallbacks for next/font loaded typeface (update CSS variable `--font-serif`).
+- Confirm task from `docs/TASKS_Project.md` before starting.
+- Do not start before AURA-008 is squash-merged to `develop`.
 
 ---
 
@@ -89,11 +102,11 @@ Remaining Phase 0 task:
 
 ## Do Not Do Yet
 
-- Do not start AURA-007 before AURA-006 merges
+- Do not start AURA-009 before AURA-008 merges
 - Do not fix audit without explicit dep-change approval
 - Do not create migrations
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`
 - Do not implement UI components (deferred to Phase 2)
-- Do not load fonts via next/font (deferred to AURA-008)
+- Do not load fonts via next/font without explicit task approval
