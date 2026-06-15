@@ -49,6 +49,14 @@ jobs:
           node-version: 20
           cache: npm
 
+      # Upgrade npm to 11 to match local development (npm 10 / Node 20 LTS enforces
+      # peer-dependency resolution more strictly than npm 11, causing `npm ci` to
+      # reject a lockfile that npm 11 accepts as valid — specifically, @swc/helpers
+      # 0.5.15 vs the >=0.5.17 peer-dep declared by next-intl's nested @swc/core).
+      # The Node runtime stays at 20 LTS; only the package manager is upgraded.
+      - name: Upgrade npm
+        run: npm install -g npm@11
+
       - name: Install dependencies
         run: npm ci
 
