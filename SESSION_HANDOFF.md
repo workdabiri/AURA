@@ -1,76 +1,37 @@
 # Session Handoff
 
 **Last Updated:** 2026-06-15  
-**Branch:** `feat/aura-006-design-tokens`
+**Branch:** `feat/aura-007-ci-codeql`
 
 ---
 
 ## Completed This Session
 
-**AURA-006: Design tokens + Tailwind + `luxury-dark` theme tokens**
+**AURA-007: GitHub Actions CI + CodeQL + branch protection documentation**
 
 Files created:
 
-- `tailwind.config.ts` — Tailwind v3.4.x config; `theme.extend` only (no replacement of defaults); imports `@tailwindcss/typography` plugin via ES default import; content scanning for `src/app/**/*.{ts,tsx}` and `src/components/**/*.{ts,tsx}`; token-backed colors, font families, font sizes, border radii, shadows, motion duration/easing, container max-width, section spacing.
-- `postcss.config.js` — Standard v3 PostCSS config (`tailwindcss: {}` + `autoprefixer: {}`). JSDoc annotation removed to avoid Knip flagging `postcss-load-config` (a peer dep, not a direct dep).
-- `src/styles/tokens.css` — All CSS custom properties for `luxury-dark` on `:root`. Covers brand, surface, text, border, radius, shadow, motion, layout, and typography scale. Colors use bare HSL channels (no `hsl()` wrapper) to enable Tailwind opacity modifiers (`bg-brand-primary/50`). No GSAP code — motion tokens only.
-- `src/styles/globals.css` — Tailwind directives (`@tailwind base/components/utilities`) + `@layer base` global resets using `luxury-dark` tokens. No hardcoded `left`/`right` directional rules introduced; future layout spacing rules must use logical CSS properties (`padding-inline`, `margin-inline`, etc.) for RTL-readiness (D-07). `prefers-reduced-motion` respected (D-26).
+- `.github/workflows/ci.yml` — Quality-gate CI. Triggers: `pull_request` → `develop` and `push` → `develop` (never targets `main`). One `quality` job on `ubuntu-latest`, Node 20 LTS via `actions/setup-node` with npm cache; `npm ci` then decomposed named steps: lint, typecheck, format:check, test:unit, test:dal, test:integration, test:security, deps:check, unused, build, `npm audit --audit-level=high`. `concurrency` cancels superseded runs; `permissions: contents: read`. A deferred Playwright `e2e` job is present as a commented stub with an "enable in AURA-008" marker.
+- `.github/workflows/codeql.yml` — CodeQL SAST. Language `javascript-typescript`, `build-mode: none`. Triggers: PR → `develop`, push → `develop`, weekly schedule (`cron: '17 3 * * 1'`). `analyze` job; `permissions: security-events: write` (+ contents/actions read). No secrets — uses built-in `GITHUB_TOKEN`.
+- `.github/workflows/lighthouse.yml` — Disabled advisory stub. `on: workflow_dispatch` only + job-level `if: false`, so it never runs on PRs and is never a required check. Header documents that AURA-206 enables it as a non-blocking advisory job (CF-4).
+- `docs/BRANCH_PROTECTION.md` — Manual GitHub branch-protection runbook. Required status checks `quality` + `analyze`; ≥1 approving review; dismiss stale reviews; no force-push/deletions; require branches up to date. Auto-merge into `develop` only after protection exists; `main` manual/production-only. One-time setup order + phasing notes (e2e at AURA-008, Lighthouse at AURA-206, Dockerized Supabase at AURA-107).
 
-Files modified:
+Files modified (continuity only):
 
-- `src/app/layout.tsx` — Added two CSS imports: `@/styles/tokens.css` then `@/styles/globals.css` (tokens before globals, per approval). No other changes to layout.
-- `knip.jsonc` — Removed `tailwindcss`, `@tailwindcss/typography`, `autoprefixer`, `postcss` from `ignoreDependencies` (all four genuinely wired); retained `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` (no components created in AURA-006).
+- `CURRENT_STATE.md`, `SESSION_HANDOFF.md` (this file), `NEXT_STEPS.md` — updated to AURA-007 state and corrected the stale AURA-006 branch/phase references (AURA-006 had already merged to `develop` as `7215152`).
 
-Files deleted:
-
-- `src/styles/.gitkeep` (directory now contains `tokens.css` and `globals.css`).
-
-Continuity files updated: `SESSION_HANDOFF.md` (this file), `CURRENT_STATE.md`, `NEXT_STEPS.md`.
-
-**No dependencies installed. No `package.json` / `package-lock.json` change. No `.env` / `.env.local` created. No real secrets. No components, routing, i18n, auth, admin, Supabase, GSAP, or business logic.**
+**No dependencies installed. No `package.json` / `package-lock.json` change. No `.env` / `.env.local`. No secrets. No `src/**` application/product/UI code. No design-token, env-schema, or migration changes. No production deploy config. No `main` automation.**
 
 ---
 
-## Carry-Forward Fix Applied
+## Decisions Applied (this session, user-approved)
 
-**Lint failure — `require()` in `tailwind.config.ts`:**
-- Initial `require('@tailwindcss/typography')` was blocked by `@typescript-eslint/no-require-imports`.
-- Fixed to `import typography from '@tailwindcss/typography'` (ES default import). Valid because `esModuleInterop: true` + `@tailwindcss/typography` v0.5.20 ships types.
-
-**Knip `postcss-load-config` false positive:**
-- `/** @type {import('postcss-load-config').Config} */` in `postcss.config.js` caused Knip to flag `postcss-load-config` as an unlisted dependency (it's a peer dep of PostCSS, not a direct dep).
-- Fixed by removing the JSDoc type annotation. The file is functional without it.
-
----
-
-## Decisions Applied
-
-- **Two CSS files:** `tokens.css` (CSS variables only) and `globals.css` (Tailwind directives + global base). Matches TASKS_Project.md "Files Likely Affected."
-- **Import order:** `tokens.css` before `globals.css` in `layout.tsx`. Globals references token values; tokens must be defined first.
-- **HSL channel pattern:** Colors defined as `43 65% 65%` (channels only) referenced as `hsl(var(--brand-primary) / <alpha-value>)` in tailwind config. Enables Tailwind opacity modifier syntax (`/50`, `/75`).
-- **System font fallbacks:** `--font-serif: ui-serif, 'Georgia', serif` etc. for MVP. Next/font loading deferred to AURA-008 when the homepage shell is built; fonts swappable via the CSS variable.
-- **Knip removals — 4 only:** `tailwindcss`, `@tailwindcss/typography`, `autoprefixer`, `postcss`. The remaining 4 (`cva`, `clsx`, `tailwind-merge`, `lucide-react`) are not imported anywhere in AURA-006 — no `cn()` helper or icons were created.
-- **`docs/TASKS_Project.md` not modified** — per correction #1; execution status is carried in continuity docs.
-
----
-
-## Token Classification
-
-**Colors (bare HSL channels for Tailwind opacity support):**
-| Token | CSS Variable | Value | Meaning |
-|---|---|---|---|
-| brand.primary | `--brand-primary` | `43 65% 65%` | Warm gold |
-| brand.secondary | `--brand-secondary` | `35 30% 75%` | Champagne |
-| brand.accent | `--brand-accent` | `40 80% 55%` | Bright amber |
-| surface.page | `--surface-page` | `220 15% 8%` | Deep charcoal |
-| surface.card | `--surface-card` | `220 12% 12%` | Dark card |
-| surface.overlay | `--surface-overlay` | `220 15% 6%` | Darkest overlay |
-| text.primary | `--text-primary` | `45 20% 95%` | Off-white |
-| text.secondary | `--text-secondary` | `45 10% 65%` | Warm gray |
-| text.inverse | `--text-inverse` | `220 15% 10%` | Near-black |
-| border.default | `--border-default` | `220 10% 20%` | Subtle dividers |
-
-**Tailwind classes generated:** `bg-brand-primary`, `text-brand-accent`, `bg-surface-card`, `text-text-secondary`, `bg-surface-overlay`, `border-border-default`, etc. Opacity modifiers work: `bg-surface-overlay/80`.
+- **One CI workflow, decomposed steps** (not job-per-gate): single required status check `quality` with readable per-gate step names; reconciles A-01 ("`npm run quality` + Playwright on PR") with the per-step list in `docs/CI_CD_STRATEGY.md`. Avoids re-installing deps N times.
+- **Node 20 LTS** pinned in CI for reproducibility (local is v26, not LTS; Next 15 supports 18.18+/20/22).
+- **Playwright/e2e deferred to AURA-008** (disabled stub). The smoke spec is `test.describe.skip` and `/`→`/en` does not exist yet; AURA-008's merge gate is "smoke green." A-01's "Playwright on PR" is satisfied by phasing.
+- **Lighthouse disabled stub, deferred to AURA-206** (CF-4) — `workflow_dispatch` + `if: false`; never a required check.
+- **Branch protection in a dedicated `docs/BRANCH_PROTECTION.md`** runbook (with `main` + `develop` rules and exact required-check names), rather than extending `CI_CD_STRATEGY.md`.
+- **DAL/integration/security run as plain Vitest now** (placeholders, no DB). AURA-107 attaches the Dockerized Supabase local stack (A-02); the `quality` check name does not change.
 
 ---
 
@@ -80,39 +41,41 @@ Continuity files updated: `SESSION_HANDOFF.md` (this file), `CURRENT_STATE.md`, 
 |---|---|
 | `npm run lint` | PASS |
 | `npm run typecheck` | PASS |
-| `npm run format:check` | PASS |
+| `npm run format:check` | PASS (YAML checked; `**/*.md` excluded) |
 | `npm run test` | PASS — 6 files, 14 tests |
 | `npm run test:unit` | PASS — 2 files, 8 tests |
 | `npm run test:dal` | PASS — 1 |
 | `npm run test:integration` | PASS — 1 |
 | `npm run test:security` | PASS — 2 files, 4 tests |
 | `npm run deps:check` | PASS — 0 violations (10 modules) |
-| `npm run unused` | PASS — 0 issues (4 Knip entries removed) |
-| `npm run build` | PASS — compiled cleanly; "no utility classes" warning expected (placeholder page has none) |
-| `npm run quality` | PASS — composite exit 0 |
+| `npm run unused` | PASS — 0 issues |
+| `npm run build` | PASS — 4 static routes |
 | `npm run audit` | PASS — exit 0; 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |
+| `npm run quality` | PASS — composite exit 0 |
 
 ---
 
 ## Open Issues (Carry-Forward)
 
-1. **`postcss` moderate** — documented exception; carry-forward; not actionable.
+1. **`postcss` moderate** — documented exception via `next@15` internal postcss; passes `--audit-level=high`. Not actionable.
 2. **Playwright Node.js deprecation warning** — Playwright internal; not a gate failure.
 3. **Knip `entry` for `src/lib/config/env.ts`** — temporary; remove in AURA-101.
-4. **Remaining Knip allowlist entries** — `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` retained until components are built. `next-intl` (AURA-008), Supabase packages (AURA-101), Resend (AURA-106), etc.
-5. **Tailwind "no utility classes" build warning** — expected; placeholder page has no classes. Disappears once AURA-008 adds real JSX.
-6. **Font families** — system fallbacks only; next/font loading for actual typeface deferred to AURA-008.
+4. **Remaining Knip allowlist entries** — `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`, `next-intl` (AURA-008), Supabase packages (AURA-101), etc.
+5. **CI cannot be verified green on GitHub from this session** — workflows are static-validated locally (parsed by Prettier; gate commands run locally). The first real CI run happens when the AURA-007 PR is opened. Acceptance criterion "CI runs green on the scaffold PR" completes at PR time.
+6. **Branch protection is not yet applied in GitHub** — manual admin step per `docs/BRANCH_PROTECTION.md`; must be done before any auto-merge into `develop`.
 
 ---
 
 ## Validation Status
 
-AURA-006 acceptance criteria met: tokens compile (build PASS), `luxury-dark` CSS variables present in `src/styles/tokens.css`, all 14 tests still pass, all quality gates green. Awaiting commit approval.
+AURA-007 acceptance criteria: CI workflow created (runs the full quality gate); CodeQL configured (JS/TS, PR + scheduled); Lighthouse advisory present-but-disabled; branch protection documented. All local gates green. **Awaiting commit approval; Opus 4.8 review required before merge** (`docs/TASKS_Project.md` Model Assignment).
 
 ---
 
 ## Next Safe Action
 
-1. User approves AURA-006 commit.
-2. Commit + open PR to `develop` + squash merge.
-3. After AURA-006 merge: proceed to **AURA-007** (GitHub Actions CI + CodeQL + branch protection documentation) — Opus review required.
+1. **Opus 4.8 review** of AURA-007 (CI/security gate + merge-policy enforcement).
+2. User approves commit → commit `feat/aura-007-ci-codeql` → open PR to `develop` (this is the first run of `ci.yml` + `codeql.yml`).
+3. After workflows run once: apply `develop` + `main` branch protection per `docs/BRANCH_PROTECTION.md`, selecting `quality` + `analyze` as required checks.
+4. Squash merge to `develop` after checks pass + ≥1 review.
+5. Then proceed to **AURA-008** (first vertical slice — `/`→`/en` + `/en` shell + unskip smoke; enables the `e2e` job).

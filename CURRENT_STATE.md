@@ -1,8 +1,10 @@
 # Current State
 
 **Updated:** 2026-06-15  
-**Branch:** `feat/aura-006-design-tokens`  
-**Phase:** Phase 0 — AURA-006 executed, awaiting commit approval
+**Branch:** `feat/aura-007-ci-codeql`  
+**Phase:** Phase 0 — AURA-007 executed, awaiting commit approval (Opus review required before merge)
+
+> Note: AURA-006 (`feat/aura-006-design-tokens`) was committed and merged to `develop` (commit `7215152`) before this session.
 
 ---
 
@@ -51,6 +53,12 @@
 - `src/styles/globals.css` — Tailwind base/components/utilities directives; `@layer base` global resets using tokens; no hardcoded `left`/`right` directional rules introduced; future layout spacing must use logical CSS properties (`padding-inline`, `margin-inline`, etc.) for RTL-readiness (D-07); `prefers-reduced-motion` respected (D-26)
 - `src/app/layout.tsx` — Imports `@/styles/tokens.css` then `@/styles/globals.css`
 
+### CI / CodeQL / Branch Protection (AURA-007) ← NEW
+- `.github/workflows/ci.yml` — quality-gate CI on PR/push to `develop`; single `quality` job (Node 20 LTS, `npm ci` + cache) decomposing lint, typecheck, format:check, unit/dal/integration/security tests, deps:check, unused, build, `npm audit --audit-level=high` into named steps. Deferred `e2e` (Playwright) job present as a commented stub — enabled in AURA-008. DAL/integration/security run as plain Vitest now; Dockerized Supabase stack attached in AURA-107 (A-02).
+- `.github/workflows/codeql.yml` — CodeQL SAST for `javascript-typescript` on PR + push to `develop` + weekly schedule; `analyze` job; `build-mode: none`; uses built-in `GITHUB_TOKEN` (no secrets).
+- `.github/workflows/lighthouse.yml` — disabled advisory stub (`workflow_dispatch` + `if: false`); enabled non-blocking in AURA-206 (CF-4). Never a required check.
+- `docs/BRANCH_PROTECTION.md` — manual GitHub branch-protection runbook; required checks `quality` + `analyze`; ≥1 review, dismiss stale, no force-push/deletions; auto-merge into `develop` only after protection exists; `main` manual-only.
+
 ### Application Scaffold (AURA-001)
 - `next.config.js`, `src/app/layout.tsx`, `src/app/page.tsx` (placeholder)
 - Full `src/` folder architecture per `docs/ARCHITECTURE.md`
@@ -70,27 +78,32 @@
 - No UI components (Button, Card, etc.) — component layer is AURA-008+
 - No `cn()` utility (deferred to when first component needs it)
 - No Stage 2 skills, MCPs, hooks, or plugins
-- No GitHub Actions CI (AURA-007)
+- No Playwright/e2e job active in CI yet (deferred to AURA-008 — smoke spec still `test.describe.skip`)
+- No Lighthouse advisory run yet (stub disabled until AURA-206)
+- No Dockerized Supabase stack in CI yet (attached in AURA-107)
+- No branch protection applied in GitHub yet (manual step; documented in `docs/BRANCH_PROTECTION.md`)
 
 ---
 
-## AURA-006 Gate Results
+## AURA-007 Gate Results
 
 | Gate | Result |
 |---|---|
 | `npm run lint` | PASS — zero errors |
 | `npm run typecheck` | PASS — clean |
-| `npm run format:check` | PASS — all files use Prettier code style |
+| `npm run format:check` | PASS — all matched files use Prettier code style (YAML included; `**/*.md` excluded) |
 | `npm run test` | PASS — 6 files, 14 tests |
 | `npm run test:unit` | PASS — 2 files, 8 tests |
 | `npm run test:dal` | PASS — 1 |
 | `npm run test:integration` | PASS — 1 |
 | `npm run test:security` | PASS — 2 files, 4 tests |
 | `npm run deps:check` | PASS — 0 violations (10 modules) |
-| `npm run unused` | PASS — 0 issues; 4 entries removed from allowlist |
-| `npm run build` | PASS — compiled cleanly; "no utility classes" warning expected (placeholder page) |
+| `npm run unused` | PASS — 0 issues |
+| `npm run build` | PASS — compiled cleanly (4 static routes) |
+| `npm run audit` | PASS — exit 0; 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |
 | `npm run quality` | PASS — composite exit 0 |
-| `npm run audit` | PASS — 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |
+
+> AURA-007 is CI/docs-only: no `src/**`, `package.json`, `package-lock.json`, env, secrets, or migrations changed — gate values are unchanged from AURA-006 as expected.
 
 ---
 

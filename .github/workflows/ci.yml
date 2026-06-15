@@ -1,0 +1,109 @@
+# AURA-007 — Continuous Integration (quality gate)
+#
+# Runs the full merge-blocker quality gate on every PR to `develop` and on
+# pushes to `develop`. This is the single required status check named `quality`
+# (see docs/BRANCH_PROTECTION.md). A failing step fails the job; the step name
+# shows which gate broke.
+#
+# Authority: A-01 (one workflow: npm run quality + Playwright on PR; CodeQL
+# scheduled/PR), docs/CI_CD_STRATEGY.md (CI pipeline), docs/QUALITY_GATES.md.
+#
+# Scope notes for this phase (Phase 0):
+#   - DAL / integration / security suites currently run as plain Vitest
+#     placeholders (no DB required). The Supabase CLI local stack in Docker is
+#     wired into this workflow by AURA-107 (A-02), at which point those jobs gain
+#     a `services:`/Docker step. Do NOT mock the DB layer when that lands.
+#   - Playwright/e2e is deferred to AURA-008 (smoke spec is `test.describe.skip`
+#     until then; `/`→`/en` does not exist yet). See the disabled `e2e` job below.
+#   - Lighthouse is a separate, disabled stub (lighthouse.yml), enabled as an
+#     advisory job in AURA-206 (CF-4). It is never a required check.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+# Never auto-target `main` — main is manual/production-only (CLAUDE.md, A-01).
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      # DAL / integration / security: plain Vitest placeholders today.
+      # AURA-107 attaches the Dockerized Supabase local stack here (A-02).
+      - name: DAL tests
+        run: npm run test:dal
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: Security negative tests
+        run: npm run test:security
+
+      - name: Dependency boundary check
+        run: npm run deps:check
+
+      - name: Unused code check
+        run: npm run unused
+
+      - name: Build
+        run: npm run build
+
+      - name: Dependency audit (high/critical)
+        run: npm run audit
+
+  # ---------------------------------------------------------------------------
+  # DEFERRED: Playwright e2e/smoke. Enabled in AURA-008, which removes
+  # `test.describe.skip` from src/tests/e2e/smoke.spec.ts and adds the
+  # `/`→`/en` redirect + `/en` shell the smoke test exercises. Until then this
+  # job is intentionally not active (no trigger reaches it). Do not make it a
+  # required status check before AURA-008.
+  #
+  # e2e:
+  #   name: e2e
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: npm
+  #     - run: npm ci
+  #     - run: npx playwright install --with-deps
+  #     - run: npm run test:smoke
+  # ---------------------------------------------------------------------------

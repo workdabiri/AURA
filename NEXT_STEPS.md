@@ -1,17 +1,20 @@
 # Next Steps
 
 **Updated:** 2026-06-15  
-**Current Phase:** Phase 0 — AURA-006 executed, awaiting commit approval
+**Current Phase:** Phase 0 — AURA-007 executed, awaiting commit approval (Opus review required before merge)
 
 ---
 
 ## Immediate Next Action
 
-**User approves AURA-006 commit**, then:
+**Opus 4.8 review of AURA-007**, then **user approves AURA-007 commit**, then:
 
-1. Commit `feat/aura-006-design-tokens`
-2. Open PR to `develop`
-3. Squash merge to `develop`
+1. Commit `feat/aura-007-ci-codeql`
+2. Open PR to `develop` (first run of `ci.yml` + `codeql.yml`)
+3. Apply branch protection in GitHub per `docs/BRANCH_PROTECTION.md` (required checks: `quality`, `analyze`) once the checks have appeared
+4. Squash merge to `develop` after checks pass + ≥1 review
+
+> AURA-006 (`feat/aura-006-design-tokens`) is already merged to `develop` (`7215152`).
 
 ---
 
@@ -23,13 +26,13 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 ---
 
-## After AURA-006 Merge
+## After AURA-007 Merge
 
-Execute remaining Phase 0 tasks in order:
+Remaining Phase 0 task:
 
 | Task | Description | Opus Review |
 |---|---|---|
-| **AURA-007** | GitHub Actions CI + CodeQL + branch protection documentation | **Required** |
+| ~~**AURA-007**~~ | ~~GitHub Actions CI + CodeQL + branch protection documentation~~ ✅ executed (awaiting Opus review + commit) | **Required** |
 | **AURA-008** | First vertical slice — `/`→`/en` redirect + `/en` homepage shell + smoke test | Not required |
 
 ---
@@ -55,13 +58,14 @@ Execute remaining Phase 0 tasks in order:
 
 ---
 
-## Notes for AURA-007
+## Notes for AURA-007 (executed — awaiting Opus review + commit)
 
-- Opus review required (CI/security gate + merge-policy enforcement).
-- Creates `.github/workflows/ci.yml` (lint, typecheck, format, tests, deps:check, unused, build, audit).
-- Creates `.github/workflows/codeql.yml` (PR + scheduled).
-- Lighthouse advisory job: defined but disabled until Phase 2 (CF-4).
-- Documents required branch protection (status checks, ≥1 review, no force-push, no auto-merge to main).
+- Opus review required (CI/security gate + merge-policy enforcement) — **pending**.
+- Created `.github/workflows/ci.yml` — `quality` job (Node 20 LTS): lint, typecheck, format:check, unit/dal/integration/security tests, deps:check, unused, build, audit. Deferred `e2e` stub for AURA-008.
+- Created `.github/workflows/codeql.yml` — JS/TS, PR + push + weekly schedule.
+- Created `.github/workflows/lighthouse.yml` — disabled stub; enabled non-blocking in AURA-206 (CF-4).
+- Created `docs/BRANCH_PROTECTION.md` — required checks `quality` + `analyze`, ≥1 review, dismiss stale, no force-push, auto-merge `develop`-only, `main` manual.
+- Follow-ups owned by later tasks: AURA-008 enables the `e2e` check; AURA-107 attaches the Dockerized Supabase stack to DAL/integration/security steps; AURA-206 enables Lighthouse advisory.
 
 ---
 

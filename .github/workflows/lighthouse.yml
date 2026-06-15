@@ -1,0 +1,37 @@
+# AURA-007 — Lighthouse advisory CI (DISABLED STUB — deferred to Phase 2)
+#
+# This stub is intentionally present-but-disabled. Per CF-4 and AURA-007, the
+# Lighthouse advisory job is *defined* now but only *enabled* in Phase 2
+# (AURA-206), once public pages exist for it to score meaningfully. Running it
+# at Phase 0 would produce meaningless results against a placeholder page.
+#
+# Disabled = it only triggers on manual `workflow_dispatch`; it does NOT run on
+# PRs and is NOT a required status check. AURA-206 will:
+#   - add a `pull_request: [develop]` trigger,
+#   - wire @lhci/cli (or treosh/lighthouse-ci-action) against the built site,
+#   - keep it ADVISORY / non-blocking until the production release gate
+#     (Desktop > 90, Mobile > 75 cinematic / 80 prod, CLS < 0.1 — see
+#     docs/CI_CD_STRATEGY.md "Lighthouse Timing").
+#
+# Authority: CF-4 (docs/CI_CD_STRATEGY.md), docs/QUALITY_GATES.md (Lighthouse
+# advisory from Phase 2; hard gate at release).
+
+name: Lighthouse (advisory — disabled until Phase 2)
+
+on:
+  # Manual-only until AURA-206. No PR/push trigger by design.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    name: lighthouse-advisory
+    # Guard so even a manual dispatch is a deliberate no-op until AURA-206
+    # wires the real audit. Flip to enable when implementing AURA-206.
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder
+        run: echo "Lighthouse advisory is deferred to Phase 2 (AURA-206). See file header."

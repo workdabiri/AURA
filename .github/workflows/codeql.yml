@@ -1,0 +1,55 @@
+# AURA-007 — CodeQL static analysis (SAST)
+#
+# Analyzes JavaScript/TypeScript on PRs to `develop`, pushes to `develop`, and
+# on a weekly schedule. A CodeQL *critical* finding is a merge blocker
+# (docs/QUALITY_GATES.md). The required status check is the `analyze` job
+# (see docs/BRANCH_PROTECTION.md).
+#
+# Authority: A-01 (CodeQL scheduled/PR), docs/QUALITY_GATES.md (CodeQL required
+# tooling), docs/SECURITY_BASELINE.md (CodeQL for static analysis).
+#
+# No secrets required — CodeQL uses the automatically provisioned GITHUB_TOKEN.
+
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+  schedule:
+    # Weekly full scan (Mondays 03:17 UTC). Odd minute to avoid cron congestion.
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: analyze
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # JS/TS is interpreted — no compilation step needed.
+          build-mode: none
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'
