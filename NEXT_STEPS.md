@@ -9,7 +9,7 @@
 
 **Squash merge PR #9** (`feat/aura-008-homepage-shell` → `develop`).
 
-Merge is blocked until ≥1 GitHub approving review is submitted. All CI checks are green:
+All CI checks are green and `mergeStateStatus` is `CLEAN`. GitHub required approvals are disabled for solo-operator mode; no review requirement is active:
 
 - `quality` — PASS
 - `e2e` — PASS

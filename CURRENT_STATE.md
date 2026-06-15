@@ -2,7 +2,7 @@
 
 **Updated:** 2026-06-16
 **Branch:** `feat/aura-008-homepage-shell` (PR #9 open → `develop`; pending squash merge)
-**Phase:** Phase 0 — AURA-008 executed; PR #9 all checks green; awaiting squash merge approval
+**Phase:** Phase 0 — AURA-008 executed; PR #9 all checks green; awaiting squash merge
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 
@@ -147,7 +147,7 @@ analyze (javascript-typescript)
 CodeQL
 ```
 
-Plus: ≥1 approving review, dismiss stale reviews enabled.
+GitHub required approvals are disabled for solo-operator mode; status checks remain enforced.
 
 ---
 

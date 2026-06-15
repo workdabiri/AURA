@@ -81,7 +81,7 @@ analyze (javascript-typescript)
 CodeQL
 ```
 
-Plus: `required_approving_review_count: 1`, `dismiss_stale_reviews: true`.
+GitHub required approvals are disabled for solo-operator mode; status checks remain enforced.
 
 ---
 
@@ -92,19 +92,19 @@ Plus: `required_approving_review_count: 1`, `dismiss_stale_reviews: true`.
 3. **Knip `entry` for `src/lib/config/env.ts`** — temporary; remove in AURA-101.
 4. **Remaining Knip allowlist entries** — `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`, Supabase packages (AURA-101), etc.
 5. **`e2e` not yet a required branch-protection check** — ✅ RESOLVED. Updated after PR #9 checks ran green.
-6. **PR #9 awaiting squash merge** — All CI checks pass. Requires ≥1 GitHub approving review before merge button unlocks (`mergeStateStatus: BLOCKED`, `reviewDecision: REVIEW_REQUIRED`).
+6. **PR #9 awaiting squash merge** — All CI checks pass. GitHub required approvals are disabled for solo-operator mode. `mergeStateStatus: CLEAN`; no GitHub review requirement is active.
 
 ---
 
 ## Validation Status
 
-AURA-008 is fully implemented. Commit `6df46d0` on `feat/aura-008-homepage-shell`. PR #9 (`https://github.com/workdabiri/AURA/pull/9`) has all four checks green. `develop` branch protection updated to require `e2e`. **Awaiting user squash-merge approval after GitHub PR review.**
+AURA-008 is fully implemented. Commit `6df46d0` on `feat/aura-008-homepage-shell`. PR #9 (`https://github.com/workdabiri/AURA/pull/9`) has all four checks green. `develop` branch protection updated to require `e2e`. GitHub required approvals are disabled for solo-operator mode. **PR #9 is ready for squash merge — `mergeStateStatus: CLEAN`.**
 
 ---
 
 ## Next Safe Action
 
-1. **Approve and squash merge PR #9** to `develop` (requires ≥1 GitHub approving review).
+1. **Squash merge PR #9** to `develop` (`mergeStateStatus: CLEAN`; all checks pass; no GitHub review requirement active in solo-operator mode).
 2. After merge: update `SESSION_HANDOFF.md`, `CURRENT_STATE.md`, `NEXT_STEPS.md` to record AURA-008 as fully merged.
 3. Update `docs/TASKS_Project.md` — set AURA-008 status to **done**.
 4. Then proceed to **AURA-009** (next approved Phase 0 or Phase 1 task per `docs/TASKS_Project.md`).
