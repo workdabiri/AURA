@@ -2,7 +2,7 @@
 
 **Updated:** 2026-06-16
 **Branch:** `feat/aura-101-supabase-stack` (AURA-101 in progress; PR open against `develop`)
-**Phase:** Phase 1 — in progress. AURA-101 PR open; awaiting Opus 4.8 review before merge.
+**Phase:** Phase 1 — in progress. AURA-101 PR open; CI green, Opus 4.8 APPROVED — ready for squash-merge to `develop`.
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 > Note: AURA-101 task is labelled "AURA-009" in continuity docs written during AURA-008; the real task-plan ID is AURA-101.
@@ -108,7 +108,6 @@
 - No Stage 2 skills, MCPs, hooks, or plugins
 - No Lighthouse advisory run yet (stub disabled until AURA-206)
 - No Dockerized Supabase stack in CI yet (attached in AURA-107); local-stack connection tests require `SUPABASE_LOCAL_TESTS=1`
-- No Supabase CLI installed locally (`supabase` not in PATH); install separately before running `supabase start`
 - No migrations (AURA-102), no RLS policies (AURA-103), no auth (AURA-104), no DAL functions
 - No real data layer, auth, admin, lead capture, CRM, GSAP, business logic, or search
 
@@ -138,18 +137,32 @@
 
 ### Local Supabase CLI
 
-Supabase CLI not installed locally (`supabase` command not found). Local-stack start/stop and `SUPABASE_LOCAL_TESTS=1` tests were not run. Deferred to when CLI is installed or AURA-107 wires CI stack.
+Supabase CLI 2.106.0 (Homebrew) + Docker 29.5.3.
 
-### GitHub CI (PR #9 — merged)
+| Command | Result |
+|---|---|
+| `supabase start` | PASS |
+| `supabase status` | PASS |
+| `SUPABASE_LOCAL_TESTS=1 npm run test:dal` | PASS — 5/5 tests |
+| `supabase stop` | PASS |
+
+`.gitignore` excludes `supabase/.branches/` and `supabase/.temp/` — runtime artifacts untracked and confirmed clean.
+
+### GitHub CI (PR #11 — AURA-101, open)
 
 | Check | Result |
 |---|---|
-| `quality` | PASS — 1m 7s |
-| `e2e` | PASS — 1m 19s |
-| `analyze (javascript-typescript)` | PASS — 1m 1s |
+| `quality` | PASS — 1m 3s |
+| `e2e` | PASS — 1m 27s |
+| `analyze (javascript-typescript)` | PASS — 1m 3s |
 | `CodeQL` | PASS — 2s |
 
-PR #9 was squash-merged to `develop` at merge commit `be43dab feat: add localized homepage shell and smoke test`. Feature branch `feat/aura-008-homepage-shell` deleted. `develop` is current source of truth.
+### Opus 4.8 Review (PR #11)
+
+- Verdict: **APPROVE**
+- Merge recommendation: **YES** (into `develop`)
+- Blocking issues: None
+- Non-blocking notes: (1) `config.toml` local `enable_signup = true` is harmless locally — production must set `false` for D-40 in AURA-104. (2) Public env vars not validated by `getServerEnv()` (cosmetic only). (3) Cruiser `no-client-to-service-role` `from` scoped to `^src/components` — build-time `server-only` guard covers all client components regardless. (4) Security tests assert rule configuration, not runtime enforcement — adequate for scaffold.
 
 ## AURA-008 Gate Results (archived — merged)
 
@@ -170,9 +183,6 @@ Playwright 1.60 internal; not a gate failure.
 
 ### Note: AURA-101 Knip entry debt
 Three new `entry` declarations for Supabase helpers remain in `knip.jsonc`. Remove each as the first DAL task imports that helper (AURA-102+).
-
-### Note: Supabase CLI not installed locally
-`supabase` command not found. Install Supabase CLI before running `supabase start` / local-stack tests. `SUPABASE_LOCAL_TESTS=1 npm run test:dal` is the trigger for the network connection test.
 
 ---
 
@@ -211,7 +221,7 @@ GitHub required approvals are disabled for solo-operator mode; status checks rem
 | `gsap`, `framer-motion` | Wired in Phase 5 |
 | `@sentry/nextjs`, `@vercel/analytics` | Wired in Phase 6 |
 | `eslint-config-next`, `@typescript-eslint/{parser,eslint-plugin}` | FlatCompat string-based; keep |
-| `entry: ["src/lib/config/env.ts"]` | Remove in AURA-101 |
+| ~~`entry: ["src/lib/config/env.ts"]`~~ | ✅ Removed AURA-101 (env.ts now has real importers) |
 
 ---
 

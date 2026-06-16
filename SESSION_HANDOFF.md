@@ -1,7 +1,7 @@
 # Session Handoff
 
 **Last Updated:** 2026-06-16
-**Branch:** `feat/aura-101-supabase-stack` — AURA-101 PR open against `develop`; awaiting Opus 4.8 review before merge.
+**Branch:** `feat/aura-101-supabase-stack` — AURA-101 PR open against `develop`; CI green, Opus 4.8 APPROVED — ready for squash-merge.
 
 ---
 
@@ -30,9 +30,9 @@ Boundary proof:
 - Removed fixture. `npm run deps:check` passes clean (0 violations, 21 modules).
 - Fixture never committed.
 
-Hard-stop applied:
+Local Supabase CLI verification:
 
-- Supabase CLI (`supabase` command) not installed locally. Local-stack start/stop and `SUPABASE_LOCAL_TESTS=1` run skipped. Not a blocker — CI uses plain tests; local-stack tests are manual until AURA-107.
+Supabase CLI 2.106.0 (Homebrew) + Docker 29.5.3: `supabase start` PASS → `supabase status` PASS → `SUPABASE_LOCAL_TESTS=1 npm run test:dal` PASS (5/5) → `supabase stop` PASS. `.gitignore` excludes `supabase/.branches/` and `supabase/.temp/`; runtime artifacts confirmed untracked.
 
 **No dependencies installed. No `package.json` / `package-lock.json` change. No `.env` / `.env.local`. No secrets. No migrations. No auth implementation. No API routes. No AURA-102 work.**
 
@@ -152,14 +152,13 @@ GitHub required approvals are disabled for solo-operator mode; status checks rem
 2. **Playwright Node.js deprecation warning** — Playwright internal; not a gate failure.
 3. **Knip entries for Supabase helpers** — `client.ts`, `server.ts`, `service-role.ts` declared as Knip entries. Remove each as the first DAL caller is added (AURA-102+).
 4. **Remaining Knip allowlist entries** — `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`, `resend`, forms/query/motion packages remain. Remove per phase schedule.
-5. **Supabase CLI not installed locally** — `supabase` not in PATH. Install CLI before running `supabase start` or `SUPABASE_LOCAL_TESTS=1 npm run test:dal`.
-6. **AURA-101 PR awaiting Opus review** — Not merged. Opus 4.8 review required before merge.
+5. **Opus 4.8 non-blocking note** — `config.toml` local `enable_signup = true` (Supabase default; harmless locally; production must set `false` for D-40 in AURA-104).
 
 ---
 
 ## Validation Status
 
-AURA-101 PR is open (`feat/aura-101-supabase-stack` → `develop`). All local gates pass. GitHub CI checks pending (quality, e2e, analyze, CodeQL). Opus 4.8 review required before merge. AURA-101 is not merged.
+AURA-101 PR is open (`feat/aura-101-supabase-stack` → `develop`). All local gates pass. GitHub CI checks all PASS. Supabase CLI 2.106.0 local-stack verification complete (5/5 tests). Opus 4.8 review: APPROVE, no blocking issues. AURA-101 is not yet merged — ready for squash-merge to `develop`.
 
 `develop` branch protection active: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL` all required. GitHub required approvals disabled for solo-operator mode.
 
@@ -167,7 +166,6 @@ AURA-101 PR is open (`feat/aura-101-supabase-stack` → `develop`). All local ga
 
 ## Next Safe Action
 
-1. Wait for GitHub CI checks to pass on PR.
-2. Request Opus 4.8 review for AURA-101 (service-role boundary, server-only guard, helper design).
-3. After Opus approves and CI is green → squash-merge to `develop`.
-4. Start **AURA-102** (initial migration) in a new session.
+1. Squash-merge PR #11 (`feat/aura-101-supabase-stack` → `develop`) — CI green, Opus 4.8 APPROVED, no blocking issues.
+2. Update continuity docs post-merge if needed.
+3. Start **AURA-102** (initial migration) in a new session.
