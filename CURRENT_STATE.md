@@ -100,7 +100,7 @@
 ### Initial MVP Migration + Generated Types (AURA-102) ← NEW (on feature branch, not merged)
 
 - `supabase/migrations/20260616183318_init.sql` — single initial migration creating all 11 MVP tables, 17 native PostgreSQL enum types, the shared `set_updated_at()` trigger function + 7 `updated_at` triggers, the full indexing/uniqueness contract, the generated `properties.title_en` STORED column + GIN full-text index, and `ENABLE ROW LEVEL SECURITY` on all 11 tables. **No RLS policies** (AURA-103), **no seed data**, **no rate_limits cleanup job** (AURA-106). Rollback path documented in the migration header comment.
-- `src/types/database.ts` — generated via `npm run db:types` (`supabase gen types typescript --local`). Treated as a generated artifact: ignored by Knip, Prettier, and ESLint; never hand-edited.
+- `src/types/database.ts` — generated via `npm run db:types` (`supabase gen types --local --lang=typescript`, written to a temp file then `mv`d into place so a failed run never truncates it). Treated as a generated artifact: ignored by Knip, Prettier, and ESLint; never hand-edited.
 - `package.json` — added `db:types` script. No dependency / lockfile change.
 - `src/tests/dal/schema.test.ts` — static (CI-safe) migration assertions + gated (`SUPABASE_LOCAL_TESTS=1`) live Postgres-catalog introspection via `psql`: 11 tables, 17 enums, enum values, JSONB columns, generated column, unique constraints, all 9 indexes, partial-unique + GIN method, and D-05 / D-18 / D-51 negative scans.
 - `src/tests/security/schema-rls.test.ts` — static + gated checks: RLS enabled on all 11 tables, **0 policies**, no `clients`/`client_id`, no raw-IP columns in sensitive tables.
@@ -111,6 +111,8 @@
 **Enums created (17):** `user_role`, `publish_status`, `transaction_type`, `market_type`, `property_type`, `availability_status`, `rental_period`, `furnishing_status`, `price_visibility`, `property_media_type`, `stakeholder_type`, `stakeholder_visibility`, `lead_status`, `lead_source`, `lead_priority`, `preferred_contact_method`, `legal_page_status`.
 
 **Local verification (CLI 2.106.0):** `supabase db reset` applies the migration clean from scratch; `SUPABASE_LOCAL_TESTS=1 npm run test:dal` PASS (26); `SUPABASE_LOCAL_TESTS=1 npm run test:security` PASS (18). Note: `supabase gen types --local` in CLI 2.106 requires `SUPABASE_ACCESS_TOKEN` to be set (any value) to bypass a platform-auth pre-check before it falls through to the local postgres-meta container.
+
+**Pre-merge hygiene patch (PR #13):** Opus 4.8 reviewed the PR and gave APPROVE with **no blocking issues**. Two non-blocking items were then fixed for source-of-truth hygiene: (1) the `db:types` script now writes to `/tmp/aura-database-types.ts` and `mv`s it into place, so a failed generation no longer truncates the tracked `src/types/database.ts` (failure-safety tested with the stack down — the file stays unchanged; success path regenerates **byte-identical** with the stack up); (2) the stale `db:types` script wording in the continuity docs was corrected. This patch changes only script safety and docs accuracy — no schema, migration, type, or test changes.
 
 ---
 

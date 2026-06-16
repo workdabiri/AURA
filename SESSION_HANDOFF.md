@@ -18,7 +18,7 @@ Files created:
 
 Files modified:
 
-- `package.json` — added `"db:types": "supabase gen types typescript --local > src/types/database.ts"`. **No dependency / `package-lock.json` change.**
+- `package.json` — added failure-safe `db:types` script: `SUPABASE_ACCESS_TOKEN=${SUPABASE_ACCESS_TOKEN:-dummy} supabase gen types --local --lang=typescript > /tmp/aura-database-types.ts && mv /tmp/aura-database-types.ts src/types/database.ts`. Generation writes to a temp file and only `mv`s it into place on success, so a failed run never truncates the tracked `src/types/database.ts`. **No dependency / `package-lock.json` change.**
 - `knip.jsonc` — added `ignore: ["src/types/database.ts"]` and `ignoreBinaries: ["supabase"]`.
 - `.prettierignore`, `eslint.config.mjs` — exclude the generated types file.
 
@@ -40,7 +40,7 @@ Implementation notes / deviations:
 - **NOT NULL posture:** always-required fields are `NOT NULL`; publish-time requirements (e.g. cover image, `en` title key) are app-layer validations, not DB constraints, per the data model.
 - **`legal_pages.content` is JSONB** (structured Markdown / controlled rich text) — there is no raw-HTML column/affordance (D-12).
 - **GIN index** built on `to_tsvector('english', coalesce(title_en, ''))` over the generated `title_en` column.
-- **`supabase gen types --local` quirk (CLI 2.106.0):** requires `SUPABASE_ACCESS_TOKEN` to be set (any value) to pass a platform-auth pre-check before falling through to the local postgres-meta container. The `db:types` script itself is unchanged; document this env requirement for local regeneration.
+- **`supabase gen types --local` quirk (CLI 2.106.0):** requires `SUPABASE_ACCESS_TOKEN` to be set (any value) to pass a platform-auth pre-check before falling through to the local postgres-meta container. The `db:types` script bakes in `SUPABASE_ACCESS_TOKEN=${SUPABASE_ACCESS_TOKEN:-dummy}` to satisfy this, and writes to `/tmp/aura-database-types.ts` then `mv`s it into place so a failed generation never truncates the tracked file. Regeneration still requires a running local stack.
 - Schema tests use `psql` (Homebrew, on PATH) for catalog introspection — no new npm dependency. They are gated by `SUPABASE_LOCAL_TESTS=1`; CI (no local stack) runs the static layer only until the Dockerized stack lands in AURA-107.
 
 **No `.env`/secrets. No seed users/data. No auth flow. No RLS policies. No API routes. No UI. No AURA-103/104 work. No merge.**
