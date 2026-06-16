@@ -17,6 +17,7 @@
     "test:e2e": "playwright test src/tests/e2e",
     "test:smoke": "playwright test src/tests/e2e/smoke.spec.ts",
     "test:security": "vitest src/tests/security",
+    "db:types": "SUPABASE_ACCESS_TOKEN=${SUPABASE_ACCESS_TOKEN:-dummy} supabase gen types --local --lang=typescript > /tmp/aura-database-types.ts && mv /tmp/aura-database-types.ts src/types/database.ts",
     "unused": "knip",
     "deps:check": "dependency-cruiser --validate .dependency-cruiser.cjs src/app src/components src/domain src/dal src/services src/lib",
     "audit": "npm audit --audit-level=high",

@@ -1,8 +1,8 @@
 # Current State
 
 **Updated:** 2026-06-16
-**Branch:** `develop` (AURA-101 squash-merged; feature branch deleted)
-**Phase:** Phase 1 — in progress. AURA-101 merged to `develop` at `95f9df3`. AURA-102 is next.
+**Branch:** `feat/aura-102-initial-migration` (AURA-102 implemented; PR open; **not merged**)
+**Phase:** Phase 1 — in progress. AURA-101 merged to `develop` at `95f9df3`. AURA-102 implemented on its feature branch, awaiting Opus 4.8 review + merge. AURA-103 is next after merge.
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 > Note: AURA-101 task is labelled "AURA-009" in continuity docs written during AURA-008; the real task-plan ID is AURA-101.
@@ -97,10 +97,31 @@
 
 ---
 
+### Initial MVP Migration + Generated Types (AURA-102) ← NEW (on feature branch, not merged)
+
+- `supabase/migrations/20260616183318_init.sql` — single initial migration creating all 11 MVP tables, 17 native PostgreSQL enum types, the shared `set_updated_at()` trigger function + 7 `updated_at` triggers, the full indexing/uniqueness contract, the generated `properties.title_en` STORED column + GIN full-text index, and `ENABLE ROW LEVEL SECURITY` on all 11 tables. **No RLS policies** (AURA-103), **no seed data**, **no rate_limits cleanup job** (AURA-106). Rollback path documented in the migration header comment.
+- `src/types/database.ts` — generated via `npm run db:types` (`supabase gen types --local --lang=typescript`, written to a temp file then `mv`d into place so a failed run never truncates it). Treated as a generated artifact: ignored by Knip, Prettier, and ESLint; never hand-edited.
+- `package.json` — added `db:types` script. No dependency / lockfile change.
+- `src/tests/dal/schema.test.ts` — static (CI-safe) migration assertions + gated (`SUPABASE_LOCAL_TESTS=1`) live Postgres-catalog introspection via `psql`: 11 tables, 17 enums, enum values, JSONB columns, generated column, unique constraints, all 9 indexes, partial-unique + GIN method, and D-05 / D-18 / D-51 negative scans.
+- `src/tests/security/schema-rls.test.ts` — static + gated checks: RLS enabled on all 11 tables, **0 policies**, no `clients`/`client_id`, no raw-IP columns in sensitive tables.
+- `knip.jsonc` — added `ignore` for the generated types file and `ignoreBinaries: ["supabase"]` (global CLI).
+- `.prettierignore` / `eslint.config.mjs` — exclude the generated types file.
+- `src/types/.gitkeep` — removed (superseded by `database.ts`).
+
+**Enums created (17):** `user_role`, `publish_status`, `transaction_type`, `market_type`, `property_type`, `availability_status`, `rental_period`, `furnishing_status`, `price_visibility`, `property_media_type`, `stakeholder_type`, `stakeholder_visibility`, `lead_status`, `lead_source`, `lead_priority`, `preferred_contact_method`, `legal_page_status`.
+
+**Local verification (CLI 2.106.0):** `supabase db reset` applies the migration clean from scratch; `SUPABASE_LOCAL_TESTS=1 npm run test:dal` PASS (26); `SUPABASE_LOCAL_TESTS=1 npm run test:security` PASS (18). Note: `supabase gen types --local` in CLI 2.106 requires `SUPABASE_ACCESS_TOKEN` to be set (any value) to bypass a platform-auth pre-check before it falls through to the local postgres-meta container.
+
+**Pre-merge hygiene patch (PR #13):** Opus 4.8 reviewed the PR and gave APPROVE with **no blocking issues**. Two non-blocking items were then fixed for source-of-truth hygiene: (1) the `db:types` script now writes to `/tmp/aura-database-types.ts` and `mv`s it into place, so a failed generation no longer truncates the tracked `src/types/database.ts` (failure-safety tested with the stack down — the file stays unchanged; success path regenerates **byte-identical** with the stack up); (2) the stale `db:types` script wording in the continuity docs was corrected. This patch changes only script safety and docs accuracy — no schema, migration, type, or test changes.
+
+---
+
 ## What Does NOT Exist
 
 - No root-level `tests/` directory
-- No Supabase migrations
+- No RLS policies yet (AURA-103); migration enables RLS only
+- No seed data / seed users; no `supabase/seed.sql`
+- No rate_limits cleanup job / pg_cron (AURA-106)
 - No `.env` or `.env.local` file (`.env.example` placeholders only)
 - No product UI features beyond the minimal homepage shell
 - No UI components (Button, Card, etc.) — component layer is Phase 2+
@@ -108,8 +129,31 @@
 - No Stage 2 skills, MCPs, hooks, or plugins
 - No Lighthouse advisory run yet (stub disabled until AURA-206)
 - No Dockerized Supabase stack in CI yet (attached in AURA-107); local-stack connection tests require `SUPABASE_LOCAL_TESTS=1`
-- No migrations (AURA-102), no RLS policies (AURA-103), no auth (AURA-104), no DAL functions
+- No RLS policies (AURA-103), no auth (AURA-104), no DAL functions (migration exists on the AURA-102 branch)
 - No real data layer, auth, admin, lead capture, CRM, GSAP, business logic, or search
+
+---
+
+## AURA-102 Gate Results (feature branch — not merged)
+
+| Gate | Result |
+|---|---|
+| `npm run lint` | PASS |
+| `npm run typecheck` | PASS |
+| `npm run format:check` | PASS |
+| `npm run test` (CI mode, flag unset) | PASS — 10 files, 31 tests + 22 skipped (live DB tests skip without `SUPABASE_LOCAL_TESTS=1`) |
+| `SUPABASE_LOCAL_TESTS=1 npm run test:dal` | PASS — 3 files, 26 tests |
+| `SUPABASE_LOCAL_TESTS=1 npm run test:security` | PASS — 4 files, 18 tests |
+| `npm run deps:check` | PASS — 0 violations (21 modules) |
+| `npm run unused` | PASS — exit 0 |
+| `npm run build` | PASS — 3 routes; middleware 44.1 kB |
+| `npm run quality` | PASS — composite exit 0 |
+| `npm run audit` | PASS — exit 0; 0 HIGH/CRITICAL; 2 moderate postcss carry-forward |
+| `supabase db reset` | PASS — migration applies clean from scratch |
+
+D-05 scan (`clients`/`client_id`) and raw-IP scan: only matches are in comments / test descriptions / guardrail assertions — **no actual schema columns**. Migration creates no `clients` table, no `client_id`, no raw-IP column.
+
+Opus 4.8 review: **required before merge** (schema + migration; Phase 1).
 
 ---
 
