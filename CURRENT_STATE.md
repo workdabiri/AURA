@@ -1,8 +1,8 @@
 # Current State
 
 **Updated:** 2026-06-16
-**Branch:** `feat/aura-101-supabase-stack` (AURA-101 in progress; PR open against `develop`)
-**Phase:** Phase 1 — in progress. AURA-101 PR open; CI green, Opus 4.8 APPROVED — ready for squash-merge to `develop`.
+**Branch:** `develop` (AURA-101 squash-merged; feature branch deleted)
+**Phase:** Phase 1 — in progress. AURA-101 merged to `develop` at `95f9df3`. AURA-102 is next.
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 > Note: AURA-101 task is labelled "AURA-009" in continuity docs written during AURA-008; the real task-plan ID is AURA-101.
@@ -78,7 +78,7 @@
 
 ---
 
-### Supabase Local Stack + Helpers (AURA-101) ← NEW (PR open)
+### Supabase Local Stack + Helpers (AURA-101) ← MERGED (`95f9df3`)
 
 - `supabase/config.toml` — minimal Supabase CLI local stack config; no migrations, no seed data, no secrets
 - `src/lib/supabase/client.ts` — browser anon helper; `createBrowserClient` from `@supabase/ssr`; `NEXT_PUBLIC_*` vars only; no server-only imports
@@ -113,7 +113,7 @@
 
 ---
 
-## AURA-101 Gate Results (branch: feat/aura-101-supabase-stack)
+## AURA-101 Gate Results (merged — `95f9df3`)
 
 | Gate | Result |
 |---|---|
@@ -148,7 +148,7 @@ Supabase CLI 2.106.0 (Homebrew) + Docker 29.5.3.
 
 `.gitignore` excludes `supabase/.branches/` and `supabase/.temp/` — runtime artifacts untracked and confirmed clean.
 
-### GitHub CI (PR #11 — AURA-101, open)
+### GitHub CI (PR #11 — AURA-101, squash-merged)
 
 | Check | Result |
 |---|---|
