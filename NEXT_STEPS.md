@@ -1,20 +1,19 @@
 # Next Steps
 
 **Updated:** 2026-06-16
-**Current Phase:** Phase 0 — complete. AURA-008 merged to `develop` at `be43dab`. Ready for AURA-009.
+**Current Phase:** Phase 1 — in progress. AURA-101 PR open against `develop`. CI green, Opus 4.8 APPROVED — ready for squash-merge.
 
 ---
 
 ## Immediate Next Action
 
-**Start AURA-009** in a new session.
+**Squash-merge PR #11, then start AURA-102.**
 
-AURA-008 is fully merged. PR #9 was squash-merged to `develop` at merge commit `be43dab feat: add localized homepage shell and smoke test`. Feature branch `feat/aura-008-homepage-shell` deleted. `develop` is current source of truth.
+1. Squash-merge PR #11 (`feat/aura-101-supabase-stack` → `develop`) — CI green, Opus 4.8 APPROVED, no blocking issues.
+2. Update continuity docs post-merge if needed.
+3. Start **AURA-102** (initial migration) in a new session.
 
-Before starting AURA-009:
-1. Read `CLAUDE.md`, `CURRENT_STATE.md`, `SESSION_HANDOFF.md`, `NEXT_STEPS.md`, and `docs/TASKS_Project.md`.
-2. Confirm the task reference from `docs/TASKS_Project.md`.
-3. Branch from `develop`: `feature/aura-009-<slug>`.
+AURA-101 PR is open: `feat/aura-101-supabase-stack` → `develop`. All gates pass.
 
 Branch protection active on `develop`:
 - `quality` — required
@@ -34,7 +33,9 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 ---
 
-## Phase 0 Task Status
+## Task Status
+
+### Phase 0 — Complete
 
 | Task | Description | Status |
 |---|---|---|
@@ -46,7 +47,15 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-006**~~ | Design tokens + Tailwind pipeline | ✅ merged |
 | ~~**AURA-007**~~ | GitHub Actions CI + CodeQL + branch protection | ✅ merged |
 | ~~**AURA-008**~~ | First vertical slice — `/`→`/en` redirect + `/en` homepage shell + smoke test | ✅ merged (`be43dab`) |
-| **AURA-009** | Next approved task | Not started |
+
+### Phase 1 — In Progress
+
+| Task | Description | Status |
+|---|---|---|
+| **AURA-101** | Supabase local stack + client/server/service-role helpers | 🔄 PR open — CI ✅, Opus ✅ APPROVE — ready for merge |
+| **AURA-102** | Initial migration — core MVP tables | Not started |
+| **AURA-103** | RLS policies for all sensitive tables | Not started |
+| **AURA-104** | Auth flow + super-admin bootstrap | Not started |
 
 ---
 
@@ -58,7 +67,8 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - ~~**AURA-006** → remove `tailwindcss`, `@tailwindcss/typography`, `autoprefixer`, `postcss`~~ ✅ done
 - ~~**AURA-008** → remove `next-intl`~~ ✅ done
 - **AURA-006 deferred** → `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` — keep until first component that uses them (Phase 2+)
-- **AURA-101** → remove `@supabase/ssr`, `@supabase/supabase-js`
+- ~~**AURA-101** → remove `@supabase/ssr`, `@supabase/supabase-js`~~ ✅ done (PR open)
+- **AURA-102+** → remove `src/lib/supabase/client.ts`, `server.ts`, `service-role.ts` Knip entries as DAL callers are added
 - **AURA-106 / Phase 3** → remove `resend`
 - **Phase 2–3 (forms)** → remove `@hookform/resolvers`, `react-hook-form`, `libphonenumber-js`
 - **Phase 2+ (data/state)** → remove `@tanstack/react-query`, `zustand`
@@ -66,8 +76,9 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - **Observability (Phase 6)** → remove `@sentry/nextjs`, `@vercel/analytics`
 - `eslint-config-next`, `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin` — used via FlatCompat but untraceable by Knip; keep until ESLint config is updated.
 
-### Knip `entry` debt (AURA-005)
-- `knip.jsonc` declares `entry: ["src/lib/config/env.ts"]` because the server env accessor has no runtime caller yet. **AURA-101 must remove this entry** once a server module imports `getServerEnv()`.
+### Knip `entry` debt (AURA-101 update)
+- ~~`env.ts` entry~~ ✅ Removed in AURA-101 — real importer exists via `server.ts` and `service-role.ts`.
+- `client.ts`, `server.ts`, `service-role.ts` entries added in AURA-101 — remove per helper as first DAL caller is wired (AURA-102+).
 
 ---
 
@@ -85,18 +96,25 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 ---
 
-## Notes for AURA-009
+## Notes for AURA-101 (Supabase helpers — PR OPEN)
 
-- Confirm task from `docs/TASKS_Project.md` before starting.
-- AURA-008 is merged; AURA-009 may start in a new session.
+All implementation complete. PR open. Wait for CI + Opus 4.8 review before merging.
 
----
+Key decisions:
+- `getServerEnv()` called in `createSupabaseServerClient()` — validates full server env before any Supabase call
+- `CookieOptions` imported from `@supabase/ssr` for explicit `setAll` parameter typing (TypeScript strict mode)
+- service-role.ts first line is `import 'server-only'` — enforced by security test + dep-cruiser
+- Supabase CLI 2.106.0 (Homebrew) + Docker 29.5.3: local-stack verified — `supabase start/status/stop` PASS; `SUPABASE_LOCAL_TESTS=1 npm run test:dal` PASS (5/5)
+- Opus 4.8 review: **APPROVE** — no blocking issues; non-blocking notes only (see CURRENT_STATE.md)
 
-## Notes for AURA-101 (Supabase helpers, Phase 1)
+## Notes for AURA-102 (next task after AURA-101 merges)
 
-- Wires `@supabase/ssr` + `@supabase/supabase-js` — remove from Knip allowlist.
-- The service-role helper must `import 'server-only'` and is covered by `no-client-to-service-role`.
-- Server client should consume `getServerEnv()` from `src/lib/config/env.ts` — **remove the `entry` declaration for `env.ts` from `knip.jsonc`** once it has a real importer.
+- Requires explicit per-task approval (migration task — see CLAUDE.md).
+- Branch: `feat/aura-102-initial-migration`
+- No `clients` table, no `client_id` (D-05 merge blocker)
+- No raw IP columns in event tables (D-18/D-51)
+- RLS ENABLE on all sensitive tables (policies in AURA-103)
+- Remove one or more Knip entries for supabase helpers as DAL callers are added
 
 ---
 

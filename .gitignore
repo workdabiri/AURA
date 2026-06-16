@@ -36,3 +36,7 @@ playwright-report/
 
 # Next.js generated type shim (regenerated on build; references .next/ which is gitignored)
 next-env.d.ts
+
+# Supabase CLI runtime artifacts (local stack state, not source)
+supabase/.branches/
+supabase/.temp/

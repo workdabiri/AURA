@@ -1,10 +1,11 @@
 # Current State
 
 **Updated:** 2026-06-16
-**Branch:** `develop` (AURA-008 squash-merged; merge commit `be43dab`)
-**Phase:** Phase 0 — complete. AURA-008 merged to `develop`. Ready for AURA-009.
+**Branch:** `feat/aura-101-supabase-stack` (AURA-101 in progress; PR open against `develop`)
+**Phase:** Phase 1 — in progress. AURA-101 PR open; CI green, Opus 4.8 APPROVED — ready for squash-merge to `develop`.
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
+> Note: AURA-101 task is labelled "AURA-009" in continuity docs written during AURA-008; the real task-plan ID is AURA-101.
 
 ---
 
@@ -77,51 +78,95 @@
 
 ---
 
+### Supabase Local Stack + Helpers (AURA-101) ← NEW (PR open)
+
+- `supabase/config.toml` — minimal Supabase CLI local stack config; no migrations, no seed data, no secrets
+- `src/lib/supabase/client.ts` — browser anon helper; `createBrowserClient` from `@supabase/ssr`; `NEXT_PUBLIC_*` vars only; no server-only imports
+- `src/lib/supabase/server.ts` — async server anon helper; `createServerClient` from `@supabase/ssr`; `cookies()` from `next/headers` (Next.js 15 async); calls `getServerEnv()` for fail-fast validation; request-scoped (no global memoization)
+- `src/lib/supabase/service-role.ts` — server-only service-role helper; first line is `import 'server-only'`; `createClient` from `@supabase/supabase-js`; memoized singleton; `SUPABASE_SERVICE_ROLE_KEY` never exported; enforced by `no-client-to-service-role` dep-cruiser rule
+
+### Tests (AURA-101) ← NEW
+- `src/tests/security/supabase-boundaries.test.ts` — 4 tests: asserts service-role.ts first line is `import 'server-only'`; asserts dep-cruiser has `no-client-to-service-role` rule covering the correct paths
+- `src/tests/dal/supabase-smoke.test.ts` — 4 tests (1 skipped in CI): importability smoke for `@supabase/ssr` and `@supabase/supabase-js`; local-stack connection test gated by `SUPABASE_LOCAL_TESTS=1`
+
+### Knip Allowlist (AURA-101) ← UPDATED
+- Removed `@supabase/ssr` — now imported by `client.ts` and `server.ts`
+- Removed `@supabase/supabase-js` — now imported by `service-role.ts`
+- Removed `entry: ["src/lib/config/env.ts"]` — env.ts now has a real importer via `server.ts` and `service-role.ts`
+- Added `entry: ["src/lib/supabase/client.ts", "src/lib/supabase/server.ts", "src/lib/supabase/service-role.ts"]` — library modules pending first DAL caller (AURA-102+)
+
+---
+
 ## What Does NOT Exist
 
 - No root-level `tests/` directory
-- No Supabase files or migrations
+- No Supabase migrations
 - No `.env` or `.env.local` file (`.env.example` placeholders only)
 - No product UI features beyond the minimal homepage shell
 - No UI components (Button, Card, etc.) — component layer is Phase 2+
 - No `cn()` utility (deferred to when first component needs it)
 - No Stage 2 skills, MCPs, hooks, or plugins
 - No Lighthouse advisory run yet (stub disabled until AURA-206)
-- No Dockerized Supabase stack in CI yet (attached in AURA-107)
+- No Dockerized Supabase stack in CI yet (attached in AURA-107); local-stack connection tests require `SUPABASE_LOCAL_TESTS=1`
+- No migrations (AURA-102), no RLS policies (AURA-103), no auth (AURA-104), no DAL functions
 - No real data layer, auth, admin, lead capture, CRM, GSAP, business logic, or search
 
 ---
 
-## AURA-008 Gate Results
+## AURA-101 Gate Results (branch: feat/aura-101-supabase-stack)
 
 | Gate | Result |
 |---|---|
 | `npm run lint` | PASS |
 | `npm run typecheck` | PASS |
 | `npm run format:check` | PASS |
-| `npm run test` | PASS — 6 files, 14 tests |
-| `npm run test:unit` | PASS |
-| `npm run test:dal` | PASS |
-| `npm run test:integration` | PASS |
-| `npm run test:security` | PASS |
-| `npm run deps:check` | PASS — 0 violations (15 modules) |
+| `npm run test` | PASS — 8 files, 21 tests + 1 skipped |
+| `npm run test:unit` | PASS — 2 files, 8 tests |
+| `npm run test:dal` | PASS — 2 files, 4 tests + 1 skipped (local-stack, `SUPABASE_LOCAL_TESTS=1`) |
+| `npm run test:security` | PASS — 3 files, 8 tests |
+| `npm run deps:check` | PASS — 0 violations (21 modules, 16 deps) |
 | `npm run unused` | PASS |
-| `npm run build` | PASS — 4 routes: `/`, `/_not-found`, `/[locale]`; middleware 44.1 kB |
-| `npm run test:smoke` | PASS — 4/4 (Chromium + Mobile Safari) |
-| `npm run test:smoke -- --project=chromium` | PASS — 2/2 (mirrors CI) |
+| `npm run build` | PASS — 4 routes; middleware 44.1 kB |
 | `npm run quality` | PASS — composite exit 0 |
 | `npm run audit` | PASS — exit 0; 0 HIGH, 0 CRITICAL; 2 moderate postcss carry-forward |
 
-### GitHub CI (PR #9 — merged)
+### Boundary proof
+
+- Temp fixture `src/components/ui/___boundary_probe_delete_me.ts` importing `service-role.ts` → `deps:check` failed with 2 errors (`no-ui-to-supabase` + `no-client-to-service-role`)
+- Fixture removed → `deps:check` passes clean (0 violations, 21 modules)
+
+### Local Supabase CLI
+
+Supabase CLI 2.106.0 (Homebrew) + Docker 29.5.3.
+
+| Command | Result |
+|---|---|
+| `supabase start` | PASS |
+| `supabase status` | PASS |
+| `SUPABASE_LOCAL_TESTS=1 npm run test:dal` | PASS — 5/5 tests |
+| `supabase stop` | PASS |
+
+`.gitignore` excludes `supabase/.branches/` and `supabase/.temp/` — runtime artifacts untracked and confirmed clean.
+
+### GitHub CI (PR #11 — AURA-101, open)
 
 | Check | Result |
 |---|---|
-| `quality` | PASS — 1m 7s |
-| `e2e` | PASS — 1m 19s |
-| `analyze (javascript-typescript)` | PASS — 1m 1s |
+| `quality` | PASS — 1m 3s |
+| `e2e` | PASS — 1m 27s |
+| `analyze (javascript-typescript)` | PASS — 1m 3s |
 | `CodeQL` | PASS — 2s |
 
-PR #9 was squash-merged to `develop` at merge commit `be43dab feat: add localized homepage shell and smoke test`. Feature branch `feat/aura-008-homepage-shell` deleted. `develop` is current source of truth.
+### Opus 4.8 Review (PR #11)
+
+- Verdict: **APPROVE**
+- Merge recommendation: **YES** (into `develop`)
+- Blocking issues: None
+- Non-blocking notes: (1) `config.toml` local `enable_signup = true` is harmless locally — production must set `false` for D-40 in AURA-104. (2) Public env vars not validated by `getServerEnv()` (cosmetic only). (3) Cruiser `no-client-to-service-role` `from` scoped to `^src/components` — build-time `server-only` guard covers all client components regardless. (4) Security tests assert rule configuration, not runtime enforcement — adequate for scaffold.
+
+## AURA-008 Gate Results (archived — merged)
+
+All gates passed. See SESSION_HANDOFF.md for detail.
 
 ---
 
@@ -135,6 +180,9 @@ Playwright 1.60 internal; not a gate failure.
 
 ### Note: Font families using system fallbacks
 `--font-serif: ui-serif, 'Georgia', serif` etc. are MVP placeholders. Next/font loading for the actual luxury typeface deferred to a later task; the CSS variable makes it swappable without changing tailwind config.
+
+### Note: AURA-101 Knip entry debt
+Three new `entry` declarations for Supabase helpers remain in `knip.jsonc`. Remove each as the first DAL task imports that helper (AURA-102+).
 
 ---
 
@@ -166,14 +214,14 @@ GitHub required approvals are disabled for solo-operator mode; status checks rem
 | `clsx` | Retained — no components yet |
 | `tailwind-merge` | Retained — no components yet |
 | `lucide-react` | Retained — no icons yet |
-| `@supabase/ssr`, `@supabase/supabase-js` | Wired in AURA-101 |
+| ~~`@supabase/ssr`, `@supabase/supabase-js`~~ | ✅ Removed AURA-101 (now imported by `src/lib/supabase/{client,server,service-role}.ts`) |
 | `resend` | Wired in AURA-106 |
 | `@hookform/resolvers`, `react-hook-form`, `libphonenumber-js` | Wired in Phase 2–3 |
 | `@tanstack/react-query`, `zustand` | Wired in Phase 2+ |
 | `gsap`, `framer-motion` | Wired in Phase 5 |
 | `@sentry/nextjs`, `@vercel/analytics` | Wired in Phase 6 |
 | `eslint-config-next`, `@typescript-eslint/{parser,eslint-plugin}` | FlatCompat string-based; keep |
-| `entry: ["src/lib/config/env.ts"]` | Remove in AURA-101 |
+| ~~`entry: ["src/lib/config/env.ts"]`~~ | ✅ Removed AURA-101 (env.ts now has real importers) |
 
 ---
 
