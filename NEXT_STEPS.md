@@ -1,15 +1,17 @@
 # Next Steps
 
 **Updated:** 2026-06-16
-**Current Phase:** Phase 1 — in progress. AURA-101 merged to `develop` at `95f9df3`. AURA-102 is next.
+**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. **AURA-102 implemented on `feat/aura-102-initial-migration` (PR open, not merged).** AURA-103 is next after merge.
 
 ---
 
 ## Immediate Next Action
 
-**Start AURA-102 (initial migration) in a new session.**
+**Get Opus 4.8 review of the AURA-102 PR, then squash-merge to `develop`.**
 
-AURA-101 is merged: squash-merged PR #11 at `95f9df3`. Feature branch deleted.
+AURA-102 (initial MVP migration + generated types + schema/security tests) is implemented and pushed; all local gates pass. Opus 4.8 review is required before merge (schema + migration, Phase 1).
+
+After AURA-102 merges, **start AURA-103 (RLS policies for all sensitive tables)** in a new session — requires explicit per-task approval (migration task). Branch: `feat/aura-103-rls-policies`.
 
 Branch protection active on `develop`:
 - `quality` — required
@@ -49,8 +51,8 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | Task | Description | Status |
 |---|---|---|
 | ~~**AURA-101**~~ | Supabase local stack + client/server/service-role helpers | ✅ merged (`95f9df3`) |
-| **AURA-102** | Initial migration — core MVP tables | Not started |
-| **AURA-103** | RLS policies for all sensitive tables | Not started |
+| **AURA-102** | Initial migration — core MVP tables | 🔵 Implemented; PR open; awaiting Opus review + merge |
+| **AURA-103** | RLS policies for all sensitive tables | Not started (next after AURA-102 merges) |
 | **AURA-104** | Auth flow + super-admin bootstrap | Not started |
 
 ---
@@ -64,7 +66,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - ~~**AURA-008** → remove `next-intl`~~ ✅ done
 - **AURA-006 deferred** → `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` — keep until first component that uses them (Phase 2+)
 - ~~**AURA-101** → remove `@supabase/ssr`, `@supabase/supabase-js`~~ ✅ done (merged `95f9df3`)
-- **AURA-102+** → remove `src/lib/supabase/client.ts`, `server.ts`, `service-role.ts` Knip entries as DAL callers are added
+- **AURA-102+** → remove `src/lib/supabase/client.ts`, `server.ts`, `service-role.ts` Knip entries as DAL callers are added. (AURA-102 is migration-only and adds no DAL caller, so these entries remain. AURA-102 added `ignore: ["src/types/database.ts"]` and `ignoreBinaries: ["supabase"]` for the generated types file + global CLI.)
 - **AURA-106 / Phase 3** → remove `resend`
 - **Phase 2–3 (forms)** → remove `@hookform/resolvers`, `react-hook-form`, `libphonenumber-js`
 - **Phase 2+ (data/state)** → remove `@tanstack/react-query`, `zustand`
@@ -118,7 +120,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 - ~~Do not start AURA-009 before AURA-008 merges~~ ✅ AURA-008 merged
 - Do not fix audit without explicit dep-change approval
-- Do not create migrations
+- Do not author the AURA-103 RLS-policy migration until AURA-102 merges + explicit per-task approval
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`

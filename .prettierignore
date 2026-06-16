@@ -5,3 +5,6 @@
 .next/
 node_modules/
 out/
+
+# Generated Supabase types (produced by `npm run db:types`; never hand-edited)
+src/types/database.ts
