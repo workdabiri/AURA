@@ -17,10 +17,8 @@
     "tailwind-merge",
     "lucide-react",
     // --- Wired in AURA-101 (Supabase client/server/service-role helpers) ---
-    //     (`server-only` was removed from this list in AURA-005 — it is now imported
-    //      by src/lib/config/env.ts.)
-    "@supabase/ssr",
-    "@supabase/supabase-js",
+    //     @supabase/ssr and @supabase/supabase-js removed here — now imported by
+    //     src/lib/supabase/{client,server,service-role}.ts.
     // --- Wired in AURA-106 / Phase 3 (email notifications) ---
     "resend",
     // --- Wired in Phase 2-3 (lead forms + phone validation) ---
@@ -43,11 +41,16 @@
     "@typescript-eslint/parser",
     "@typescript-eslint/eslint-plugin",
   ],
-  // AURA-005 — `src/lib/config/env.ts` is the server-only env accessor. It imports
-  // `server-only` (so it cannot be imported by Vitest) and has no runtime caller until
-  // AURA-101 wires the Supabase server client via `getServerEnv()`. Declaring it an
-  // explicit entry prevents a false "unused file" report while keeping Knip's analysis
-  // of its imports intact. REMOVE this entry in AURA-101 once a server module imports it.
-  // (env.public.ts and env.schema.ts are covered by tests and need no declaration.)
-  "entry": ["src/lib/config/env.ts"],
+  // AURA-101 — Supabase helpers are library modules with no application callers yet.
+  // They will be imported by the DAL layer (AURA-102+). Until then, declare them as
+  // entries so Knip can trace their import chains (including env.ts, server-only, etc.).
+  // REMOVE these entries in the first DAL task that imports each helper.
+  //   client.ts   → first DAL module reading public data
+  //   server.ts   → first DAL module with auth-gated reads
+  //   service-role.ts → first admin DAL operation (AURA-103+)
+  "entry": [
+    "src/lib/supabase/client.ts",
+    "src/lib/supabase/server.ts",
+    "src/lib/supabase/service-role.ts",
+  ],
 }
