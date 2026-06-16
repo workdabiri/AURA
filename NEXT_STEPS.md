@@ -1,19 +1,15 @@
 # Next Steps
 
 **Updated:** 2026-06-16
-**Current Phase:** Phase 1 — in progress. AURA-101 PR open against `develop`. CI green, Opus 4.8 APPROVED — ready for squash-merge.
+**Current Phase:** Phase 1 — in progress. AURA-101 merged to `develop` at `95f9df3`. AURA-102 is next.
 
 ---
 
 ## Immediate Next Action
 
-**Squash-merge PR #11, then start AURA-102.**
+**Start AURA-102 (initial migration) in a new session.**
 
-1. Squash-merge PR #11 (`feat/aura-101-supabase-stack` → `develop`) — CI green, Opus 4.8 APPROVED, no blocking issues.
-2. Update continuity docs post-merge if needed.
-3. Start **AURA-102** (initial migration) in a new session.
-
-AURA-101 PR is open: `feat/aura-101-supabase-stack` → `develop`. All gates pass.
+AURA-101 is merged: squash-merged PR #11 at `95f9df3`. Feature branch deleted.
 
 Branch protection active on `develop`:
 - `quality` — required
@@ -52,7 +48,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 | Task | Description | Status |
 |---|---|---|
-| **AURA-101** | Supabase local stack + client/server/service-role helpers | 🔄 PR open — CI ✅, Opus ✅ APPROVE — ready for merge |
+| ~~**AURA-101**~~ | Supabase local stack + client/server/service-role helpers | ✅ merged (`95f9df3`) |
 | **AURA-102** | Initial migration — core MVP tables | Not started |
 | **AURA-103** | RLS policies for all sensitive tables | Not started |
 | **AURA-104** | Auth flow + super-admin bootstrap | Not started |
@@ -67,7 +63,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - ~~**AURA-006** → remove `tailwindcss`, `@tailwindcss/typography`, `autoprefixer`, `postcss`~~ ✅ done
 - ~~**AURA-008** → remove `next-intl`~~ ✅ done
 - **AURA-006 deferred** → `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react` — keep until first component that uses them (Phase 2+)
-- ~~**AURA-101** → remove `@supabase/ssr`, `@supabase/supabase-js`~~ ✅ done (PR open)
+- ~~**AURA-101** → remove `@supabase/ssr`, `@supabase/supabase-js`~~ ✅ done (merged `95f9df3`)
 - **AURA-102+** → remove `src/lib/supabase/client.ts`, `server.ts`, `service-role.ts` Knip entries as DAL callers are added
 - **AURA-106 / Phase 3** → remove `resend`
 - **Phase 2–3 (forms)** → remove `@hookform/resolvers`, `react-hook-form`, `libphonenumber-js`
@@ -96,16 +92,16 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 ---
 
-## Notes for AURA-101 (Supabase helpers — PR OPEN)
+## Notes for AURA-101 (Supabase helpers — MERGED ✅)
 
-All implementation complete. PR open. Wait for CI + Opus 4.8 review before merging.
-
-Key decisions:
-- `getServerEnv()` called in `createSupabaseServerClient()` — validates full server env before any Supabase call
-- `CookieOptions` imported from `@supabase/ssr` for explicit `setAll` parameter typing (TypeScript strict mode)
-- service-role.ts first line is `import 'server-only'` — enforced by security test + dep-cruiser
-- Supabase CLI 2.106.0 (Homebrew) + Docker 29.5.3: local-stack verified — `supabase start/status/stop` PASS; `SUPABASE_LOCAL_TESTS=1 npm run test:dal` PASS (5/5)
-- Opus 4.8 review: **APPROVE** — no blocking issues; non-blocking notes only (see CURRENT_STATE.md)
+- Merge commit: `95f9df3 feat: add Supabase helpers and local stack`
+- PR #11 squash-merged to `develop`. Feature branch `feat/aura-101-supabase-stack` deleted.
+- Opus 4.8 review: **APPROVE** — no blocking issues; non-blocking notes only (see CURRENT_STATE.md).
+- Supabase CLI 2.106.0 (Homebrew) + Docker 29.5.3: local-stack verified — `supabase start/status/stop` PASS; `SUPABASE_LOCAL_TESTS=1 npm run test:dal` PASS (5/5).
+- Key decisions:
+  - `getServerEnv()` called in `createSupabaseServerClient()` — validates full server env before any Supabase call
+  - `CookieOptions` imported from `@supabase/ssr` for explicit `setAll` parameter typing (TypeScript strict mode)
+  - service-role.ts first line is `import 'server-only'` — enforced by security test + dep-cruiser
 
 ## Notes for AURA-102 (next task after AURA-101 merges)
 
