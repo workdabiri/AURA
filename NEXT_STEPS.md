@@ -1,29 +1,28 @@
 # Next Steps
 
 **Updated:** 2026-06-16
-**Current Phase:** Phase 0 — AURA-008 executed; PR #9 all checks green; awaiting squash merge
+**Current Phase:** Phase 0 — complete. AURA-008 merged to `develop` at `be43dab`. Ready for AURA-009.
 
 ---
 
 ## Immediate Next Action
 
-**Squash merge PR #9** (`feat/aura-008-homepage-shell` → `develop`).
+**Start AURA-009** in a new session.
 
-All CI checks are green and `mergeStateStatus` is `CLEAN`. GitHub required approvals are disabled for solo-operator mode; no review requirement is active:
+AURA-008 is fully merged. PR #9 was squash-merged to `develop` at merge commit `be43dab feat: add localized homepage shell and smoke test`. Feature branch `feat/aura-008-homepage-shell` deleted. `develop` is current source of truth.
 
-- `quality` — PASS
-- `e2e` — PASS
-- `analyze (javascript-typescript)` — PASS
-- `CodeQL` — PASS
+Before starting AURA-009:
+1. Read `CLAUDE.md`, `CURRENT_STATE.md`, `SESSION_HANDOFF.md`, `NEXT_STEPS.md`, and `docs/TASKS_Project.md`.
+2. Confirm the task reference from `docs/TASKS_Project.md`.
+3. Branch from `develop`: `feature/aura-009-<slug>`.
 
-After merge:
+Branch protection active on `develop`:
+- `quality` — required
+- `e2e` — required
+- `analyze (javascript-typescript)` — required
+- `CodeQL` — required
 
-1. Update continuity files to record AURA-008 as fully merged.
-2. Update `docs/TASKS_Project.md` — set AURA-008 status to **done**.
-3. Proceed to **AURA-009**.
-
-> AURA-007 (`feat/aura-007-ci-codeql`) is already merged to `develop`.
-> AURA-008 commit `6df46d0` is on `feat/aura-008-homepage-shell`, PR #9.
+GitHub required approvals are disabled for solo-operator mode; required checks remain enforced.
 
 ---
 
@@ -46,7 +45,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-005**~~ | Environment schema + config | ✅ merged |
 | ~~**AURA-006**~~ | Design tokens + Tailwind pipeline | ✅ merged |
 | ~~**AURA-007**~~ | GitHub Actions CI + CodeQL + branch protection | ✅ merged |
-| **AURA-008** | First vertical slice — `/`→`/en` redirect + `/en` homepage shell + smoke test | PR #9 open — awaiting merge |
+| ~~**AURA-008**~~ | First vertical slice — `/`→`/en` redirect + `/en` homepage shell + smoke test | ✅ merged (`be43dab`) |
 | **AURA-009** | Next approved task | Not started |
 
 ---
@@ -72,10 +71,11 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 ---
 
-## Notes for AURA-008 (executed — PR #9 open)
+## Notes for AURA-008 (merged ✅)
 
-- Commit: `6df46d0 feat: add localized homepage shell and smoke test`
-- PR: `https://github.com/workdabiri/AURA/pull/9`
+- Merge commit: `be43dab feat: add localized homepage shell and smoke test`
+- PR #9 squash-merged to `develop`. Feature branch deleted.
+- Original implementation commit: `6df46d0` (on deleted feature branch, for reference only)
 - `/` → `/en` redirect via explicit 301 in `src/middleware.ts` (`NextResponse.redirect(..., 301)`).
 - `/en` homepage shell uses all AURA luxury-dark design token classes.
 - Playwright smoke unskipped; 2 tests: 301 status + location header check; `/en` loads without error.
@@ -88,7 +88,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 ## Notes for AURA-009
 
 - Confirm task from `docs/TASKS_Project.md` before starting.
-- Do not start before AURA-008 is squash-merged to `develop`.
+- AURA-008 is merged; AURA-009 may start in a new session.
 
 ---
 
@@ -102,7 +102,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 ## Do Not Do Yet
 
-- Do not start AURA-009 before AURA-008 merges
+- ~~Do not start AURA-009 before AURA-008 merges~~ ✅ AURA-008 merged
 - Do not fix audit without explicit dep-change approval
 - Do not create migrations
 - Do not create `.env` / `.env.local` files

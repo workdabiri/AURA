@@ -1,7 +1,7 @@
 # Session Handoff
 
 **Last Updated:** 2026-06-16
-**Branch:** `feat/aura-008-homepage-shell` (PR #9 open → `develop`; awaiting squash merge)
+**Branch:** `develop` (AURA-008 squash-merged at `be43dab`; feature branch deleted)
 
 ---
 
@@ -92,19 +92,19 @@ GitHub required approvals are disabled for solo-operator mode; status checks rem
 3. **Knip `entry` for `src/lib/config/env.ts`** — temporary; remove in AURA-101.
 4. **Remaining Knip allowlist entries** — `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`, Supabase packages (AURA-101), etc.
 5. **`e2e` not yet a required branch-protection check** — ✅ RESOLVED. Updated after PR #9 checks ran green.
-6. **PR #9 awaiting squash merge** — All CI checks pass. GitHub required approvals are disabled for solo-operator mode. `mergeStateStatus: CLEAN`; no GitHub review requirement is active.
+6. **PR #9 merge** — ✅ RESOLVED. Squash-merged to `develop` at `be43dab`. Feature branch deleted.
 
 ---
 
 ## Validation Status
 
-AURA-008 is fully implemented. Commit `6df46d0` on `feat/aura-008-homepage-shell`. PR #9 (`https://github.com/workdabiri/AURA/pull/9`) has all four checks green. `develop` branch protection updated to require `e2e`. GitHub required approvals are disabled for solo-operator mode. **PR #9 is ready for squash merge — `mergeStateStatus: CLEAN`.**
+AURA-008 is fully merged. PR #9 was squash-merged to `develop` at merge commit `be43dab feat: add localized homepage shell and smoke test`. Feature branch `feat/aura-008-homepage-shell` deleted. `develop` is current source of truth. `develop` branch protection is active with all four checks enforced. GitHub required approvals are disabled for solo-operator mode; required checks remain enforced.
 
 ---
 
 ## Next Safe Action
 
-1. **Squash merge PR #9** to `develop` (`mergeStateStatus: CLEAN`; all checks pass; no GitHub review requirement active in solo-operator mode).
-2. After merge: update `SESSION_HANDOFF.md`, `CURRENT_STATE.md`, `NEXT_STEPS.md` to record AURA-008 as fully merged.
-3. Update `docs/TASKS_Project.md` — set AURA-008 status to **done**.
-4. Then proceed to **AURA-009** (next approved Phase 0 or Phase 1 task per `docs/TASKS_Project.md`).
+Start **AURA-009** in a new session. Before beginning:
+1. Read `CLAUDE.md`, `CURRENT_STATE.md`, `SESSION_HANDOFF.md`, `NEXT_STEPS.md`, and `docs/TASKS_Project.md`.
+2. Confirm the task reference from `docs/TASKS_Project.md` before writing any code.
+3. Branch from `develop`: `feature/aura-009-<slug>`.
