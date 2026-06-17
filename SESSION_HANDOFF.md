@@ -1,13 +1,17 @@
 # Session Handoff
 
-**Last Updated:** 2026-06-16
-**Branch:** `feat/aura-102-initial-migration` — AURA-102 implemented, PR open, **not merged**. Opus 4.8 review required before merge. AURA-103 (RLS policies) is next after merge.
+**Last Updated:** 2026-06-17
+**Branch:** `develop` — current source of truth; clean, synced with `origin/develop`. **AURA-102 fully merged at `3657e4f`** (feature branch `feat/aura-102-initial-migration` deleted). Opus 4.8 review APPROVE / merge YES / no blocking issues. AURA-103 (RLS policies) is the next safe task — not started; requires a new session + explicit per-task approval.
 
 ---
 
-## Completed This Session
+## AURA-102 — MERGED (`3657e4f`)
 
 **AURA-102: Initial migration — core MVP tables (+ generated types, schema/security tests)**
+
+Merged via PR #13 (squash) into `develop` at `3657e4f feat: add initial MVP database migration` (full SHA `3657e4fd1d2686bab6d6dcf95261a2f184ac9787`). Feature branch deleted. Opus 4.8: **APPROVE**, merge recommendation **YES**, no blocking issues; post-review `db:types` reproducibility / failure-safety fixes completed before merge. Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`.
+
+Summary: 11 MVP tables; 17 native PostgreSQL enums; generated `src/types/database.ts`; failure-safe `db:types` script; RLS enabled on all 11 tables; **0 RLS policies**; no seed data; no auth; no API routes; no UI.
 
 Files created:
 
@@ -43,7 +47,7 @@ Implementation notes / deviations:
 - **`supabase gen types --local` quirk (CLI 2.106.0):** requires `SUPABASE_ACCESS_TOKEN` to be set (any value) to pass a platform-auth pre-check before falling through to the local postgres-meta container. The `db:types` script bakes in `SUPABASE_ACCESS_TOKEN=${SUPABASE_ACCESS_TOKEN:-dummy}` to satisfy this, and writes to `/tmp/aura-database-types.ts` then `mv`s it into place so a failed generation never truncates the tracked file. Regeneration still requires a running local stack.
 - Schema tests use `psql` (Homebrew, on PATH) for catalog introspection — no new npm dependency. They are gated by `SUPABASE_LOCAL_TESTS=1`; CI (no local stack) runs the static layer only until the Dockerized stack lands in AURA-107.
 
-**No `.env`/secrets. No seed users/data. No auth flow. No RLS policies. No API routes. No UI. No AURA-103/104 work. No merge.**
+**No `.env`/secrets. No seed users/data. No auth flow. No RLS policies. No API routes. No UI. No AURA-103/104 work.**
 
 ---
 
@@ -200,7 +204,9 @@ GitHub required approvals are disabled for solo-operator mode; status checks rem
 
 ## Validation Status
 
-AURA-101 is merged. Squash-merged PR #11 (`feat/aura-101-supabase-stack` → `develop`) at `95f9df3`. Feature branch deleted. All local gates passed. GitHub CI checks all PASSED. Supabase CLI 2.106.0 local-stack verification complete (5/5 tests). Opus 4.8 review: APPROVE, no blocking issues.
+AURA-102 is merged. Squash-merged PR #13 (`feat/aura-102-initial-migration` → `develop`) at `3657e4f`. Feature branch deleted. `develop` is clean and synced with `origin/develop`. All local gates passed; GitHub required checks (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`) all PASSED before merge. Opus 4.8 review: **APPROVE**, merge recommendation **YES**, no blocking issues.
+
+AURA-101 remains merged at `95f9df3`.
 
 `develop` branch protection active: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL` all required. GitHub required approvals disabled for solo-operator mode.
 
@@ -208,6 +214,4 @@ AURA-101 is merged. Squash-merged PR #11 (`feat/aura-101-supabase-stack` → `de
 
 ## Next Safe Action
 
-1. **Obtain Opus 4.8 review** of the AURA-102 PR (schema + migration; required before merge).
-2. After approval, squash-merge `feat/aura-102-initial-migration` → `develop`.
-3. Then start **AURA-103** (RLS policies for all sensitive tables) in a new session — requires explicit per-task approval (migration task) per CLAUDE.md. Branch: `feat/aura-103-rls-policies`.
+**AURA-103 (RLS policies for all sensitive tables)** is the next safe task — **not started**. It requires a **new session** and **explicit per-task approval** (migration task) per CLAUDE.md before any work begins. Do not author the RLS-policy migration in this session. Branch (when approved): `feat/aura-103-rls-policies`.

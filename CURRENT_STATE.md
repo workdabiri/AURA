@@ -1,8 +1,8 @@
 # Current State
 
-**Updated:** 2026-06-16
-**Branch:** `feat/aura-102-initial-migration` (AURA-102 implemented; PR open; **not merged**)
-**Phase:** Phase 1 — in progress. AURA-101 merged to `develop` at `95f9df3`. AURA-102 implemented on its feature branch, awaiting Opus 4.8 review + merge. AURA-103 is next after merge.
+**Updated:** 2026-06-17
+**Branch:** `develop` (current source of truth; clean, synced with `origin/develop`)
+**Phase:** Phase 1 — in progress. AURA-101 merged to `develop` at `95f9df3`. **AURA-102 fully merged to `develop` at `3657e4f`** (feature branch deleted). AURA-103 is the next safe task — not started; requires a new session and explicit per-task approval.
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 > Note: AURA-101 task is labelled "AURA-009" in continuity docs written during AURA-008; the real task-plan ID is AURA-101.
@@ -97,7 +97,7 @@
 
 ---
 
-### Initial MVP Migration + Generated Types (AURA-102) ← NEW (on feature branch, not merged)
+### Initial MVP Migration + Generated Types (AURA-102) ← MERGED (`3657e4f`)
 
 - `supabase/migrations/20260616183318_init.sql` — single initial migration creating all 11 MVP tables, 17 native PostgreSQL enum types, the shared `set_updated_at()` trigger function + 7 `updated_at` triggers, the full indexing/uniqueness contract, the generated `properties.title_en` STORED column + GIN full-text index, and `ENABLE ROW LEVEL SECURITY` on all 11 tables. **No RLS policies** (AURA-103), **no seed data**, **no rate_limits cleanup job** (AURA-106). Rollback path documented in the migration header comment.
 - `src/types/database.ts` — generated via `npm run db:types` (`supabase gen types --local --lang=typescript`, written to a temp file then `mv`d into place so a failed run never truncates it). Treated as a generated artifact: ignored by Knip, Prettier, and ESLint; never hand-edited.
@@ -112,7 +112,9 @@
 
 **Local verification (CLI 2.106.0):** `supabase db reset` applies the migration clean from scratch; `SUPABASE_LOCAL_TESTS=1 npm run test:dal` PASS (26); `SUPABASE_LOCAL_TESTS=1 npm run test:security` PASS (18). Note: `supabase gen types --local` in CLI 2.106 requires `SUPABASE_ACCESS_TOKEN` to be set (any value) to bypass a platform-auth pre-check before it falls through to the local postgres-meta container.
 
-**Pre-merge hygiene patch (PR #13):** Opus 4.8 reviewed the PR and gave APPROVE with **no blocking issues**. Two non-blocking items were then fixed for source-of-truth hygiene: (1) the `db:types` script now writes to `/tmp/aura-database-types.ts` and `mv`s it into place, so a failed generation no longer truncates the tracked `src/types/database.ts` (failure-safety tested with the stack down — the file stays unchanged; success path regenerates **byte-identical** with the stack up); (2) the stale `db:types` script wording in the continuity docs was corrected. This patch changes only script safety and docs accuracy — no schema, migration, type, or test changes.
+**Opus 4.8 review (PR #13):** Verdict **APPROVE**, merge recommendation **YES**, **no blocking issues**. Post-review, two non-blocking `db:types` reproducibility / failure-safety items were completed before merge: (1) the `db:types` script now writes to `/tmp/aura-database-types.ts` and `mv`s it into place, so a failed generation no longer truncates the tracked `src/types/database.ts` (failure-safety tested with the stack down — the file stays unchanged; success path regenerates **byte-identical** with the stack up); (2) the stale `db:types` script wording in the continuity docs was corrected. This patch changed only script safety and docs accuracy — no schema, migration, type, or test changes.
+
+**Merged:** PR #13 squash-merged into `develop` at `3657e4f feat: add initial MVP database migration` (full SHA `3657e4fd1d2686bab6d6dcf95261a2f184ac9787`). Feature branch `feat/aura-102-initial-migration` deleted. Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`.
 
 ---
 
@@ -129,12 +131,12 @@
 - No Stage 2 skills, MCPs, hooks, or plugins
 - No Lighthouse advisory run yet (stub disabled until AURA-206)
 - No Dockerized Supabase stack in CI yet (attached in AURA-107); local-stack connection tests require `SUPABASE_LOCAL_TESTS=1`
-- No RLS policies (AURA-103), no auth (AURA-104), no DAL functions (migration exists on the AURA-102 branch)
+- No RLS policies (AURA-103), no auth (AURA-104), no DAL functions (migration merged in AURA-102; RLS policies and DAL come later)
 - No real data layer, auth, admin, lead capture, CRM, GSAP, business logic, or search
 
 ---
 
-## AURA-102 Gate Results (feature branch — not merged)
+## AURA-102 Gate Results (merged — `3657e4f`)
 
 | Gate | Result |
 |---|---|
@@ -153,7 +155,23 @@
 
 D-05 scan (`clients`/`client_id`) and raw-IP scan: only matches are in comments / test descriptions / guardrail assertions — **no actual schema columns**. Migration creates no `clients` table, no `client_id`, no raw-IP column.
 
-Opus 4.8 review: **required before merge** (schema + migration; Phase 1).
+### GitHub CI (PR #13 — AURA-102, squash-merged)
+
+| Check | Result |
+|---|---|
+| `quality` | PASS |
+| `e2e` | PASS |
+| `analyze (javascript-typescript)` | PASS |
+| `CodeQL` | PASS |
+
+### Opus 4.8 Review (PR #13)
+
+- Verdict: **APPROVE**
+- Merge recommendation: **YES** (into `develop`)
+- Blocking issues: None
+- Post-review: non-blocking `db:types` reproducibility / failure-safety fixes completed before merge (see migration section above).
+
+**AURA-102 summary:** 11 MVP tables; 17 native PostgreSQL enums; generated `src/types/database.ts`; failure-safe `db:types` script; RLS enabled on all 11 tables; **0 RLS policies**; no seed data; no auth; no API routes; no UI.
 
 ---
 

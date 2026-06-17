@@ -1,17 +1,17 @@
 # Next Steps
 
-**Updated:** 2026-06-16
-**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. **AURA-102 implemented on `feat/aura-102-initial-migration` (PR open, not merged).** AURA-103 is next after merge.
+**Updated:** 2026-06-17
+**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. **AURA-102 fully merged to `develop` at `3657e4f`** (feature branch deleted). `develop` is the current source of truth. AURA-103 is the next safe task — not started.
 
 ---
 
 ## Immediate Next Action
 
-**Get Opus 4.8 review of the AURA-102 PR, then squash-merge to `develop`.**
+**AURA-103 (RLS policies for all sensitive tables) is the next safe task — not started.**
 
-AURA-102 (initial MVP migration + generated types + schema/security tests) is implemented and pushed; all local gates pass. Opus 4.8 review is required before merge (schema + migration, Phase 1).
+AURA-103 requires a **new session** and **explicit per-task approval** (migration task) per CLAUDE.md before any work begins. Do not author the RLS-policy migration in this session. Branch (when approved): `feat/aura-103-rls-policies`.
 
-After AURA-102 merges, **start AURA-103 (RLS policies for all sensitive tables)** in a new session — requires explicit per-task approval (migration task). Branch: `feat/aura-103-rls-policies`.
+AURA-102 (initial MVP migration + generated types + schema/security tests) is merged: Opus 4.8 review **APPROVE** / merge recommendation **YES** / no blocking issues; squash-merged via PR #13 at `3657e4f`; all required checks (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`) passed before merge.
 
 Branch protection active on `develop`:
 - `quality` — required
@@ -51,8 +51,8 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | Task | Description | Status |
 |---|---|---|
 | ~~**AURA-101**~~ | Supabase local stack + client/server/service-role helpers | ✅ merged (`95f9df3`) |
-| **AURA-102** | Initial migration — core MVP tables | 🔵 Implemented; PR open; awaiting Opus review + merge |
-| **AURA-103** | RLS policies for all sensitive tables | Not started (next after AURA-102 merges) |
+| ~~**AURA-102**~~ | Initial migration — core MVP tables | ✅ merged (`3657e4f`) |
+| **AURA-103** | RLS policies for all sensitive tables | Not started — next safe task; new session + explicit per-task approval required |
 | **AURA-104** | Auth flow + super-admin bootstrap | Not started |
 
 ---
@@ -105,14 +105,15 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
   - `CookieOptions` imported from `@supabase/ssr` for explicit `setAll` parameter typing (TypeScript strict mode)
   - service-role.ts first line is `import 'server-only'` — enforced by security test + dep-cruiser
 
-## Notes for AURA-102 (next task after AURA-101 merges)
+## Notes for AURA-102 (MERGED ✅)
 
-- Requires explicit per-task approval (migration task — see CLAUDE.md).
-- Branch: `feat/aura-102-initial-migration`
-- No `clients` table, no `client_id` (D-05 merge blocker)
-- No raw IP columns in event tables (D-18/D-51)
-- RLS ENABLE on all sensitive tables (policies in AURA-103)
-- Remove one or more Knip entries for supabase helpers as DAL callers are added
+- Merge commit: `3657e4f feat: add initial MVP database migration` (full SHA `3657e4fd1d2686bab6d6dcf95261a2f184ac9787`)
+- PR #13 squash-merged to `develop`. Feature branch `feat/aura-102-initial-migration` deleted.
+- Opus 4.8 review: **APPROVE** — merge recommendation **YES**, no blocking issues. Post-review `db:types` reproducibility / failure-safety fixes completed before merge.
+- Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`.
+- Summary: 11 MVP tables; 17 native PostgreSQL enums; generated `src/types/database.ts`; failure-safe `db:types` script; RLS enabled on all 11 tables; **0 RLS policies**; no seed data; no auth; no API routes; no UI.
+- No `clients` table, no `client_id` (D-05 merge blocker); no raw IP columns in event tables (D-18/D-51).
+- Knip helper entries (`client.ts`, `server.ts`, `service-role.ts`) remain — AURA-102 is migration-only and added no DAL caller; remove per helper as DAL callers are added.
 
 ---
 
@@ -120,7 +121,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 - ~~Do not start AURA-009 before AURA-008 merges~~ ✅ AURA-008 merged
 - Do not fix audit without explicit dep-change approval
-- Do not author the AURA-103 RLS-policy migration until AURA-102 merges + explicit per-task approval
+- Do not author the AURA-103 RLS-policy migration in this session — AURA-103 requires a new session + explicit per-task approval (migration task)
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`
