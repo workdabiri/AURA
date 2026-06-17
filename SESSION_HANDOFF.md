@@ -1,7 +1,55 @@
 # Session Handoff
 
 **Last Updated:** 2026-06-17
-**Branch:** `develop` — current source of truth; clean, synced with `origin/develop`. **AURA-102 fully merged at `3657e4f`** (feature branch `feat/aura-102-initial-migration` deleted). Opus 4.8 review APPROVE / merge YES / no blocking issues. AURA-103 (RLS policies) is the next safe task — not started; requires a new session + explicit per-task approval.
+**Branch:** `feat/aura-103-rls-policies` (off `develop`). **AURA-103 (RLS policies) implemented, NOT merged.** All local gates green; **Opus 4.8 review required before merge** (RLS is a P0 security boundary). AURA-102 remains merged at `3657e4f`. AURA-104 is next — not started.
+
+---
+
+## AURA-103 — IMPLEMENTED, NOT MERGED (branch `feat/aura-103-rls-policies`)
+
+**AURA-103: RLS policies for all sensitive MVP tables (+ role-check helpers, least-privilege grants, RLS-layer tests).**
+
+New migration only (AURA-102 init migration untouched).
+
+**Migration:** `supabase/migrations/20260617025449_rls_policies.sql` — adds the RLS policy matrix on top of the AURA-102 default-deny baseline. Documented rollback block in the header (drops policies + helper functions; **RLS stays ENABLED** — never disabled).
+
+**Helper functions (3):**
+- `public.current_user_role()` → `public.user_role` — `SECURITY DEFINER`, `STABLE`, `SET search_path = ''`, fully-qualified, reads `public.user_profiles` via `(select auth.uid())`. SECURITY DEFINER is what bypasses RLS on the profile lookup and **prevents recursive RLS**.
+- `public.is_admin()` → boolean — `coalesce(role in ('super_admin','client_admin'), false)`; SECURITY INVOKER, STABLE, `search_path=''`.
+- `public.is_super_admin()` → boolean — `coalesce(role = 'super_admin', false)`; SECURITY INVOKER, STABLE, `search_path=''`.
+- Execution: `REVOKE ALL ... FROM PUBLIC` then `GRANT EXECUTE ... TO authenticated` (anon gets none — no anon policy references them).
+
+**Policies (36 total):** properties 4 · areas 4 · legal_pages 4 · property_media 5 · property_stakeholders 4 · leads 4 · whatsapp_clicks 2 · settings 3 · user_profiles 5 · audit_logs 1. (rate_limits: 0 — service-role only.)
+- **Public reads (anon):** published properties, active areas, published legal pages, media of published properties.
+- **Public inserts (anon):** leads (`WITH CHECK (true)`), whatsapp_clicks (`WITH CHECK (true)`). No anon SELECT/UPDATE/DELETE on either.
+- **Admin (authenticated, `is_admin()`):** properties/areas/legal_pages SELECT/INSERT/UPDATE; property_media + property_stakeholders full CRUD; leads SELECT/INSERT/UPDATE; whatsapp_clicks SELECT; settings SELECT/INSERT/UPDATE.
+- **user_profiles:** own-row SELECT (`id = (select auth.uid())`) for any authenticated user; super_admin SELECT/INSERT/UPDATE/DELETE all (`is_super_admin()`). client_admin = own-row only (no user management).
+- **audit_logs:** super_admin SELECT only; no INSERT/UPDATE/DELETE policy (writes are service-role only).
+
+**Locked decisions enforced:**
+- `property_stakeholders` — **NO anon/public policy** (direct anon access default-deny; column-safe public projection deferred to AURA-203). Verified even with a `visibility='public'` seed row present.
+- `properties` — **NO DELETE policy** (hard delete default-deny for anon AND authenticated; service-role-only, outside MVP UI). Same posture applied to leads (no DELETE policy).
+
+**GRANTs (important deviation/finding — flag for Opus):** the AURA-102 baseline grants anon/authenticated/service_role only `Dxt` (TRUNCATE/REFERENCES/TRIGGER) and **NO DML** — so explicit grants are *required* for the policies (and the server-side service role) to function at all. The migration `REVOKE ALL ON TABLE ... FROM anon, authenticated` on all 11 tables (also removing the stray anon/authenticated **TRUNCATE** footgun), then grants least-privilege:
+- anon: SELECT on properties/areas/legal_pages/property_media; INSERT on leads/whatsapp_clicks. Nothing else.
+- authenticated: per-table DML matching the policies (no DELETE on properties/leads; nothing on rate_limits).
+- service_role: SELECT/INSERT/UPDATE/DELETE on all 11 tables — it is the trusted BYPASSRLS server role that performs the "service-role only" operations the matrix relies on (audit_logs writes, rate_limits, any rare hard delete). Without this grant those documented behaviours would be impossible.
+- **rate_limits:** NO anon/authenticated grants and NO policies (service-role only). Cleanup/pg_cron is AURA-106.
+
+**Tests:**
+- `src/tests/security/rls-test-utils.ts` — shared psql role-simulation harness (not a test file): seeds fixtures + `set local role` + `request.jwt.claims` inside a rolled-back transaction (no committed seed files). `-q` strips command tags so only the measured query output is captured.
+- `src/tests/security/rls-policies.test.ts` — RLS-layer **negatives** + policy-catalog assertions (counts per table, rate_limits 0, properties no DELETE, stakeholders no anon, current_user_role SECURITY DEFINER, rate_limits no anon/authenticated grants).
+- `src/tests/dal/rls-policies.test.ts` — RLS-layer **positives** (anon allowlist reads/inserts; super_admin all-status + user management + audit; client_admin manages business tables but cannot manage users or read audit logs).
+- `src/tests/security/schema-rls.test.ts` — updated: replaced the AURA-102 "0 policies" live assertion with "policies now exist (authored in AURA-103) + rate_limits stays policy-free"; clarified the static init-file guard.
+- Application-layer authenticated negatives (session-but-no-profile; profile-but-no-role → 401/403) are intentionally **deferred to AURA-104** and not asserted here.
+
+**Generated types:** `npm run db:types` produced a **small expected diff** in `src/types/database.ts` — the 3 new helper functions now appear under `Functions` (`current_user_role`/`is_admin`/`is_super_admin`). This is correct (the AURA-103 task spec required these helpers); the "byte-identical" expectation in the task brief assumed policies-only, but helper functions necessarily surface in generated types. No table/enum type changes.
+
+**Local verification (CLI 2.106.0):** `supabase db reset` applies both migrations clean from scratch; `SUPABASE_LOCAL_TESTS=1 npm run test:dal` PASS (4 files, 41); `SUPABASE_LOCAL_TESTS=1 npm run test:security` PASS (5 files, 43); `npm run quality` PASS (exit 0); `npm run audit` PASS (2 moderate postcss carry-forward). Blocker greps clean (no `clients`/`client_id`, no raw IP, no rate_limits policy, no anon stakeholder policy, no properties DELETE policy).
+
+**Scope honoured:** no auth flow, no seed users/seed data, no UI, no API routes, no storage policies, no rate-limit cleanup/pg_cron, no AURA-104 work, no `.env`/secrets, no dependency/lockfile change.
+
+**Opus 4.8 review: REQUIRED before merge.**
 
 ---
 
