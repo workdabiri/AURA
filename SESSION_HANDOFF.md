@@ -1,13 +1,15 @@
 # Session Handoff
 
 **Last Updated:** 2026-06-17
-**Branch:** `feat/aura-103-rls-policies` (off `develop`). **AURA-103 (RLS policies) implemented, NOT merged.** All local gates green; **Opus 4.8 review required before merge** (RLS is a P0 security boundary). AURA-102 remains merged at `3657e4f`. AURA-104 is next — not started.
+**Branch:** `develop` (current source of truth; this docs-sync update is on `docs/aura-103-merged-state`). **AURA-103 (RLS policies) merged at `1a35958`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. AURA-102 remains merged at `3657e4f`. AURA-104 is next — not started (requires a new session + explicit per-task approval).
 
 ---
 
-## AURA-103 — IMPLEMENTED, NOT MERGED (branch `feat/aura-103-rls-policies`)
+## AURA-103 — MERGED (`1a35958`)
 
 **AURA-103: RLS policies for all sensitive MVP tables (+ role-check helpers, least-privilege grants, RLS-layer tests).**
+
+Merged via PR #15 (squash) into `develop` at `1a35958 feat: add RLS policies for MVP tables` (full SHA `1a35958ccf658b6918474b5b1d51b6c5de37be75`); `develop` is now the source of truth. Feature branch `feat/aura-103-rls-policies` deleted. Opus 4.8: **APPROVE**, merge recommendation **YES**, no blocking issues. Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`.
 
 New migration only (AURA-102 init migration untouched).
 
@@ -49,7 +51,9 @@ New migration only (AURA-102 init migration untouched).
 
 **Scope honoured:** no auth flow, no seed users/seed data, no UI, no API routes, no storage policies, no rate-limit cleanup/pg_cron, no AURA-104 work, no `.env`/secrets, no dependency/lockfile change.
 
-**Opus 4.8 review: REQUIRED before merge.**
+**Opus 4.8 review (PR #15): APPROVE — merge recommendation YES, no blocking issues.**
+
+**Carry-forward:** (1) live RLS tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until **AURA-107** wires the Dockerized Supabase stack into CI; (2) for **AURA-104**, anon has INSERT but no SELECT on `leads` / `whatsapp_clicks`, so the route layer must use **minimal-return behavior** for those anon inserts; (3) AURA-104 must complete the application-layer authenticated negatives deferred here (session-but-no-profile → blocked; profile-but-no-qualifying-role → 403; valid `super_admin`/`client_admin` → allowed).
 
 ---
 
@@ -252,9 +256,9 @@ GitHub required approvals are disabled for solo-operator mode; status checks rem
 
 ## Validation Status
 
-AURA-102 is merged. Squash-merged PR #13 (`feat/aura-102-initial-migration` → `develop`) at `3657e4f`. Feature branch deleted. `develop` is clean and synced with `origin/develop`. All local gates passed; GitHub required checks (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`) all PASSED before merge. Opus 4.8 review: **APPROVE**, merge recommendation **YES**, no blocking issues.
+AURA-103 is merged. Squash-merged PR #15 (`feat/aura-103-rls-policies` → `develop`) at `1a35958` (full SHA `1a35958ccf658b6918474b5b1d51b6c5de37be75`). Feature branch deleted. `develop` is now the source of truth — clean and synced with `origin/develop`. All local gates passed; GitHub required checks (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`) all PASSED before merge. Opus 4.8 review: **APPROVE**, merge recommendation **YES**, no blocking issues.
 
-AURA-101 remains merged at `95f9df3`.
+AURA-102 remains merged at `3657e4f`. AURA-101 remains merged at `95f9df3`.
 
 `develop` branch protection active: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL` all required. GitHub required approvals disabled for solo-operator mode.
 
@@ -262,4 +266,4 @@ AURA-101 remains merged at `95f9df3`.
 
 ## Next Safe Action
 
-**AURA-103 (RLS policies for all sensitive tables)** is the next safe task — **not started**. It requires a **new session** and **explicit per-task approval** (migration task) per CLAUDE.md before any work begins. Do not author the RLS-policy migration in this session. Branch (when approved): `feat/aura-103-rls-policies`.
+**AURA-104 (auth flow + `user_profiles` role checks + admin bootstrap script, D-40)** is the next safe task — **not started**. It touches auth / seed / security-sensitive flow, so it requires a **new session** and **explicit per-task approval** per CLAUDE.md before any work begins. Do not create the auth flow, seed users, or API routes in this session. AURA-104 must complete the application-layer authenticated negatives deferred from AURA-103 (session-but-no-profile → blocked; profile-but-no-qualifying-role → 403; valid `super_admin`/`client_admin` → allowed), use minimal-return behavior for anon lead/whatsapp_clicks inserts (anon has INSERT but no SELECT), and set `enable_signup = false` for production (D-40). Branch (when approved): `feat/aura-104-auth-rbac`.

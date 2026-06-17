@@ -1,8 +1,8 @@
 # Current State
 
 **Updated:** 2026-06-17
-**Branch:** `feat/aura-103-rls-policies` (off `develop`)
-**Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. **AURA-103 (RLS policies) is IMPLEMENTED on `feat/aura-103-rls-policies`, NOT merged** — all local gates green; **Opus 4.8 review required before merge** (P0 security boundary). AURA-104 is next — not started.
+**Branch:** `develop` (current source of truth; docs updated on `docs/aura-103-merged-state`)
+**Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. **AURA-103 (RLS policies) merged at `1a35958`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge. AURA-104 is next — not started (requires a new session + explicit per-task approval).
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 > Note: AURA-101 task is labelled "AURA-009" in continuity docs written during AURA-008; the real task-plan ID is AURA-101.
@@ -118,7 +118,7 @@
 
 ---
 
-### RLS Policies + Role Helpers (AURA-103) ← IMPLEMENTED, NOT MERGED (`feat/aura-103-rls-policies`)
+### RLS Policies + Role Helpers (AURA-103) ← MERGED (`1a35958`)
 
 - `supabase/migrations/20260617025449_rls_policies.sql` — new migration (AURA-102 init untouched). Adds **3 role-check helper functions** (`current_user_role()` = SECURITY DEFINER/STABLE/`search_path=''` to avoid recursive RLS; `is_admin()`/`is_super_admin()` invoker wrappers, `coalesce(...,false)` fail-closed), **36 RLS policies** across 10 tables (rate_limits intentionally has 0), and a **least-privilege GRANT layer**. Documented rollback block in header; **RLS stays ENABLED throughout** (never disabled).
 - **Public allowlist:** anon SELECT published properties / active areas / published legal pages / media of published properties; anon INSERT leads + whatsapp_clicks only. **Admin** (authenticated + `is_admin()`/`is_super_admin()`): per the RBAC/Security-Baseline matrix.
@@ -126,14 +126,20 @@
 - **GRANT finding:** AURA-102 baseline granted anon/authenticated/service_role only `Dxt` (TRUNCATE/REFERENCES/TRIGGER), **no DML** — so explicit grants are required. Migration REVOKEs ALL from anon/authenticated (removing the stray anon TRUNCATE), grants least-privilege DML per role, grants service_role full DML on all 11 tables, and leaves rate_limits with **no anon/authenticated grants**.
 - Tests: `src/tests/security/rls-test-utils.ts` (psql role-sim harness, rolled-back transactions, no committed seed), `src/tests/security/rls-policies.test.ts` (negatives + catalog), `src/tests/dal/rls-policies.test.ts` (positives). `src/tests/security/schema-rls.test.ts` updated (0-policy assertion → policies-now-exist; rate_limits stays policy-free).
 - Generated types: `src/types/database.ts` gained the 3 helper functions under `Functions` (expected; no table/enum type change).
-- Local: `supabase db reset` clean; gated `test:dal` 41 PASS, `test:security` 43 PASS; `quality` PASS; `audit` PASS. **Opus 4.8 review required before merge.**
+- Local: `supabase db reset` clean; gated `test:dal` 41 PASS, `test:security` 43 PASS; `quality` PASS; `audit` PASS.
+
+**Merged:** PR #15 squash-merged into `develop` at `1a35958 feat: add RLS policies for MVP tables` (full SHA `1a35958ccf658b6918474b5b1d51b6c5de37be75`); `develop` is now the source of truth. Feature branch `feat/aura-103-rls-policies` deleted. Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`.
+
+**Opus 4.8 review (PR #15):** Verdict **APPROVE**, merge recommendation **YES**, **no blocking issues**.
+
+**Carry-forward:** live RLS tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until **AURA-107** wires the Dockerized Supabase stack into CI. For **AURA-104**: anon has INSERT but no SELECT on `leads` / `whatsapp_clicks`, so the route layer must use **minimal-return behavior** for those anon inserts.
 
 ---
 
 ## What Does NOT Exist
 
 - No root-level `tests/` directory
-- RLS policies are **implemented in AURA-103 but not yet merged** to `develop` (on `feat/aura-103-rls-policies`); on `develop` itself, RLS is enabled with 0 policies (AURA-102 baseline)
+- RLS policies are **merged to `develop` in AURA-103** (`1a35958`) — 36 policies across 10 tables + 3 role helpers; `rate_limits` intentionally has 0 policies (service-role only)
 - No seed data / seed users; no `supabase/seed.sql`
 - No rate_limits cleanup job / pg_cron (AURA-106)
 - No `.env` or `.env.local` file (`.env.example` placeholders only)
@@ -143,7 +149,7 @@
 - No Stage 2 skills, MCPs, hooks, or plugins
 - No Lighthouse advisory run yet (stub disabled until AURA-206)
 - No Dockerized Supabase stack in CI yet (attached in AURA-107); local-stack connection tests require `SUPABASE_LOCAL_TESTS=1`
-- No RLS policies (AURA-103), no auth (AURA-104), no DAL functions (migration merged in AURA-102; RLS policies and DAL come later)
+- No auth (AURA-104), no DAL functions (migration merged in AURA-102; RLS policies merged in AURA-103; DAL comes later)
 - No real data layer, auth, admin, lead capture, CRM, GSAP, business logic, or search
 
 ---
