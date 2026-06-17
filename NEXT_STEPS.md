@@ -1,17 +1,15 @@
 # Next Steps
 
 **Updated:** 2026-06-17
-**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. **AURA-102 fully merged to `develop` at `3657e4f`** (feature branch deleted). `develop` is the current source of truth. AURA-103 is the next safe task — not started.
+**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. **AURA-103 (RLS policies) is IMPLEMENTED on `feat/aura-103-rls-policies` — NOT merged.** AURA-104 is next, not started.
 
 ---
 
 ## Immediate Next Action
 
-**AURA-103 (RLS policies for all sensitive tables) is the next safe task — not started.**
+**AURA-103 (RLS policies) is implemented on `feat/aura-103-rls-policies` and awaiting Opus 4.8 review + merge.** All local gates pass (`quality` exit 0; gated `test:dal` 41, `test:security` 43; `db reset` clean). **Opus 4.8 review is REQUIRED before merge** (RLS is a P0 security boundary). Do not merge to `develop` until Opus review passes and GitHub required checks are green.
 
-AURA-103 requires a **new session** and **explicit per-task approval** (migration task) per CLAUDE.md before any work begins. Do not author the RLS-policy migration in this session. Branch (when approved): `feat/aura-103-rls-policies`.
-
-AURA-102 (initial MVP migration + generated types + schema/security tests) is merged: Opus 4.8 review **APPROVE** / merge recommendation **YES** / no blocking issues; squash-merged via PR #13 at `3657e4f`; all required checks (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`) passed before merge.
+Once AURA-103 merges: **AURA-104 (auth flow + `user_profiles` role checks + admin bootstrap script, D-40)** is the next task — not started. AURA-104 completes the application-layer authenticated negatives deferred from AURA-103 (session-but-no-profile → blocked; profile-but-no-role → 403) and must set `enable_signup = false` for production (D-40).
 
 Branch protection active on `develop`:
 - `quality` — required
@@ -52,7 +50,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 |---|---|---|
 | ~~**AURA-101**~~ | Supabase local stack + client/server/service-role helpers | ✅ merged (`95f9df3`) |
 | ~~**AURA-102**~~ | Initial migration — core MVP tables | ✅ merged (`3657e4f`) |
-| **AURA-103** | RLS policies for all sensitive tables | Not started — next safe task; new session + explicit per-task approval required |
+| **AURA-103** | RLS policies for all sensitive tables | ⏳ Implemented on `feat/aura-103-rls-policies`, NOT merged — gates green; Opus 4.8 review required before merge |
 | **AURA-104** | Auth flow + super-admin bootstrap | Not started |
 
 ---

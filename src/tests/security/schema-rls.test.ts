@@ -78,7 +78,9 @@ describe('AURA-102 migration security posture (static)', () => {
     }
   })
 
-  test('creates NO RLS policies (policies belong to AURA-103)', () => {
+  // The AURA-102 init migration must remain policy-free; the policy matrix lives in the
+  // separate AURA-103 rls_policies migration (guards against policies leaking into init).
+  test('the init migration itself defines NO policies (those live in AURA-103)', () => {
     expect(code).not.toContain('create policy')
   })
 
@@ -120,9 +122,17 @@ describe.skipIf(!LOCAL_TESTS)('AURA-102 applied security posture (local Postgres
     expect(disabled).toEqual([])
   })
 
-  test('NO RLS policies exist yet (AURA-103 owns policies)', () => {
+  // AURA-102 enabled RLS with zero policies; AURA-103 then authored the policy matrix
+  // in a SEPARATE migration. This assertion was updated in AURA-103: policies now exist
+  // (the full per-table matrix is asserted in src/tests/{security,dal}/rls-policies.test.ts),
+  // and rate_limits remains policy-free (service-role only).
+  test('RLS policies now exist (authored in AURA-103), rate_limits stays policy-free', () => {
     const count = psql("select count(*) from pg_policies where schemaname='public';")
-    expect(count).toEqual(['0'])
+    expect(Number(count[0])).toBeGreaterThan(0)
+    const rateLimitPolicies = psql(
+      "select count(*) from pg_policies where schemaname='public' and tablename='rate_limits';"
+    )
+    expect(rateLimitPolicies).toEqual(['0'])
   })
 
   test('no `clients` table exists (D-05)', () => {
