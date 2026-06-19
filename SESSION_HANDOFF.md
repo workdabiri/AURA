@@ -1,7 +1,63 @@
 # Session Handoff
 
-**Last Updated:** 2026-06-17
-**Branch:** `develop` (current source of truth; this docs-sync update is on `docs/aura-103-merged-state`). **AURA-103 (RLS policies) merged at `1a35958`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. AURA-102 remains merged at `3657e4f`. AURA-104 is next — not started (requires a new session + explicit per-task approval).
+**Last Updated:** 2026-06-19
+**Branch:** `feat/aura-104-auth-rbac` (implementation in review; **NOT merged**). **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) is IMPLEMENTED** and awaiting **Opus 4.8 review before merge** (auth + service-role bootstrap + D-40 merge blocker). AURA-103 remains merged at `1a35958`; AURA-102 at `3657e4f`. `develop` is unchanged. AURA-105 is next — not started.
+
+---
+
+## AURA-104 — IMPLEMENTED, NOT MERGED (`feat/aura-104-auth-rbac`)
+
+**AURA-104: Auth + `user_profiles` role checks + admin bootstrap script (D-40).** Implements the application-layer admin authorization guard and the first-`super_admin` bootstrap script, completing the authenticated session/profile/role negatives deferred from AURA-103. **No migration, no `supabase/config.toml` change, no signup route/UI, no API routes, no admin UI.** Opus 4.8 review is **required before merge**.
+
+### What was built
+
+- **Auth guard service (`src/services/auth/`)** — server-only request-path admin authorization:
+  - `types.ts` (pure) — `UserRole`, `AdminProfile`, `RoleRequirement`, `AdminContext`, `AccessResult` (discriminated union), `AuthFailureCode`, and the typed `AuthorizationError` (carries `status` 401/403 + stable `code`, maps cleanly to the API `{ error, code }` envelope).
+  - `policy.ts` (pure, no `server-only`) — `isAdminRole`, `isSuperAdminRole`, and `evaluateAccess({ userId, profile, requirement })`. Encodes the order that yields the correct 401-vs-403 distinction: no user → 401 `UNAUTHENTICATED`; user but no profile → 403 `NO_PROFILE` (**auth alone is insufficient**); profile but role too low → 403 `INSUFFICIENT_ROLE`; otherwise allowed. Unit-tested directly.
+  - `guard.ts` (**`import 'server-only'` first line**) — `getCurrentUser`, `getCurrentAdmin(requirement='admin')`, `requireAdmin`, `requireSuperAdmin`. Uses `createSupabaseServerClient()` (anon, request-scoped) and `supabase.auth.getUser()` (re-validated server-side — **never** the unverified cookie session). Fetches the caller's **own** `user_profiles` row under their session (RLS own-row), then delegates the decision to `evaluateAccess`. **Does not import or use the privileged service-role client.**
+  - `index.ts` — public barrel (server-only-tainted; server code imports this; tests import `./policy`/`./types` directly).
+  - Role source of truth: `public.user_profiles.role`; allowed admin roles `super_admin`, `client_admin` (D-30).
+- **Bootstrap script (`scripts/seed-admin.ts`)** — operator-only first-`super_admin` linker:
+  - Links an **existing** Supabase Auth user to a `user_profiles` row with `role = 'super_admin'`. **Does NOT create Auth users or passwords; no self-signup path** (D-40).
+  - Inputs: `--user-id <uuid>` / `--full-name <name>` (CLI preferred), with optional `SEED_ADMIN_USER_ID` / `SEED_ADMIN_FULL_NAME` env fallback. These fallbacks are **operator/runtime-only and intentionally NOT added to `src/lib/validation/env.schema.ts`**. Validates UUID + non-empty name.
+  - Verifies the Auth user exists via `supabase.auth.admin.getUserById(userId)` before any write.
+  - **Idempotent** (already-`super_admin` → no-op success) and **fail-closed** (existing different role → refuses, exits non-zero; never auto-promotes/demotes).
+  - Uses `getSupabaseServiceRole()` via a **dynamic import inside `main()`** + a direct-run guard, so unit tests can import the pure helpers without tripping the `server-only` guard or constructing the privileged client. main() runs only on direct invocation.
+
+### Locked decisions applied (this task, user-approved)
+
+1. `supabase/config.toml` **not modified** — local `enable_signup = true` is unchanged. The guard makes signup drift non-dangerous by rejecting any session without a valid admin `user_profiles` row. **Production hosted Supabase must set `enable_signup = false` (D-40)** — a deployment/config requirement documented here and in CURRENT_STATE/NEXT_STEPS.
+2. `scripts/seed-admin.ts` is the approved bootstrap artifact (server-only/operator-only; links existing Auth user; no user/password creation).
+3. **No dependencies added; `package-lock.json` unchanged.** No TS runner (`tsx`/`ts-node`) exists in the repo. **Runner decision deferred (see Carry-forward)** — no `package.json` run-script was added because executing the file needs a runner that resolves the `@/*` alias and the `server-only` guard.
+4. `SEED_ADMIN_*` fallbacks are **not** in the app runtime env schema.
+5. Optional audit-domain deny logging **deferred** — no `src/domain/audit/**` created (task spec marks it optional).
+
+### Files
+
+**New:** `src/services/auth/{types,policy,guard,index}.ts`, `scripts/seed-admin.ts`, `src/tests/unit/auth-policy.test.ts`, `src/tests/unit/seed-admin.test.ts`, `src/tests/security/auth-guard.test.ts`, `src/tests/integration/auth-guard.test.ts`, `src/tests/integration/seed-admin.test.ts`.
+**Modified:** `knip.jsonc` (removed `src/lib/supabase/server.ts` entry — now statically imported by `guard.ts`; added `guard.ts`, `index.ts`, `scripts/seed-admin.ts` entries; `service-role.ts` + `client.ts` entries retained — service-role is only dynamically imported by the operator script), continuity docs.
+**Untouched (verified):** `supabase/config.toml`, `supabase/migrations/**`, `package-lock.json`, `.env` / `.env.local`.
+
+### Tests (how no-self-signup + auth-alone-insufficient are enforced)
+
+- **Unit** (`src/tests/unit/`, no DB): `auth-policy.test.ts` — predicates + `evaluateAccess` for all negatives (401 no-session; 403 no-profile = auth alone insufficient; 403 insufficient-role) and positives (super_admin & client_admin pass `requireAdmin`; super_admin passes `requireSuperAdmin`; client_admin fails it). `seed-admin.test.ts` — `isValidUuid`, `parseSeedArgs` (CLI precedence over env, missing/invalid throws), `classifyProfileAction` (insert/noop/conflict = idempotent + fail-closed).
+- **Security** (`src/tests/security/auth-guard.test.ts`, static): `guard.ts` first line is `import 'server-only'`; guard authorizes via `getUser()` and **not** `getSession()`; guard uses the anon server client and **never** `getSupabaseServiceRole`/the service-role module (request-path guard does not use service-role); **no signup/register route or component** under `src/app`/`src/components` and no `signUp()`/`createUser()` call; **service-role not imported by any `src/app`/`src/components` file**; dependency-cruiser still has `no-client-to-service-role`; seed script verifies via `getUserById` and never calls `createUser`/`signUp`.
+- **Integration** (`src/tests/integration/`, gated `SUPABASE_LOCAL_TESTS=1`, no DB mocking): `auth-guard.test.ts` drives the guard's exact own-row profile read against the **real RLS substrate** via the AURA-103 psql role-sim harness (rolled-back txn) — super_admin/client_admin read their own role; the no-profile auth user reads nothing → guard 403; anon → 401. `seed-admin.test.ts` proves the upsert DB invariants (exactly one super_admin row; duplicate insert rejected by the PK — the invariant the script guards via `classifyProfileAction`).
+
+### Verification (this branch)
+
+- **Local stack (CLI 2.106.0):** `supabase start` ✓ → `supabase db reset` applies both migrations clean ✓ → `SUPABASE_LOCAL_TESTS=1 npm run test:security` **PASS (6 files, 53)** → `SUPABASE_LOCAL_TESTS=1 npm run test:integration` **PASS (3 files, 7)** → `supabase stop` ✓.
+- **Full gates (CI mode):** `npm run quality` **PASS** (lint, typecheck, format:check, `npm run test` 13 files/65 + 68 gated-skips, unused, deps:check 0 violations, `next build` 4 routes). `npm run audit` **PASS** (exit 0; 2 moderate `postcss`-via-`next` carry-forward only).
+- **Blocker greps clean:** no `clients`/`client_id`; no raw IP; no service-role in `src/app`/`src/components`; no `signUp()`/`createUser()` call; `package-lock.json` / `.env` / `config.toml` / migrations untouched.
+
+### Carry-forward / open items
+
+1. **Runner decision (action needed, separate):** `scripts/seed-admin.ts` is committed and type-checked but **not yet runnable** — executing it needs a TS runner that resolves the `@/*` path alias and the `server-only` guard (the only no-throw path is the `react-server` resolve condition). No runner is a repo dependency and none was added (locked decision #3). Options for a follow-up: approve `tsx` (devDependency) and add a `seed:admin` npm script, or run via `node` with a path-alias loader + `--conditions=react-server`. The script's pure logic and DB effect are already covered by unit + gated-integration tests.
+2. **Production `enable_signup = false` (D-40):** hosted-Supabase deployment/config requirement (local `config.toml` stays `true`). The app-layer guard already rejects any non-admin session, so local signup drift is non-dangerous.
+3. Live guard/seed integration tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until **AURA-107** wires the Dockerized Supabase stack into CI (same posture as AURA-102/103).
+4. The first admin Route Handler / admin layout (**AURA-301**) will consume `requireAdmin`/`requireSuperAdmin`; remove the `guard.ts` / `index.ts` Knip entries then.
+
+**Opus 4.8 review: REQUIRED before merge** (auth + service-role bootstrap + D-40 merge blocker). Do not merge until APPROVE.
 
 ---
 
