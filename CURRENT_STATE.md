@@ -1,8 +1,8 @@
 # Current State
 
 **Updated:** 2026-06-20
-**Branch:** `develop` (source of truth). **AURA-105 implemented on `feature/aura-105-storage-bucket-policies` — NOT merged** (awaiting Opus review + PR merge).
-**Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) merged at `44a7fd4`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. **AURA-105 (storage bucket policies + media path strategy) is implemented on its feature branch (not merged).** AURA-106 is next — not started.
+**Branch:** `develop` (source of truth). Latest merged commit: `fae3d62`.
+**Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) merged at `44a7fd4`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. AURA-106 is next — not started.
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 > Note: AURA-101 task is labelled "AURA-009" in continuity docs written during AURA-008; the real task-plan ID is AURA-101.
@@ -160,7 +160,7 @@ Application-layer admin authorization + first-`super_admin` bootstrap. **No migr
 
 ---
 
-### Storage Bucket Policies + Media Path Strategy (AURA-105) ← IMPLEMENTED on `feature/aura-105-storage-bucket-policies` (NOT merged)
+### Storage Bucket Policies + Media Path Strategy (AURA-105) ← MERGED (`fae3d62`)
 
 Supabase Storage layer for property media: the `property-media` bucket + admin-only `storage.objects` policies, plus a pure media validation/path contract. **No upload route/UI, no admin UI, no signed URLs, no service-role usage, no `config.toml`/`.env`/lockfile change.**
 
@@ -172,7 +172,11 @@ Supabase Storage layer for property media: the `property-media` bucket + admin-o
 
 **Local verification (CLI 2.106.0):** `supabase db reset` applies all three migrations clean; `SUPABASE_LOCAL_TESTS=1 npm run test:dal` PASS (41); `SUPABASE_LOCAL_TESTS=1 npm run test:security` PASS (7 files, 74); `npm run quality` PASS; `npm run audit` PASS (exit 0; 2 moderate postcss carry-forward). Forbidden-path greps clean (no `.env`/lockfile/`config.toml`; no `client_id`/tenant; no raw IP; no real video/360; no service-role in components/app/domain).
 
-**Carry-forward:** (1) **Opus review required before merge** (storage access boundary); (2) live storage catalog/behavioural tests are **local-only** until **AURA-107** wires the Dockerized stack into CI; (3) AURA-304 (upload route) is the first real importer of the media/storage modules — remove their Knip `entry` lines then; (4) **public-read bucket limitation** (a retained object URL stays fetchable after a property is unpublished/archived) is documented and deferred — full revocation needs signed URLs (out of MVP); (5) hosted-Supabase note: creating `storage.objects` policies via migration runs as `postgres` (supported on the platform; superuser locally).
+**Merged:** PR #19 squash-merged into `develop` at `fae3d62 feat: add storage bucket policies and media path strategy`. Feature branch `feature/aura-105-storage-bucket-policies` deleted. Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`.
+
+**Opus 4.8 review (PR #19):** Verdict **APPROVE**, merge recommendation **YES**, **no blocking issues**.
+
+**Carry-forward:** (1) live storage catalog/behavioural tests are **local-only** until **AURA-107** wires the Dockerized stack into CI; (2) AURA-304 (upload route) is the first real importer of the media/storage modules — remove their Knip `entry` lines then; (3) **public-read bucket limitation** (a retained object URL stays fetchable after a property is unpublished/archived) is documented and deferred — full revocation needs signed URLs (out of MVP); (4) hosted-Supabase note: creating `storage.objects` policies via migration runs as `postgres` (supported on the platform; superuser locally).
 
 ---
 
@@ -190,7 +194,7 @@ Supabase Storage layer for property media: the `property-media` bucket + admin-o
 - No Lighthouse advisory run yet (stub disabled until AURA-206)
 - No Dockerized Supabase stack in CI yet (attached in AURA-107); local-stack connection tests require `SUPABASE_LOCAL_TESTS=1`
 - Admin auth guard + first-`super_admin` bootstrap script **now exist** — merged in AURA-104 (`44a7fd4`): `src/services/auth/**` guard + `scripts/seed-admin.ts`. Still missing: no DAL functions yet; no login UI/route (AURA-301); no admin routes/UI; no signup path anywhere (D-40); no rate-limit service (AURA-106)
-- Storage bucket policies + media path contract **now exist on the AURA-105 feature branch (not merged)**: `property-media` bucket + admin-only `storage.objects` policies + `src/domain/properties/media.ts` + `src/services/storage/policy.ts`. Still missing: no upload route/UI (AURA-304); no signed URLs (deferred out of MVP)
+- Storage bucket policies + media path contract **now exist** — merged in AURA-105 (`fae3d62`): `property-media` bucket + admin-only `storage.objects` policies + `src/domain/properties/media.ts` + `src/services/storage/policy.ts`. Still missing: no upload route/UI (AURA-304); no signed URLs (deferred out of MVP); no rate-limit service (AURA-106)
 - No real data layer (beyond the auth guard), admin UI, lead capture, CRM, GSAP, business logic, or search
 
 ---

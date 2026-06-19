@@ -1,13 +1,15 @@
 # Session Handoff
 
 **Last Updated:** 2026-06-20
-**Branch:** **`feature/aura-105-storage-bucket-policies`** — AURA-105 (storage bucket policies + media path strategy) **IMPLEMENTED, NOT merged** (awaiting Opus review + PR merge into `develop`). `develop` remains source of truth at `52560cd`. **AURA-104 merged at `44a7fd4`**; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. AURA-106 is next — not started.
+**Branch:** `develop` — source of truth at `fae3d62`. **AURA-105 (storage bucket policies + media path strategy) MERGED at `fae3d62`** — Opus 4.8 APPROVE, no blocking issues; required checks green; feature branch deleted. **AURA-104 merged at `44a7fd4`**; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. AURA-106 is next — not started.
 
 ---
 
-## AURA-105 — IMPLEMENTED on `feature/aura-105-storage-bucket-policies` (NOT merged)
+## AURA-105 — MERGED (`fae3d62`)
 
 **AURA-105: Storage bucket policies + media path strategy.** Configures the Supabase Storage layer for property media: the `property-media` bucket + admin-only `storage.objects` policies, and a pure media validation/storage-path contract for the later upload route. **No upload route/UI (AURA-304), no admin UI, no signed URLs (deferred), no service-role usage, no video/360, no `supabase/config.toml`/`.env`/`package-lock.json` change.**
+
+Merged via PR #19 (squash) into `develop` at `fae3d62 feat: add storage bucket policies and media path strategy`. Feature branch `feature/aura-105-storage-bucket-policies` deleted. **Opus 4.8 review (PR #19): APPROVE, merge recommendation YES, no blocking issues** (6 info-level observations; none blocking). Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`.
 
 ### What was built
 
@@ -38,11 +40,10 @@
 
 ### Carry-forward / open items
 
-1. **Opus review required before merge** (storage access boundary — per the task's Model Assignment).
-2. Live storage catalog/behavioural tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until **AURA-107** wires the Dockerized stack into CI.
-3. **AURA-304** (media upload route) is the first real importer of `src/domain/properties/media.ts` + `src/services/storage/policy.ts` — remove their Knip `entry` lines then; the route gates writes with `requireAdmin()` and chooses the storage client there.
-4. **Public-read limitation** (retained URL fetchable after unpublish/archive) documented + deferred — full revocation needs signed URLs (out of MVP).
-5. Hosted-Supabase note: `storage.objects` policy creation in the migration runs as `postgres` (supported on the platform; superuser locally).
+1. Live storage catalog/behavioural tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until **AURA-107** wires the Dockerized stack into CI.
+2. **AURA-304** (media upload route) is the first real importer of `src/domain/properties/media.ts` + `src/services/storage/policy.ts` — remove their Knip `entry` lines then; the route gates writes with `requireAdmin()` and chooses the storage client there.
+3. **Public-read limitation** (retained URL fetchable after unpublish/archive) documented + deferred — full revocation needs signed URLs (out of MVP).
+4. Hosted-Supabase note: `storage.objects` policy creation in the migration runs as `postgres` (supported on the platform; superuser locally).
 
 ---
 
@@ -100,7 +101,7 @@ Merged via PR #17 (squash) into `develop` at `44a7fd4 feat: add admin auth guard
 3. Live guard/seed integration tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until **AURA-107** wires the Dockerized Supabase stack into CI (same posture as AURA-102/103).
 4. The first admin Route Handler / admin layout (**AURA-301**) will consume `requireAdmin`/`requireSuperAdmin`; remove the `guard.ts` / `index.ts` Knip entries then.
 
-**Opus 4.8 review: APPROVE — merged.** Current source of truth is `develop` at `44a7fd4`. **AURA-105 (storage bucket policies + media path strategy) is next — not started; requires its own per-task approval (migration task).**
+**Opus 4.8 review: APPROVE — merged.** Current source of truth is `develop` at `fae3d62`. **AURA-106 (rate_limits cleanup job / pg_cron) is next — not started; requires its own per-task approval (migration task).**
 
 ---
 
@@ -365,6 +366,6 @@ AURA-102 remains merged at `3657e4f`. AURA-101 remains merged at `95f9df3`.
 
 ## Next Safe Action
 
-**AURA-105 is implemented on `feature/aura-105-storage-bucket-policies` and awaits Opus review + PR merge into `develop`** (do not merge to `main`; auto-merge only into `develop` after required checks). Immediate next action for this branch: push, open the PR to `develop`, obtain **Opus 4.8 review** (required — storage access boundary), and merge after required checks (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`) pass.
+**AURA-105 is merged** into `develop` at `fae3d62`. `develop` is the current source of truth.
 
-After AURA-105 merges, **AURA-106 (rate_limits cleanup job / pg_cron)** is the next task — **not started**; requires its own per-task approval. Branch (when approved): `feature/aura-106-rate-limit-cleanup`.
+**AURA-106 (rate_limits cleanup job / pg_cron)** is the next task — **not started**; requires a new session + explicit per-task approval before any work begins. Branch (when approved): `feature/aura-106-rate-limit-cleanup`.
