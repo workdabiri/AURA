@@ -1,8 +1,8 @@
 # Current State
 
-**Updated:** 2026-06-19
-**Branch:** `develop` (current source of truth). Docs-sync update on `docs/aura-104-merged-state`.
-**Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) merged at `44a7fd4`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. AURA-105 is next — not started.
+**Updated:** 2026-06-20
+**Branch:** `develop` (source of truth). **AURA-105 implemented on `feature/aura-105-storage-bucket-policies` — NOT merged** (awaiting Opus review + PR merge).
+**Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) merged at `44a7fd4`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. **AURA-105 (storage bucket policies + media path strategy) is implemented on its feature branch (not merged).** AURA-106 is next — not started.
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 > Note: AURA-101 task is labelled "AURA-009" in continuity docs written during AURA-008; the real task-plan ID is AURA-101.
@@ -160,6 +160,22 @@ Application-layer admin authorization + first-`super_admin` bootstrap. **No migr
 
 ---
 
+### Storage Bucket Policies + Media Path Strategy (AURA-105) ← IMPLEMENTED on `feature/aura-105-storage-bucket-policies` (NOT merged)
+
+Supabase Storage layer for property media: the `property-media` bucket + admin-only `storage.objects` policies, plus a pure media validation/path contract. **No upload route/UI, no admin UI, no signed URLs, no service-role usage, no `config.toml`/`.env`/lockfile change.**
+
+- `supabase/migrations/20260619201518_storage_policies.sql` — creates/reconciles the **`property-media`** bucket (`public = true`, `file_size_limit = 10485760`, `allowed_mime_types = {image/jpeg,image/png,image/webp}`) idempotently via `ON CONFLICT`; adds **4 admin-only `storage.objects` policies** (`property_media_objects_admin_{select,insert,update,delete}`) scoped to `bucket_id = 'property-media'` and gated by `public.is_admin()`. **No anon policy** on `storage.objects` (no public list/enumeration; public read is via the bucket `public` flag). Documented rollback block + the public-read CDN-revocation known limitation (signed URLs deferred).
+- `src/domain/properties/media.ts` — **pure** contract (no React/Supabase/service-role/I/O): constants (`MEDIA_BUCKET`, `MAX_MEDIA_BYTES = 10_485_760`, `ALLOWED_MEDIA_MIME_TYPES`, `MEDIA_TYPES`, `MIME_EXTENSION`), Zod schemas, `validateMediaUpload`, `extensionForMime`, and `buildMediaStoragePath` → `properties/{property_id}/{media_type}/{media_id}.{ext}` (UUID-only components; extension derived from MIME; rejects non-UUID / traversal / slash injection; never trusts a user filename).
+- `src/services/storage/policy.ts` — server-safe storage contract surface: re-exports the bucket/path contract from domain + declares `MEDIA_BUCKET_CONFIG` and `MEDIA_OBJECT_POLICIES` (single source of truth cross-checked against the migration in tests). No Supabase/service-role import.
+- Tests: `src/tests/unit/media-contract.test.ts` (19, CI-safe), `src/tests/security/storage-policies.test.ts` (static migration + contract assertions, CI-safe; gated `SUPABASE_LOCAL_TESTS=1` catalog + behavioural access-control). NOTE on gated coverage: anon write/list denial is proven by the "no anon policy" catalog assertion + behavioural anon INSERT denial — behavioural anon UPDATE/DELETE are intentionally omitted (RLS silently filters UPDATE to 0 rows; `storage.protect_delete()` blocks ALL direct SQL DELETEs regardless of role).
+- `knip.jsonc` — added `src/domain/properties/media.ts` + `src/services/storage/policy.ts` as `entry` (first real importer is the AURA-304 upload route; remove then).
+
+**Local verification (CLI 2.106.0):** `supabase db reset` applies all three migrations clean; `SUPABASE_LOCAL_TESTS=1 npm run test:dal` PASS (41); `SUPABASE_LOCAL_TESTS=1 npm run test:security` PASS (7 files, 74); `npm run quality` PASS; `npm run audit` PASS (exit 0; 2 moderate postcss carry-forward). Forbidden-path greps clean (no `.env`/lockfile/`config.toml`; no `client_id`/tenant; no raw IP; no real video/360; no service-role in components/app/domain).
+
+**Carry-forward:** (1) **Opus review required before merge** (storage access boundary); (2) live storage catalog/behavioural tests are **local-only** until **AURA-107** wires the Dockerized stack into CI; (3) AURA-304 (upload route) is the first real importer of the media/storage modules — remove their Knip `entry` lines then; (4) **public-read bucket limitation** (a retained object URL stays fetchable after a property is unpublished/archived) is documented and deferred — full revocation needs signed URLs (out of MVP); (5) hosted-Supabase note: creating `storage.objects` policies via migration runs as `postgres` (supported on the platform; superuser locally).
+
+---
+
 ## What Does NOT Exist
 
 - No root-level `tests/` directory
@@ -173,7 +189,8 @@ Application-layer admin authorization + first-`super_admin` bootstrap. **No migr
 - No Stage 2 skills, MCPs, hooks, or plugins
 - No Lighthouse advisory run yet (stub disabled until AURA-206)
 - No Dockerized Supabase stack in CI yet (attached in AURA-107); local-stack connection tests require `SUPABASE_LOCAL_TESTS=1`
-- Admin auth guard + first-`super_admin` bootstrap script **now exist** — merged in AURA-104 (`44a7fd4`): `src/services/auth/**` guard + `scripts/seed-admin.ts`. Still missing: no DAL functions yet; no login UI/route (AURA-301); no admin routes/UI; no signup path anywhere (D-40); no storage policies (AURA-105); no rate-limit service (AURA-106)
+- Admin auth guard + first-`super_admin` bootstrap script **now exist** — merged in AURA-104 (`44a7fd4`): `src/services/auth/**` guard + `scripts/seed-admin.ts`. Still missing: no DAL functions yet; no login UI/route (AURA-301); no admin routes/UI; no signup path anywhere (D-40); no rate-limit service (AURA-106)
+- Storage bucket policies + media path contract **now exist on the AURA-105 feature branch (not merged)**: `property-media` bucket + admin-only `storage.objects` policies + `src/domain/properties/media.ts` + `src/services/storage/policy.ts`. Still missing: no upload route/UI (AURA-304); no signed URLs (deferred out of MVP)
 - No real data layer (beyond the auth guard), admin UI, lead capture, CRM, GSAP, business logic, or search
 
 ---
