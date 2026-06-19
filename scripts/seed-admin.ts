@@ -80,7 +80,9 @@ export function parseSeedArgs(
     throw new Error('A user id is required: pass --user-id <uuid> (or set SEED_ADMIN_USER_ID).')
   }
   if (!isValidUuid(userId)) {
-    throw new Error(`Invalid user id (expected a UUID): ${userId}`)
+    // Do not echo the value: it can derive from CLI/env and must not be logged in
+    // clear text (CodeQL js/clear-text-logging treats process-env values as sensitive).
+    throw new Error('Invalid user id: expected a UUID.')
   }
   if (!fullName) {
     throw new Error(
@@ -119,9 +121,10 @@ async function main(): Promise<void> {
   // 1. Verify the Auth user exists. We NEVER create it here (no signup, D-40).
   const { data: userResult, error: userError } = await supabase.auth.admin.getUserById(args.userId)
   if (userError || !userResult?.user) {
+    // Identifiers are not echoed (they may be env-derived; avoid clear-text logging).
     throw new Error(
-      `No Supabase Auth user found for id ${args.userId}. ` +
-        `Create the user in Supabase Auth first — this script never creates users.`
+      'No Supabase Auth user found for the provided id. ' +
+        'Create the user in Supabase Auth first — this script never creates users.'
     )
   }
 
@@ -138,12 +141,13 @@ async function main(): Promise<void> {
   const action = classifyProfileAction(existing?.role ?? null)
 
   if (action === 'noop') {
-    console.log(`✓ User ${args.userId} is already super_admin — no changes made.`)
+    console.log('✓ Target user is already super_admin — no changes made.')
     return
   }
   if (action === 'conflict') {
+    // `existing.role` is DB-derived (not env) and safe to surface; the id is not echoed.
     throw new Error(
-      `Refusing to modify ${args.userId}: an existing profile has role "${existing?.role}", ` +
+      `Refusing to modify the target profile: its existing role is "${existing?.role}", ` +
         `not super_admin. This script will not change a non-super_admin profile.`
     )
   }
@@ -156,7 +160,7 @@ async function main(): Promise<void> {
     throw new Error(`Failed to create super_admin profile: ${insertError.message}`)
   }
 
-  console.log(`✓ Created super_admin profile for ${args.userId} (${args.fullName}).`)
+  console.log('✓ Created super_admin profile for the target user.')
 }
 
 // Run only when invoked directly (e.g. `node scripts/seed-admin.ts ...` via a TS
