@@ -1,17 +1,20 @@
 # Next Steps
 
-**Updated:** 2026-06-19
-**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + bootstrap script) merged at `44a7fd4`.** `develop` is the current source of truth. AURA-105 is next, not started.
+**Updated:** 2026-06-20
+**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 (storage bucket policies + media path strategy) IMPLEMENTED on `feature/aura-105-storage-bucket-policies` — NOT merged.** `develop` is the source of truth at `52560cd`. AURA-106 is next, not started.
 
 ---
 
 ## Immediate Next Action
 
-**AURA-104 (auth guard + `user_profiles` role checks + admin bootstrap script, D-40) is MERGED into `develop` at `44a7fd4 feat: add admin auth guard and bootstrap script`.** PR #17 squash-merged; feature branch `feat/aura-104-auth-rbac` deleted. Opus 4.8 review: **APPROVE**, merge recommendation **YES**, no blocking issues. Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`. Details in SESSION_HANDOFF.md (AURA-104 section).
+**AURA-105 (storage bucket policies + media path strategy) is IMPLEMENTED on `feature/aura-105-storage-bucket-policies` — not merged.** Local gates + local Supabase verification all green (see SESSION_HANDOFF.md → AURA-105 section). **Immediate next action: push the branch, open a PR to `develop`, obtain Opus 4.8 review (required — storage access boundary), and merge after required checks pass.** Do not merge to `main`; auto-merge only into `develop`.
 
-**Immediate next action — AURA-105 discovery / planning (NOT implementation).** AURA-105 (Storage bucket policies + media path strategy) is the next task — **not started**. It is a migration task (storage policies) and touches security boundaries, so it **requires a new session + explicit per-task approval before any work begins**. The next safe step is to read `docs/TASKS_Project.md` (AURA-105), `docs/SECURITY_BASELINE.md` (Storage Rules), and `docs/ARCHITECTURE.md` (storage tradeoff) to scope the task — then surface it for approval. Do not write code, migrations, or config in advance of that approval.
+What it delivers: the `property-media` public-read bucket (10MB cap; jpeg/png/webp only) + 4 admin-only `storage.objects` policies (`public.is_admin()`, no anon policy); a pure media validation/storage-path contract (`src/domain/properties/media.ts`) and storage contract surface (`src/services/storage/policy.ts`); unit + static + gated security tests. No upload route/UI (AURA-304), no signed URLs (deferred), no service-role usage, no `config.toml`/`.env`/lockfile change.
+
+**After AURA-105 merges → AURA-106 (rate_limits cleanup job / pg_cron)** is next — **not started**; requires a new session + explicit per-task approval. Branch (when approved): `feature/aura-106-rate-limit-cleanup`.
 
 **Carry-forward / open items still in force:**
+- **AURA-105 Opus review required before merge** (storage access boundary). Live storage catalog/behavioural tests are local-only (`SUPABASE_LOCAL_TESTS=1`) until AURA-107. AURA-304 is the first real importer of the media/storage modules — remove their Knip `entry` lines then. Public-read bucket limitation (retained URL fetchable after unpublish/archive) is documented + deferred (signed URLs out of MVP).
 - **Runner decision (seed-admin, non-blocking follow-up):** executing `scripts/seed-admin.ts` needs a TS runner resolving `@/*` + the `server-only` guard; none added (no `tsx`/`ts-node` in repo). Decide between approving `tsx` + a `seed:admin` script, or a `node --conditions=react-server` + path-alias loader. Pure logic + DB effect are already test-covered. Accepted by Opus as non-blocking at AURA-104 merge.
 - **Production `enable_signup = false` (D-40):** hosted-Supabase deployment/config requirement. Local `config.toml` stays `true` (unchanged); the app-layer guard rejects any non-admin session.
 - **Minimal-return for anon inserts (AURA-301+):** anon has INSERT but **no SELECT** on `leads` / `whatsapp_clicks`, so those anon inserts must use **minimal-return behavior** (returning the inserted row would fail the RLS read).
@@ -58,7 +61,8 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-102**~~ | Initial migration — core MVP tables | ✅ merged (`3657e4f`) |
 | ~~**AURA-103**~~ | RLS policies for all sensitive tables | ✅ merged (`1a35958`) |
 | ~~**AURA-104**~~ | Auth guard + super-admin bootstrap | ✅ merged (`44a7fd4`) |
-| **AURA-105** | Storage bucket policies + media path strategy | Not started — next; requires a new session + per-task approval (migration task) |
+| **AURA-105** | Storage bucket policies + media path strategy | 🟡 Implemented on `feature/aura-105-storage-bucket-policies` — awaiting Opus review + PR merge |
+| **AURA-106** | rate_limits cleanup job / pg_cron | Not started — next; requires a new session + per-task approval |
 
 ---
 
@@ -84,6 +88,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - ~~`server.ts` entry~~ ✅ Removed in AURA-104 — now statically imported by `src/services/auth/guard.ts`.
 - `client.ts`, `service-role.ts` entries remain — `client.ts` has no Client Component consumer yet; `service-role.ts` is only **dynamically** imported by `scripts/seed-admin.ts`, so its entry is retained until a server DAL op imports it statically.
 - `src/services/auth/guard.ts`, `src/services/auth/index.ts`, `scripts/seed-admin.ts` entries added in AURA-104 — remove the guard/index entries when the first admin Route Handler / admin layout (AURA-301) imports the guard.
+- `src/domain/properties/media.ts`, `src/services/storage/policy.ts` entries added in AURA-105 — remove when the media upload route (AURA-304) becomes their first real importer.
 
 ---
 
@@ -138,8 +143,10 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 
 - ~~Do not start AURA-009 before AURA-008 merges~~ ✅ AURA-008 merged
 - ~~Do not start AURA-104 in this session~~ ✅ AURA-104 merged (`44a7fd4`)
+- ~~Do not start AURA-105~~ ✅ AURA-105 implemented on its feature branch (awaiting Opus review + merge)
 - Do not fix audit without explicit dep-change approval
-- Do not start AURA-105 — AURA-105 requires a new session + explicit per-task approval (migration / storage-security flow)
+- Do not start AURA-106 — AURA-106 requires a new session + explicit per-task approval (migration / pg_cron)
+- Do not merge AURA-105 to `main`; auto-merge only into `develop` after required checks pass
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`

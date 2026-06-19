@@ -1,7 +1,48 @@
 # Session Handoff
 
-**Last Updated:** 2026-06-19
-**Branch:** `develop` (current source of truth; this docs-sync update is on `docs/aura-104-merged-state`). **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) merged at `44a7fd4`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. AURA-103 remains merged at `1a35958`; AURA-102 at `3657e4f`. AURA-105 is next — not started (requires separate per-task approval).
+**Last Updated:** 2026-06-20
+**Branch:** **`feature/aura-105-storage-bucket-policies`** — AURA-105 (storage bucket policies + media path strategy) **IMPLEMENTED, NOT merged** (awaiting Opus review + PR merge into `develop`). `develop` remains source of truth at `52560cd`. **AURA-104 merged at `44a7fd4`**; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. AURA-106 is next — not started.
+
+---
+
+## AURA-105 — IMPLEMENTED on `feature/aura-105-storage-bucket-policies` (NOT merged)
+
+**AURA-105: Storage bucket policies + media path strategy.** Configures the Supabase Storage layer for property media: the `property-media` bucket + admin-only `storage.objects` policies, and a pure media validation/storage-path contract for the later upload route. **No upload route/UI (AURA-304), no admin UI, no signed URLs (deferred), no service-role usage, no video/360, no `supabase/config.toml`/`.env`/`package-lock.json` change.**
+
+### What was built
+
+- **Migration `supabase/migrations/20260619201518_storage_policies.sql`** (new; AURA-102/103 migrations untouched):
+  - Creates/reconciles the **`property-media`** bucket idempotently (`insert ... on conflict (id) do update`): `public = true`, `file_size_limit = 10485760` (10 MiB; A-15/Q-04), `allowed_mime_types = {image/jpeg,image/png,image/webp}` (A-14; D-41 — no video/360).
+  - **4 admin-only `storage.objects` policies** — `property_media_objects_admin_{select,insert,update,delete}`, each scoped `bucket_id = 'property-media'` and gated by `public.is_admin()` (AURA-103 helper → super_admin/client_admin). Idempotent via `drop policy if exists` first.
+  - **No anon policy** on `storage.objects` → anon cannot list/enumerate or mutate. Public read is served by the bucket `public` flag (direct CDN fetch by UUID path); media *discovery* stays gated by the existing `property_media` table RLS (anon sees rows for published properties only).
+  - Documented rollback block + the **known limitation**: a retained public object URL stays fetchable after the property is unpublished/archived (table RLS hides the row, not the object); full revocation needs signed URLs (deferred out of MVP).
+- **`src/domain/properties/media.ts`** — PURE contract (no React/Supabase/service-role/I/O): `MEDIA_BUCKET`, `MAX_MEDIA_BYTES = 10_485_760`, `ALLOWED_MEDIA_MIME_TYPES`, `MEDIA_TYPES` (`image`/`floorplan`), `MIME_EXTENSION`; Zod schemas; `validateMediaUpload`; `extensionForMime`; `buildMediaStoragePath` → **`properties/{property_id}/{media_type}/{media_id}.{ext}`** (UUID-only components validated by `z.string().uuid()`; extension derived from MIME; rejects traversal/slash injection/non-UUID; never trusts a user filename).
+- **`src/services/storage/policy.ts`** — server-safe storage contract surface: re-exports the bucket/path contract from domain + declares `MEDIA_BUCKET_CONFIG` and `MEDIA_OBJECT_POLICIES` (single source of truth, cross-checked against the migration text by tests). No Supabase/service-role import. (services→domain import; no dependency-cruiser rule forbids it; `deps:check` clean.)
+- **Tests:** `src/tests/unit/media-contract.test.ts` (19, CI-safe — constants, validation accept/reject, path template, traversal rejection); `src/tests/security/storage-policies.test.ts` (CI-safe static migration + contract cross-check; gated `SUPABASE_LOCAL_TESTS=1` catalog [bucket metadata, 4 admin policies, no-anon-policy] + behavioural [anon INSERT denied, non-admin INSERT denied, is_admin predicate, admin INSERT/SELECT allowed]).
+  - **Gated-coverage note:** behavioural anon UPDATE/DELETE are intentionally omitted — RLS silently filters anon UPDATE to 0 rows, and `storage.protect_delete()` blocks ALL direct SQL DELETEs regardless of role; the anon write/list denial is proven authoritatively by the "no anon policy" catalog assertion + the behavioural anon INSERT denial.
+- **`knip.jsonc`** — added `src/domain/properties/media.ts` + `src/services/storage/policy.ts` as `entry` (first real importer = AURA-304; remove then).
+
+### Locked decisions applied (this task, user-approved)
+
+1. Bucket name `property-media`; source of truth = SQL migration under `supabase/migrations/**`.
+2. Bucket config: `public = true`, `file_size_limit = 10485760`, `allowed_mime_types = {image/jpeg,image/png,image/webp}`.
+3. Media types `image` + `floorplan`; video/360/virtual tours out of MVP (D-41).
+4. Path `properties/{property_id}/{media_type}/{media_id}.{ext}`; UUID-only; MIME-derived extension; no user filename trust; reject traversal/slash injection.
+5. Public-read bucket; admin-only `storage.objects` write/list via `public.is_admin()`; **no anon policy**; **no service-role used in AURA-105** (the AURA-304 route may later choose a request-scoped admin client or service-role *after* `requireAdmin()`).
+
+### Verification (this branch)
+
+- **Local stack (CLI 2.106.0):** `supabase start` ✓ → `supabase db reset` applies all 3 migrations clean ✓ → `SUPABASE_LOCAL_TESTS=1 npm run test:dal` **PASS (4 files, 41)** → `SUPABASE_LOCAL_TESTS=1 npm run test:security` **PASS (7 files, 74)** → `supabase stop` ✓.
+- **Full gates (CI mode):** `npm run quality` **PASS** (lint, typecheck, format:check, `npm run test` 15 files/95 + 80 gated-skips, unused, deps:check 0 violations/28 modules, `next build`). `npm run audit` **PASS** (exit 0; 2 moderate `postcss`-via-`next` carry-forward only).
+- **Blocker greps clean:** no `.env`/`package-lock.json`/`config.toml` change; no `clients`/`client_id`/tenant; no raw IP; no real video/360 (only D-41 exclusion comments); no service-role in `src/components`/`src/app`/`src/domain`.
+
+### Carry-forward / open items
+
+1. **Opus review required before merge** (storage access boundary — per the task's Model Assignment).
+2. Live storage catalog/behavioural tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until **AURA-107** wires the Dockerized stack into CI.
+3. **AURA-304** (media upload route) is the first real importer of `src/domain/properties/media.ts` + `src/services/storage/policy.ts` — remove their Knip `entry` lines then; the route gates writes with `requireAdmin()` and chooses the storage client there.
+4. **Public-read limitation** (retained URL fetchable after unpublish/archive) documented + deferred — full revocation needs signed URLs (out of MVP).
+5. Hosted-Supabase note: `storage.objects` policy creation in the migration runs as `postgres` (supported on the platform; superuser locally).
 
 ---
 
@@ -324,4 +365,6 @@ AURA-102 remains merged at `3657e4f`. AURA-101 remains merged at `95f9df3`.
 
 ## Next Safe Action
 
-**AURA-104 (auth flow + `user_profiles` role checks + admin bootstrap script, D-40)** is the next safe task — **not started**. It touches auth / seed / security-sensitive flow, so it requires a **new session** and **explicit per-task approval** per CLAUDE.md before any work begins. Do not create the auth flow, seed users, or API routes in this session. AURA-104 must complete the application-layer authenticated negatives deferred from AURA-103 (session-but-no-profile → blocked; profile-but-no-qualifying-role → 403; valid `super_admin`/`client_admin` → allowed), use minimal-return behavior for anon lead/whatsapp_clicks inserts (anon has INSERT but no SELECT), and set `enable_signup = false` for production (D-40). Branch (when approved): `feat/aura-104-auth-rbac`.
+**AURA-105 is implemented on `feature/aura-105-storage-bucket-policies` and awaits Opus review + PR merge into `develop`** (do not merge to `main`; auto-merge only into `develop` after required checks). Immediate next action for this branch: push, open the PR to `develop`, obtain **Opus 4.8 review** (required — storage access boundary), and merge after required checks (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`) pass.
+
+After AURA-105 merges, **AURA-106 (rate_limits cleanup job / pg_cron)** is the next task — **not started**; requires its own per-task approval. Branch (when approved): `feature/aura-106-rate-limit-cleanup`.
