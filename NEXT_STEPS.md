@@ -1,18 +1,23 @@
 # Next Steps
 
-**Updated:** 2026-06-17
-**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. **AURA-103 (RLS policies) merged at `1a35958`.** `develop` is the current source of truth. AURA-104 is next, not started.
+**Updated:** 2026-06-19
+**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + bootstrap script) is IMPLEMENTED on `feat/aura-104-auth-rbac` — Opus 4.8 review required before merge.** `develop` is the current merged source of truth. AURA-105 is next, not started.
 
 ---
 
 ## Immediate Next Action
 
-**AURA-103 (RLS policies) is MERGED into `develop` at `1a35958 feat: add RLS policies for MVP tables` (full SHA `1a35958ccf658b6918474b5b1d51b6c5de37be75`).** `develop` is now the source of truth, clean and synced with `origin/develop`; PR #15 was squash-merged and the feature branch `feat/aura-103-rls-policies` is deleted. Opus 4.8 review: **APPROVE**, merge recommendation **YES**, no blocking issues. Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`.
+**AURA-104 (auth guard + `user_profiles` role checks + admin bootstrap script, D-40) is IMPLEMENTED on `feat/aura-104-auth-rbac` and NOT merged.** A PR to `develop` is open and **Opus 4.8 review is required before merge** (auth + service-role bootstrap + D-40 merge blocker). Do not merge until APPROVE. Details in SESSION_HANDOFF.md (AURA-104 section).
 
-**AURA-104 (auth flow + `user_profiles` role checks + admin bootstrap script, D-40)** is the next safe task — **not started**. It touches auth / seed / security-sensitive flow, so it **requires a new session and explicit per-task approval** before any work begins. AURA-104 must:
-- Complete the application-layer authenticated negatives deferred from AURA-103: session present but no `user_profiles` row → blocked; profile present but no qualifying role → 403; valid `super_admin` / `client_admin` → allowed.
-- Use **minimal-return behavior** for anon lead / whatsapp_clicks inserts at the route layer, because anon has INSERT but **no SELECT** on those tables (returning the inserted row would fail the RLS read).
-- Set `enable_signup = false` for production (D-40).
+What it delivered: server-only admin guard (`src/services/auth/**`) requiring **valid session + `user_profiles` row + role in (`super_admin`,`client_admin`)** — auth alone is never sufficient (completes the AURA-103-deferred authenticated negatives); `getUser()`-verified identity; no service-role in the request path. Plus `scripts/seed-admin.ts` (operator-only; links an **existing** Auth user to a `super_admin` profile; idempotent + fail-closed; **no user/password creation; no self-signup**, D-40). No migration, no `config.toml` change, no API routes, no UI.
+
+**Before merge / post-merge follow-ups:**
+- **Runner decision (separate):** executing `scripts/seed-admin.ts` needs a TS runner resolving `@/*` + the `server-only` guard; none added (no `tsx`/`ts-node` in repo). Decide between approving `tsx` + a `seed:admin` script, or a `node --conditions=react-server` + path-alias loader. Pure logic + DB effect are already test-covered.
+- **Production `enable_signup = false` (D-40):** hosted-Supabase deployment/config requirement. Local `config.toml` stays `true` (unchanged); the app-layer guard rejects any non-admin session.
+
+**AURA-105 (Storage bucket policies + media path strategy)** is the next task after AURA-104 merges — **not started**. It is a migration task (storage policies); requires its own per-task approval.
+
+Carry-forward still in force for the eventual admin route layer (AURA-301+): anon has INSERT but **no SELECT** on `leads` / `whatsapp_clicks`, so those anon inserts must use **minimal-return behavior** (returning the inserted row would fail the RLS read).
 
 Branch protection active on `develop`:
 - `quality` — required
@@ -54,7 +59,8 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-101**~~ | Supabase local stack + client/server/service-role helpers | ✅ merged (`95f9df3`) |
 | ~~**AURA-102**~~ | Initial migration — core MVP tables | ✅ merged (`3657e4f`) |
 | ~~**AURA-103**~~ | RLS policies for all sensitive tables | ✅ merged (`1a35958`) |
-| **AURA-104** | Auth flow + super-admin bootstrap | Not started — requires a new session + explicit per-task approval (auth/seed/security-sensitive) |
+| **AURA-104** | Auth guard + super-admin bootstrap | **Implemented on `feat/aura-104-auth-rbac` — Opus 4.8 review required before merge** (auth + D-40 merge blocker) |
+| **AURA-105** | Storage bucket policies + media path strategy | Not started — next after AURA-104 merges; requires per-task approval (migration task) |
 
 ---
 
@@ -75,9 +81,11 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - **Observability (Phase 6)** → remove `@sentry/nextjs`, `@vercel/analytics`
 - `eslint-config-next`, `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin` — used via FlatCompat but untraceable by Knip; keep until ESLint config is updated.
 
-### Knip `entry` debt (AURA-101 update)
+### Knip `entry` debt
 - ~~`env.ts` entry~~ ✅ Removed in AURA-101 — real importer exists via `server.ts` and `service-role.ts`.
-- `client.ts`, `server.ts`, `service-role.ts` entries added in AURA-101 — remove per helper as first DAL caller is wired (AURA-102+).
+- ~~`server.ts` entry~~ ✅ Removed in AURA-104 — now statically imported by `src/services/auth/guard.ts`.
+- `client.ts`, `service-role.ts` entries remain — `client.ts` has no Client Component consumer yet; `service-role.ts` is only **dynamically** imported by `scripts/seed-admin.ts`, so its entry is retained until a server DAL op imports it statically.
+- `src/services/auth/guard.ts`, `src/services/auth/index.ts`, `scripts/seed-admin.ts` entries added in AURA-104 — remove the guard/index entries when the first admin Route Handler / admin layout (AURA-301) imports the guard.
 
 ---
 
