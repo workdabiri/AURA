@@ -1,23 +1,21 @@
 # Next Steps
 
 **Updated:** 2026-06-19
-**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + bootstrap script) is IMPLEMENTED on `feat/aura-104-auth-rbac` — Opus 4.8 review required before merge.** `develop` is the current merged source of truth. AURA-105 is next, not started.
+**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + bootstrap script) merged at `44a7fd4`.** `develop` is the current source of truth. AURA-105 is next, not started.
 
 ---
 
 ## Immediate Next Action
 
-**AURA-104 (auth guard + `user_profiles` role checks + admin bootstrap script, D-40) is IMPLEMENTED on `feat/aura-104-auth-rbac` and NOT merged.** A PR to `develop` is open and **Opus 4.8 review is required before merge** (auth + service-role bootstrap + D-40 merge blocker). Do not merge until APPROVE. Details in SESSION_HANDOFF.md (AURA-104 section).
+**AURA-104 (auth guard + `user_profiles` role checks + admin bootstrap script, D-40) is MERGED into `develop` at `44a7fd4 feat: add admin auth guard and bootstrap script`.** PR #17 squash-merged; feature branch `feat/aura-104-auth-rbac` deleted. Opus 4.8 review: **APPROVE**, merge recommendation **YES**, no blocking issues. Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`. Details in SESSION_HANDOFF.md (AURA-104 section).
 
-What it delivered: server-only admin guard (`src/services/auth/**`) requiring **valid session + `user_profiles` row + role in (`super_admin`,`client_admin`)** — auth alone is never sufficient (completes the AURA-103-deferred authenticated negatives); `getUser()`-verified identity; no service-role in the request path. Plus `scripts/seed-admin.ts` (operator-only; links an **existing** Auth user to a `super_admin` profile; idempotent + fail-closed; **no user/password creation; no self-signup**, D-40). No migration, no `config.toml` change, no API routes, no UI.
+**Immediate next action — AURA-105 discovery / planning (NOT implementation).** AURA-105 (Storage bucket policies + media path strategy) is the next task — **not started**. It is a migration task (storage policies) and touches security boundaries, so it **requires a new session + explicit per-task approval before any work begins**. The next safe step is to read `docs/TASKS_Project.md` (AURA-105), `docs/SECURITY_BASELINE.md` (Storage Rules), and `docs/ARCHITECTURE.md` (storage tradeoff) to scope the task — then surface it for approval. Do not write code, migrations, or config in advance of that approval.
 
-**Before merge / post-merge follow-ups:**
-- **Runner decision (separate):** executing `scripts/seed-admin.ts` needs a TS runner resolving `@/*` + the `server-only` guard; none added (no `tsx`/`ts-node` in repo). Decide between approving `tsx` + a `seed:admin` script, or a `node --conditions=react-server` + path-alias loader. Pure logic + DB effect are already test-covered.
+**Carry-forward / open items still in force:**
+- **Runner decision (seed-admin, non-blocking follow-up):** executing `scripts/seed-admin.ts` needs a TS runner resolving `@/*` + the `server-only` guard; none added (no `tsx`/`ts-node` in repo). Decide between approving `tsx` + a `seed:admin` script, or a `node --conditions=react-server` + path-alias loader. Pure logic + DB effect are already test-covered. Accepted by Opus as non-blocking at AURA-104 merge.
 - **Production `enable_signup = false` (D-40):** hosted-Supabase deployment/config requirement. Local `config.toml` stays `true` (unchanged); the app-layer guard rejects any non-admin session.
-
-**AURA-105 (Storage bucket policies + media path strategy)** is the next task after AURA-104 merges — **not started**. It is a migration task (storage policies); requires its own per-task approval.
-
-Carry-forward still in force for the eventual admin route layer (AURA-301+): anon has INSERT but **no SELECT** on `leads` / `whatsapp_clicks`, so those anon inserts must use **minimal-return behavior** (returning the inserted row would fail the RLS read).
+- **Minimal-return for anon inserts (AURA-301+):** anon has INSERT but **no SELECT** on `leads` / `whatsapp_clicks`, so those anon inserts must use **minimal-return behavior** (returning the inserted row would fail the RLS read).
+- **AURA-107 still needed:** live guard/seed/RLS integration tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until AURA-107 wires the Dockerized Supabase stack into CI.
 
 Branch protection active on `develop`:
 - `quality` — required
@@ -59,8 +57,8 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-101**~~ | Supabase local stack + client/server/service-role helpers | ✅ merged (`95f9df3`) |
 | ~~**AURA-102**~~ | Initial migration — core MVP tables | ✅ merged (`3657e4f`) |
 | ~~**AURA-103**~~ | RLS policies for all sensitive tables | ✅ merged (`1a35958`) |
-| **AURA-104** | Auth guard + super-admin bootstrap | **Implemented on `feat/aura-104-auth-rbac` — Opus 4.8 review required before merge** (auth + D-40 merge blocker) |
-| **AURA-105** | Storage bucket policies + media path strategy | Not started — next after AURA-104 merges; requires per-task approval (migration task) |
+| ~~**AURA-104**~~ | Auth guard + super-admin bootstrap | ✅ merged (`44a7fd4`) |
+| **AURA-105** | Storage bucket policies + media path strategy | Not started — next; requires a new session + per-task approval (migration task) |
 
 ---
 
@@ -139,8 +137,9 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 ## Do Not Do Yet
 
 - ~~Do not start AURA-009 before AURA-008 merges~~ ✅ AURA-008 merged
+- ~~Do not start AURA-104 in this session~~ ✅ AURA-104 merged (`44a7fd4`)
 - Do not fix audit without explicit dep-change approval
-- Do not start AURA-104 in this session — AURA-104 requires a new session + explicit per-task approval (auth / seed / security-sensitive flow)
+- Do not start AURA-105 — AURA-105 requires a new session + explicit per-task approval (migration / storage-security flow)
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`

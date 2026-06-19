@@ -1,13 +1,15 @@
 # Session Handoff
 
 **Last Updated:** 2026-06-19
-**Branch:** `feat/aura-104-auth-rbac` (implementation in review; **NOT merged**). **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) is IMPLEMENTED** and awaiting **Opus 4.8 review before merge** (auth + service-role bootstrap + D-40 merge blocker). AURA-103 remains merged at `1a35958`; AURA-102 at `3657e4f`. `develop` is unchanged. AURA-105 is next — not started.
+**Branch:** `develop` (current source of truth; this docs-sync update is on `docs/aura-104-merged-state`). **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) merged at `44a7fd4`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. AURA-103 remains merged at `1a35958`; AURA-102 at `3657e4f`. AURA-105 is next — not started (requires separate per-task approval).
 
 ---
 
-## AURA-104 — IMPLEMENTED, NOT MERGED (`feat/aura-104-auth-rbac`)
+## AURA-104 — MERGED (`44a7fd4`)
 
-**AURA-104: Auth + `user_profiles` role checks + admin bootstrap script (D-40).** Implements the application-layer admin authorization guard and the first-`super_admin` bootstrap script, completing the authenticated session/profile/role negatives deferred from AURA-103. **No migration, no `supabase/config.toml` change, no signup route/UI, no API routes, no admin UI.** Opus 4.8 review is **required before merge**.
+**AURA-104: Auth + `user_profiles` role checks + admin bootstrap script (D-40).** Implements the application-layer admin authorization guard and the first-`super_admin` bootstrap script, completing the authenticated session/profile/role negatives deferred from AURA-103. **No migration, no `supabase/config.toml` change, no signup route/UI, no API routes, no admin UI.**
+
+Merged via PR #17 (squash) into `develop` at `44a7fd4 feat: add admin auth guard and bootstrap script`. Feature branch `feat/aura-104-auth-rbac` deleted. **Opus 4.8 review (PR #17): APPROVE, merge recommendation YES, no blocking issues** (the non-runnable `scripts/seed-admin.ts` runner decision accepted as a non-blocking follow-up). Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`.
 
 ### What was built
 
@@ -57,7 +59,7 @@
 3. Live guard/seed integration tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until **AURA-107** wires the Dockerized Supabase stack into CI (same posture as AURA-102/103).
 4. The first admin Route Handler / admin layout (**AURA-301**) will consume `requireAdmin`/`requireSuperAdmin`; remove the `guard.ts` / `index.ts` Knip entries then.
 
-**Opus 4.8 review: REQUIRED before merge** (auth + service-role bootstrap + D-40 merge blocker). Do not merge until APPROVE.
+**Opus 4.8 review: APPROVE — merged.** Current source of truth is `develop` at `44a7fd4`. **AURA-105 (storage bucket policies + media path strategy) is next — not started; requires its own per-task approval (migration task).**
 
 ---
 
