@@ -1,8 +1,8 @@
 # Current State
 
 **Updated:** 2026-06-19
-**Branch:** `feat/aura-104-auth-rbac` (AURA-104 implementation in review; **NOT merged**). `develop` remains the merged source of truth.
-**Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) is IMPLEMENTED on `feat/aura-104-auth-rbac` and awaiting Opus 4.8 review before merge.** AURA-105 is next — not started.
+**Branch:** `develop` (current source of truth). Docs-sync update on `docs/aura-104-merged-state`.
+**Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) merged at `44a7fd4`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. AURA-105 is next — not started.
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 > Note: AURA-101 task is labelled "AURA-009" in continuity docs written during AURA-008; the real task-plan ID is AURA-101.
@@ -136,9 +136,9 @@
 
 ---
 
-### Admin Auth Guard + Bootstrap Script (AURA-104) ← IMPLEMENTED, NOT MERGED (`feat/aura-104-auth-rbac`)
+### Admin Auth Guard + Bootstrap Script (AURA-104) ← MERGED (`44a7fd4`)
 
-Application-layer admin authorization + first-`super_admin` bootstrap. **No migration, no `config.toml` change, no signup route/UI, no API routes, no admin UI.** Opus 4.8 review **required before merge**.
+Application-layer admin authorization + first-`super_admin` bootstrap. **No migration, no `config.toml` change, no signup route/UI, no API routes, no admin UI.**
 
 - `src/services/auth/types.ts` — pure types + typed `AuthorizationError` (`status` 401/403 + stable `code`; maps to the API `{ error, code }` envelope).
 - `src/services/auth/policy.ts` — pure `isAdminRole` / `isSuperAdminRole` / `evaluateAccess`. Encodes the admin contract: a valid session AND a `user_profiles` row AND a qualifying role are all required — **auth alone is never sufficient**. Yields 401 `UNAUTHENTICATED` / 403 `NO_PROFILE` / 403 `INSUFFICIENT_ROLE` / allowed.
@@ -152,7 +152,11 @@ Application-layer admin authorization + first-`super_admin` bootstrap. **No migr
 
 **Local verification (CLI 2.106.0):** `supabase db reset` clean; `SUPABASE_LOCAL_TESTS=1 npm run test:security` PASS (6 files, 53); `SUPABASE_LOCAL_TESTS=1 npm run test:integration` PASS (3 files, 7); `npm run quality` PASS; `npm run audit` PASS (2 moderate postcss carry-forward). Blocker greps clean.
 
-**Carry-forward:** (1) **runner decision needed** to execute `scripts/seed-admin.ts` (no `tsx`/`ts-node` in repo; none added — locked decision #3); (2) AURA-301 will consume the guard and should remove the `guard.ts`/`index.ts` Knip entries; (3) live guard/seed integration tests are local-only until AURA-107 wires the Dockerized stack into CI.
+**Merged:** PR #17 squash-merged into `develop` at `44a7fd4 feat: add admin auth guard and bootstrap script`. Feature branch `feat/aura-104-auth-rbac` deleted. Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`.
+
+**Opus 4.8 review (PR #17):** Verdict **APPROVE**, merge recommendation **YES**, **no blocking issues**. The non-runnable `scripts/seed-admin.ts` runner decision was accepted as a non-blocking follow-up.
+
+**Carry-forward:** (1) **runner decision needed** to execute `scripts/seed-admin.ts` (no `tsx`/`ts-node` in repo; none added — locked decision #3; tracked as non-blocking follow-up); (2) **production hosted Supabase must set `enable_signup = false`** (D-40) — local `config.toml` stays `true`, app-layer guard makes local signup drift non-dangerous; (3) AURA-301 will consume the guard and should remove the `guard.ts`/`index.ts` Knip entries; (4) live guard/seed integration tests are local-only until AURA-107 wires the Dockerized stack into CI.
 
 ---
 
@@ -169,8 +173,8 @@ Application-layer admin authorization + first-`super_admin` bootstrap. **No migr
 - No Stage 2 skills, MCPs, hooks, or plugins
 - No Lighthouse advisory run yet (stub disabled until AURA-206)
 - No Dockerized Supabase stack in CI yet (attached in AURA-107); local-stack connection tests require `SUPABASE_LOCAL_TESTS=1`
-- Admin auth guard + bootstrap script are **implemented on `feat/aura-104-auth-rbac` (AURA-104) but NOT merged** (Opus review pending). No DAL functions yet; no login UI/route (AURA-301); no admin routes/UI; no signup path anywhere (D-40)
-- No real data layer, auth, admin, lead capture, CRM, GSAP, business logic, or search
+- Admin auth guard + first-`super_admin` bootstrap script **now exist** — merged in AURA-104 (`44a7fd4`): `src/services/auth/**` guard + `scripts/seed-admin.ts`. Still missing: no DAL functions yet; no login UI/route (AURA-301); no admin routes/UI; no signup path anywhere (D-40); no storage policies (AURA-105); no rate-limit service (AURA-106)
+- No real data layer (beyond the auth guard), admin UI, lead capture, CRM, GSAP, business logic, or search
 
 ---
 
