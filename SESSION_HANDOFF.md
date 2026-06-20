@@ -1,7 +1,31 @@
 # Session Handoff
 
 **Last Updated:** 2026-06-20
-**Branch:** `develop` — source of truth at `dd21edd`. **AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) MERGED at `dd21edd`** (PR #21 squash-merged; Opus 4.8 **APPROVE**, no blocking issues; feature branch `feature/aura-106-rate-limit-service` deleted). AURA-105 merged at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. AURA-107 is next — not started; requires its own per-task approval.
+**Branch:** `develop` — source of truth at `04d3522`. **Phase 1 is COMPLETE.** **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) MERGED at `04d3522`** (PR #23 squash-merged; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-107-dal-security-ci-harness` deleted). AURA-106 merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. **Phase 2 (Public Website) is next; first task AURA-201 — not started; requires its own per-task discovery/planning approval.**
+
+---
+
+## AURA-107 — MERGED (`04d3522`) — **PHASE 1 EXIT GATE → PHASE 1 COMPLETE**
+
+**AURA-107: run live Supabase DAL/security/integration tests in CI.** Brings the previously local-only gated suites into CI against a **Dockerized Supabase CLI local stack**. CI/test-infrastructure only — **no product code, no migration, no `package.json`/`package-lock.json`, no `.env`/`supabase/config.toml`/secrets change.** The diff is exactly two files: `.github/workflows/ci.yml` and `src/tests/dal/supabase-smoke.test.ts`.
+
+Merged via PR #23 (squash) into `develop` at `04d3522 ci: run live Supabase DAL and security tests`. Feature branch `feature/aura-107-dal-security-ci-harness` deleted. **Opus 4.8 phase-exit review (PR #23): APPROVE, merge recommendation YES, no blocking issues.** Required checks passed before merge: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, and the new **`db-tests`**. Current source of truth is `develop` at `04d3522`.
+
+### What was built
+
+- **New `db-tests` job** in `.github/workflows/ci.yml` — separate from `quality` (which stays the fast gate and was **not** weakened; its DAL/security/integration steps run static + gated suites that self-skip without `SUPABASE_LOCAL_TESTS=1`). The `db-tests` job: checkout → Node 20 → pin npm `11.12.1` (consistent with `quality`/`e2e`) → `npm ci` → ensure `psql` client present → `supabase/setup-cli@v1` pinned to **`2.106.0`** → `supabase start` → `supabase db reset` (applies all 4 migrations) → `pg_isready` readiness wait (30×2s) → `test:dal` / `test:security` / `test:integration` with `SUPABASE_LOCAL_TESTS=1` → `supabase stop` (`if: always()`, tolerates a never-installed CLI). `timeout-minutes: 15`. Env: `SUPABASE_LOCAL_TESTS=1`, `SUPABASE_DB_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres` (local-default creds; **no secrets, no production resources**).
+- **Node-20 smoke-test harness fix** in `src/tests/dal/supabase-smoke.test.ts` — the gated reachability test now proves the local stack is reachable with a raw `fetch` against `/rest/v1/` instead of constructing a `supabase-js` client. `createClient()` eagerly builds a `RealtimeClient` requiring a global `WebSocket`, absent in Node < 22 (CI is Node 20). `createClient` importability is still asserted by the CI-smoke `describe` block, so **no coverage is lost**; the fetch reachability assertion remains. No `ws` dependency added; Node baseline stays 20 across all jobs.
+
+### Live CI evidence (`db-tests` green — run job 82498034393)
+
+- All 4 migrations applied (`20260616183318_init`, `20260617025449_rls_policies`, `20260619201518_storage_policies`, `20260619230918_rate_limit_functions`); Postgres readiness confirmed (`Postgres ready after 1 attempt(s)`); stack stopped cleanly (`Stopped supabase local development setup.`).
+- **`test:dal` PASS — 49** (5 files); **`test:security` PASS — 94** (8 files); **`test:integration` PASS — 7** (3 files). **Zero skips in live mode.** Counts match the local pre-PR verification.
+
+### Carry-forward / owner action
+
+1. **`db-tests` is NOT yet a required branch-protection check on `develop`.** Verified via GitHub API on 2026-06-20: current required checks are `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`. **The owner must add `db-tests` to the `develop` protection rule in GitHub Settings** (`docs/BRANCH_PROTECTION.md`). This session does not modify branch protection.
+2. **Local-only carry-forward resolved.** The AURA-103/104/105/106 "live tests are local-only (`SUPABASE_LOCAL_TESTS=1`) until AURA-107" posture is now satisfied — those suites run live in CI. Local manual runs still use `SUPABASE_LOCAL_TESTS=1` + `supabase start`.
+3. **Phase 2 is next.** First task **AURA-201 (Public layout + header/footer + i18n shell)** — not started; requires a new session + per-task discovery/planning approval.
 
 ---
 
@@ -398,16 +422,16 @@ GitHub required approvals are disabled for solo-operator mode; status checks rem
 
 ## Validation Status
 
-AURA-103 is merged. Squash-merged PR #15 (`feat/aura-103-rls-policies` → `develop`) at `1a35958` (full SHA `1a35958ccf658b6918474b5b1d51b6c5de37be75`). Feature branch deleted. `develop` is now the source of truth — clean and synced with `origin/develop`. All local gates passed; GitHub required checks (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`) all PASSED before merge. Opus 4.8 review: **APPROVE**, merge recommendation **YES**, no blocking issues.
+**AURA-107 is merged. Phase 1 is complete.** Squash-merged PR #23 (`feature/aura-107-dal-security-ci-harness` → `develop`) at `04d3522`. Feature branch deleted. `develop` is the source of truth — clean and synced with `origin/develop`. GitHub required checks (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`) plus the new `db-tests` all PASSED before merge. Opus 4.8 phase-exit review: **APPROVE**, merge recommendation **YES**, no blocking issues.
 
-AURA-102 remains merged at `3657e4f`. AURA-101 remains merged at `95f9df3`.
+AURA-106 remains merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`; AURA-101 at `95f9df3`.
 
-`develop` branch protection active: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL` all required. GitHub required approvals disabled for solo-operator mode.
+`develop` branch protection active (verified via API 2026-06-20): `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL` all required. **`db-tests` is green on PR #23 but NOT yet required — owner must add it to the `develop` rule (`docs/BRANCH_PROTECTION.md`).** GitHub required approvals disabled for solo-operator mode.
 
 ---
 
 ## Next Safe Action
 
-**AURA-106 is merged** into `develop` at `dd21edd` (PR #21; Opus 4.8 **APPROVE**, no blocking issues; feature branch deleted). `develop` is the current source of truth.
+**AURA-107 is merged** into `develop` at `04d3522` (PR #23; Opus 4.8 phase-exit review **APPROVE**, no blocking issues; feature branch deleted). **Phase 1 is complete.** `develop` is the current source of truth.
 
-**AURA-107 (DAL/security test harness + Dockerized Supabase CI stack — the Phase 1 exit gate)** is the next task — **not started**; requires a new session + explicit per-task approval before any work begins. Do not start AURA-107 in this docs-sync session.
+**Two follow-ups:** (1) **Owner action** — add `db-tests` to the `develop` branch-protection required checks in GitHub Settings (`docs/BRANCH_PROTECTION.md`); not done from this session. (2) **AURA-201 (Public layout + header/footer + i18n shell)** is the next task and the start of Phase 2 — **not started**; requires a new session + explicit per-task discovery/planning approval before any work begins. Do not start AURA-201 in this docs-sync session.

@@ -1,31 +1,34 @@
 # Next Steps
 
 **Updated:** 2026-06-20
-**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`.** **AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) merged at `dd21edd`** (PR #21; Opus 4.8 **APPROVE**, no blocking issues; feature branch deleted). `develop` is the source of truth at `dd21edd`. AURA-107 is next, not started.
+**Current Phase:** **Phase 1 — COMPLETE** (AURA-101–AURA-107 all merged). **Phase 2 (Public Website) is next.** AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`.** **AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) merged at `dd21edd`** (PR #21; Opus 4.8 **APPROVE**, no blocking issues; feature branch deleted). **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) merged at `04d3522`** (PR #23; Opus 4.8 phase-exit review **APPROVE**, no blocking issues; feature branch deleted). `develop` is the source of truth at `04d3522`. The next task is **AURA-201 (Public layout + header/footer + i18n shell)** — not started.
 
 ---
 
 ## Immediate Next Action
 
-**AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) is MERGED at `dd21edd`** (PR #21 squash-merged into `develop`; Opus 4.8 **APPROVE**, merge recommendation **YES**, no blocking issues; required checks `quality` / `e2e` / `analyze (javascript-typescript)` / `CodeQL` green before merge; feature branch `feature/aura-106-rate-limit-service` deleted). Full scope delivered (the task is the rate-limit *service*, not cleanup-only): pure key/threshold policy (`src/services/rate-limit/key.ts`), server-only enforcement runtime (`limit.ts`) + barrel (`index.ts`); a new migration (`20260619230918_rate_limit_functions.sql`) adding `consume_rate_limit` + `cleanup_rate_limits` (both `SECURITY DEFINER`, empty `search_path`, service-role-only), the `rate_limits_expires_at_idx`, and a **guarded** hourly pg_cron job (`aura-rate-limits-cleanup`) that degrades to a NOTICE where pg_cron is unavailable; unit + gated DAL + gated security tests.
+**AURA-107 (live DAL/security/integration tests in CI via a Dockerized Supabase stack — the Phase 1 exit gate) is MERGED at `04d3522`** (PR #23 squash-merged into `develop`; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; required checks `quality` / `e2e` / `analyze (javascript-typescript)` / `CodeQL` + the new **`db-tests`** green before merge; feature branch `feature/aura-107-dal-security-ci-harness` deleted). CI/test-infrastructure only (two files: `.github/workflows/ci.yml` + `src/tests/dal/supabase-smoke.test.ts`). The new `db-tests` job boots the Dockerized Supabase CLI stack (CLI pinned `2.106.0`), applies all 4 migrations via `supabase db reset`, and runs the suites live (`SUPABASE_LOCAL_TESTS=1`): **DAL 49 passed, Security 94 passed, Integration 7 passed** (zero skips). **Phase 1 is now complete.**
 
-**Immediate next action — AURA-107 discovery / planning, not implementation.** **AURA-107** is the **Phase 1 exit gate**: the DAL + security-negative test harness wired against a **Dockerized Supabase CI stack** (it brings the currently local-only gated tests into CI). It is **not started** and requires a new session + its own explicit per-task approval before any work begins. Do not implement AURA-107 in this docs-sync session.
+**Owner action required (branch protection):** `db-tests` is green on PR #23 but **not yet a required check** on `develop` — verified via API, current required checks are `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`. The owner must add **`db-tests`** to the `develop` branch-protection rule in GitHub Settings (`docs/BRANCH_PROTECTION.md`). This session does not modify branch protection.
+
+**Immediate next action — Phase 2 discovery / planning, not implementation.** The first Phase 2 task is **AURA-201 (Public layout + header/footer + i18n shell)**: build the public `/[locale]` layout (header, footer, navigation) reading agency settings via a safe server selector. It is **not started** and requires a new session + its own explicit per-task discovery/planning approval before any work begins. Do not implement AURA-201 in this docs-sync session.
 
 **Carry-forward / open items still in force:**
-- **AURA-106 live tests are local-only** (`SUPABASE_LOCAL_TESTS=1`): the `consume_rate_limit`/`cleanup_rate_limits` behavioural + security-negative tests run against the local stack until AURA-107 wires the Dockerized stack into CI (static migration-text + pure unit tests run in CI now). The rate-limit service has **no route consumer yet** — lead/whatsapp/login routes (Phases 3-4) are its first importers; remove `src/services/rate-limit/index.ts` from the Knip `entry` list then.
+- **Live DAL/security/integration tests now run in CI** (AURA-107 `db-tests` job) — the prior "local-only (`SUPABASE_LOCAL_TESTS=1`) until AURA-107" posture from AURA-103/104/105/106 is **resolved**. Local manual runs still use `SUPABASE_LOCAL_TESTS=1` + `supabase start`. The rate-limit service still has **no route consumer yet** — lead/whatsapp/login routes (Phases 3-4) are its first importers; remove `src/services/rate-limit/index.ts` from the Knip `entry` list then.
 - **pg_cron is environment-dependent.** The cleanup schedule is registered defensively: where pg_cron is unavailable, the function + index still apply and `public.cleanup_rate_limits()` must be driven by an equivalent external scheduler (A-16 "pg_cron or equivalent"). On hosted Supabase, confirm pg_cron is enabled so the hourly job runs.
 - **AURA-106 non-blocking Opus hardening notes (future task, not actioned at merge):** (1) add a defensive `p_limit > 0` / `p_window_seconds > 0` guard inside `consume_rate_limit` (defense-in-depth; only `service_role` calls it with validated config today); (2) tighten the `RATE_LIMIT_SALT` minimum length in `src/lib/validation/env.schema.ts` (currently `z.string().min(1)`, pre-existing from AURA-101); (3) reconfirm/regenerate `src/types/database.ts` from the live stack in a future DB-touching task (the AURA-106 function types were hand-added and verified accurate against the SQL).
-- **Live storage catalog/behavioural tests are local-only** (`SUPABASE_LOCAL_TESTS=1`) until AURA-107 wires the Dockerized stack into CI. AURA-304 is the first real importer of the media/storage modules — remove their Knip `entry` lines then. **Public-read bucket limitation** (retained URL fetchable after unpublish/archive) is documented + deferred (signed URLs out of MVP).
+- **Live storage catalog/behavioural tests now run in CI** (AURA-107 `db-tests` job; previously local-only). AURA-304 is the first real importer of the media/storage modules — remove their Knip `entry` lines then. **Public-read bucket limitation** (retained URL fetchable after unpublish/archive) is documented + deferred (signed URLs out of MVP).
 - **Runner decision (seed-admin, non-blocking follow-up):** executing `scripts/seed-admin.ts` needs a TS runner resolving `@/*` + the `server-only` guard; none added (no `tsx`/`ts-node` in repo). Decide between approving `tsx` + a `seed:admin` script, or a `node --conditions=react-server` + path-alias loader. Pure logic + DB effect are already test-covered. Accepted by Opus as non-blocking at AURA-104 merge.
 - **Production `enable_signup = false` (D-40):** hosted-Supabase deployment/config requirement. Local `config.toml` stays `true` (unchanged); the app-layer guard rejects any non-admin session.
 - **Minimal-return for anon inserts (AURA-301+):** anon has INSERT but **no SELECT** on `leads` / `whatsapp_clicks`, so those anon inserts must use **minimal-return behavior** (returning the inserted row would fail the RLS read).
-- **AURA-107 still needed:** live guard/seed/RLS/storage integration tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until AURA-107 wires the Dockerized Supabase stack into CI.
+- **AURA-107 delivered:** live guard/seed/RLS/storage/rate-limit integration tests now run in CI via the `db-tests` job (Dockerized Supabase stack). The local-only carry-forward is resolved.
 
-Branch protection active on `develop`:
+Branch protection active on `develop` (verified via API 2026-06-20):
 - `quality` — required
 - `e2e` — required
 - `analyze (javascript-typescript)` — required
 - `CodeQL` — required
+- **`db-tests` — NOT yet required (owner action: add it to the `develop` rule; AURA-107 added the check)**
 
 GitHub required approvals are disabled for solo-operator mode; required checks remain enforced.
 
@@ -54,7 +57,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-007**~~ | GitHub Actions CI + CodeQL + branch protection | ✅ merged |
 | ~~**AURA-008**~~ | First vertical slice — `/`→`/en` redirect + `/en` homepage shell + smoke test | ✅ merged (`be43dab`) |
 
-### Phase 1 — In Progress
+### Phase 1 — Complete ✅
 
 | Task | Description | Status |
 |---|---|---|
@@ -64,7 +67,14 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-104**~~ | Auth guard + super-admin bootstrap | ✅ merged (`44a7fd4`) |
 | ~~**AURA-105**~~ | Storage bucket policies + media path strategy | ✅ merged (`fae3d62`) |
 | ~~**AURA-106**~~ | Rate-limit service + salted-hash key + TTL cleanup (D-51) | ✅ merged (`dd21edd`) |
-| **AURA-107** | DAL test harness + security negative scaffold (Dockerized CI stack) | Not started — next; Phase 1 exit gate; requires a new session + per-task approval |
+| ~~**AURA-107**~~ | DAL/security/integration live tests in CI (Dockerized stack) — Phase 1 exit gate | ✅ merged (`04d3522`) |
+
+### Phase 2 — Public Website — Not Started
+
+| Task | Description | Status |
+|---|---|---|
+| **AURA-201** | Public layout + header/footer + i18n shell | Not started — next; requires a new session + per-task discovery/planning approval |
+| AURA-202–207 | Listing, detail, areas, legal, SEO/noindex, about | Not started |
 
 ---
 
@@ -148,10 +158,12 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - ~~Do not start AURA-104 in this session~~ ✅ AURA-104 merged (`44a7fd4`)
 - ~~Do not start AURA-105~~ ✅ AURA-105 merged at `fae3d62`
 - ~~Do not start AURA-106~~ ✅ AURA-106 merged at `dd21edd`
+- ~~Do not start AURA-107~~ ✅ AURA-107 merged at `04d3522` (Phase 1 complete)
 - Do not fix audit without explicit dep-change approval
-- Do not start AURA-107 — AURA-107 requires a new session + explicit per-task approval (DAL/security test harness + Dockerized CI stack; Phase 1 exit gate)
+- Do not start AURA-201 — AURA-201 (first Phase 2 task) requires a new session + explicit per-task discovery/planning approval before implementation
+- Do not modify `develop` branch protection from a code/docs session — adding `db-tests` as a required check is a manual owner action in GitHub Settings
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`
-- Do not implement UI components (deferred to Phase 2)
+- Do not implement UI components without AURA-201 approval (Phase 2)
 - Do not load fonts via next/font without explicit task approval
