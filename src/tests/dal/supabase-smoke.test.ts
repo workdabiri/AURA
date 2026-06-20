@@ -39,11 +39,12 @@ describe('Supabase local-stack connection smoke (requires SUPABASE_LOCAL_TESTS=1
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:54321'
       const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'anon-key-placeholder'
 
-      const { createClient } = await import('@supabase/supabase-js')
-      const supabase = createClient(url, anonKey)
-
-      // Issue a request that always succeeds at the network level (401 or 200, not a fetch error).
-      // We are proving the client can reach the local stack, not that tables exist.
+      // Reachability is proven by a raw fetch against the REST endpoint — we are
+      // proving the local stack is reachable, not that tables exist. We deliberately
+      // do NOT construct a supabase-js client here: createClient() eagerly builds a
+      // RealtimeClient that requires a global WebSocket, which Node < 22 lacks (the
+      // CI runner is Node 20). createClient importability is covered by the CI-smoke
+      // test above, so no coverage is lost. (AURA-107)
       const response = await fetch(`${url}/rest/v1/`, {
         headers: {
           apikey: anonKey,
@@ -53,9 +54,6 @@ describe('Supabase local-stack connection smoke (requires SUPABASE_LOCAL_TESTS=1
 
       expect(response.status).not.toBe(0)
       expect(response).toBeDefined()
-
-      // Silence TS unused-variable check for the supabase client created above.
-      expect(supabase).toBeDefined()
     }
   )
 })
