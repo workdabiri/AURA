@@ -30,14 +30,15 @@ So these rules must be applied **once, manually**, after the AURA-007 workflows 
 
 ## Required status checks
 
-> **Note on check names:** For a matrix job (like CodeQL's `strategy.matrix.language`), GitHub reports the check context as `<job-name> (<matrix-value>)`, not the bare job name. The three checks visible on this PR are `quality`, `analyze (javascript-typescript)`, and `CodeQL`. Use the exact strings below when configuring required checks.
+> **Note on check names:** For a matrix job (like CodeQL's `strategy.matrix.language`), GitHub reports the check context as `<job-name> (<matrix-value>)`, not the bare job name. Use the exact strings below when configuring required checks.
 
 | Check name (as reported by GitHub) | Source | Required? |
 |---|---|---|
 | `quality` | `.github/workflows/ci.yml` — `jobs.quality` | **Yes** — merge blocker |
 | `analyze (javascript-typescript)` | `.github/workflows/codeql.yml` — `jobs.analyze` (matrix: javascript-typescript) | **Yes** — CodeQL Actions job; merge blocker |
 | `CodeQL` | GitHub code-scanning results (auto-reported alongside `analyze`) | **Yes** — code-scanning gate; merge blocker |
-| `e2e` | `.github/workflows/ci.yml` (currently **disabled**) | Not yet — add when **AURA-008** enables Playwright |
+| `e2e` | `.github/workflows/ci.yml` — `jobs.e2e` (enabled in **AURA-008**) | **Yes** — required since AURA-008; merge blocker |
+| `db-tests` | `.github/workflows/ci.yml` — `jobs.db-tests` (added in **AURA-107**) | **Yes** — required since AURA-107; live DAL/security/integration tests against the Dockerized Supabase stack; merge blocker. Added to the `develop` rule (verified via API 2026-06-20). |
 | `lighthouse-advisory` | `.github/workflows/lighthouse.yml` (currently **disabled**) | **No** — advisory only; never a required check (enabled non-blocking in **AURA-206**) |
 
 > The `quality` job decomposes the full gate (lint, typecheck, format:check, unit/dal/integration/security tests, deps:check, unused, build, `npm audit --audit-level=high`) into named steps. A single required check (`quality`) therefore gates the entire `npm run quality` set plus audit; step names reveal which gate failed.
@@ -53,7 +54,8 @@ Configure a branch protection rule (or Ruleset) targeting `develop` with:
   - [ ] **Dismiss stale pull request approvals when new commits are pushed**
 - [ ] **Require status checks to pass before merging**
   - [ ] **Require branches to be up to date before merging**
-  - [ ] Required checks: **`quality`**, **`analyze (javascript-typescript)`**, **`CodeQL`**
+  - [x] Currently required: **`quality`**, **`e2e`**, **`analyze (javascript-typescript)`**, **`CodeQL`**, **`db-tests`** (verified via GitHub API on 2026-06-20)
+  - [x] **`db-tests`** (AURA-107) added to the required checks — **AURA-107 Phase 1 exit gate is now fully enforced by branch protection**
 - [ ] **Require conversation resolution before merging** (recommended)
 - [ ] **Do not allow force pushes**
 - [ ] **Do not allow deletions**
@@ -93,5 +95,5 @@ Configure a branch protection rule (or Ruleset) targeting `develop` with:
 - **Opus review:** AURA-007 (this CI/security-gate work) requires **Opus 4.8 review before merge** (`docs/TASKS_Project.md` Model Assignment). The required-review setting above is the mechanism that enforces a human sign-off; Opus review is that sign-off for sensitive tasks.
 - **AURA-008** unskips the Playwright smoke test and enables the `e2e` job — add `e2e` as a required check then.
 - **AURA-206** enables the Lighthouse advisory job (non-blocking) — it remains **excluded** from required checks until the production release gate (`docs/CI_CD_STRATEGY.md` "Lighthouse Timing").
-- **AURA-107** attaches the Dockerized Supabase local stack to the DAL/integration/security steps (A-02) — the `quality` check name does not change.
-- **No secrets** are required for `ci.yml` or `codeql.yml` (CodeQL uses the built-in `GITHUB_TOKEN`). Production/deploy secrets and Vercel configuration are explicitly out of scope for AURA-007.
+- **AURA-107 (merged `04d3522`)** added a **separate `db-tests` job** (rather than attaching the stack to the `quality` steps) so `quality` stays the fast gate. `db-tests` boots the Dockerized Supabase CLI stack, applies all migrations via `supabase db reset`, and runs the DAL/security/integration suites live (`SUPABASE_LOCAL_TESTS=1`). It was green on PR #23 (DAL 49 / Security 94 / Integration 7). **`db-tests` is now required on `develop`** (verified via API 2026-06-20) — the AURA-107 Phase 1 exit gate is fully enforced by branch protection. The `quality` check name is unchanged.
+- **No secrets** are required for `ci.yml` (incl. `db-tests`, which uses only local-default `postgres:postgres` creds) or `codeql.yml` (CodeQL uses the built-in `GITHUB_TOKEN`). Production/deploy secrets and Vercel configuration are explicitly out of scope for AURA-007.
