@@ -1,19 +1,20 @@
 # Next Steps
 
 **Updated:** 2026-06-20
-**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`.** `develop` is the source of truth at `fae3d62`. **AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) is implemented on `feature/aura-106-rate-limit-service` — NOT merged (awaiting Opus review).** AURA-107 is next, not started.
+**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`.** **AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) merged at `dd21edd`** (PR #21; Opus 4.8 **APPROVE**, no blocking issues; feature branch deleted). `develop` is the source of truth at `dd21edd`. AURA-107 is next, not started.
 
 ---
 
 ## Immediate Next Action
 
-**AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) is IMPLEMENTED on `feature/aura-106-rate-limit-service` — NOT merged.** Full scope delivered (the task is the rate-limit *service*, not cleanup-only): pure key/threshold policy (`src/services/rate-limit/key.ts`), server-only enforcement runtime (`limit.ts`) + barrel (`index.ts`); a new migration (`20260619230918_rate_limit_functions.sql`) adding `consume_rate_limit` + `cleanup_rate_limits` (both `SECURITY DEFINER`, empty `search_path`, service-role-only), the `rate_limits_expires_at_idx`, and a **guarded** hourly pg_cron job (`aura-rate-limits-cleanup`) that degrades to a NOTICE where pg_cron is unavailable; unit + gated DAL + gated security tests; regenerated `database.ts`. All gates pass; local `supabase db reset` applies clean (pg_cron present locally → job scheduled). **Awaiting Opus 4.8 review before merge (D-51 merge blocker).**
+**AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) is MERGED at `dd21edd`** (PR #21 squash-merged into `develop`; Opus 4.8 **APPROVE**, merge recommendation **YES**, no blocking issues; required checks `quality` / `e2e` / `analyze (javascript-typescript)` / `CodeQL` green before merge; feature branch `feature/aura-106-rate-limit-service` deleted). Full scope delivered (the task is the rate-limit *service*, not cleanup-only): pure key/threshold policy (`src/services/rate-limit/key.ts`), server-only enforcement runtime (`limit.ts`) + barrel (`index.ts`); a new migration (`20260619230918_rate_limit_functions.sql`) adding `consume_rate_limit` + `cleanup_rate_limits` (both `SECURITY DEFINER`, empty `search_path`, service-role-only), the `rate_limits_expires_at_idx`, and a **guarded** hourly pg_cron job (`aura-rate-limits-cleanup`) that degrades to a NOTICE where pg_cron is unavailable; unit + gated DAL + gated security tests.
 
-**Immediate next action — open the AURA-106 PR to `develop` and request Opus 4.8 review.** Do NOT merge until Opus approves. After merge, **AURA-107** (DAL/security test harness + Dockerized CI stack) is next — not started; requires its own per-task approval.
+**Immediate next action — AURA-107 discovery / planning, not implementation.** **AURA-107** is the **Phase 1 exit gate**: the DAL + security-negative test harness wired against a **Dockerized Supabase CI stack** (it brings the currently local-only gated tests into CI). It is **not started** and requires a new session + its own explicit per-task approval before any work begins. Do not implement AURA-107 in this docs-sync session.
 
 **Carry-forward / open items still in force:**
 - **AURA-106 live tests are local-only** (`SUPABASE_LOCAL_TESTS=1`): the `consume_rate_limit`/`cleanup_rate_limits` behavioural + security-negative tests run against the local stack until AURA-107 wires the Dockerized stack into CI (static migration-text + pure unit tests run in CI now). The rate-limit service has **no route consumer yet** — lead/whatsapp/login routes (Phases 3-4) are its first importers; remove `src/services/rate-limit/index.ts` from the Knip `entry` list then.
 - **pg_cron is environment-dependent.** The cleanup schedule is registered defensively: where pg_cron is unavailable, the function + index still apply and `public.cleanup_rate_limits()` must be driven by an equivalent external scheduler (A-16 "pg_cron or equivalent"). On hosted Supabase, confirm pg_cron is enabled so the hourly job runs.
+- **AURA-106 non-blocking Opus hardening notes (future task, not actioned at merge):** (1) add a defensive `p_limit > 0` / `p_window_seconds > 0` guard inside `consume_rate_limit` (defense-in-depth; only `service_role` calls it with validated config today); (2) tighten the `RATE_LIMIT_SALT` minimum length in `src/lib/validation/env.schema.ts` (currently `z.string().min(1)`, pre-existing from AURA-101); (3) reconfirm/regenerate `src/types/database.ts` from the live stack in a future DB-touching task (the AURA-106 function types were hand-added and verified accurate against the SQL).
 - **Live storage catalog/behavioural tests are local-only** (`SUPABASE_LOCAL_TESTS=1`) until AURA-107 wires the Dockerized stack into CI. AURA-304 is the first real importer of the media/storage modules — remove their Knip `entry` lines then. **Public-read bucket limitation** (retained URL fetchable after unpublish/archive) is documented + deferred (signed URLs out of MVP).
 - **Runner decision (seed-admin, non-blocking follow-up):** executing `scripts/seed-admin.ts` needs a TS runner resolving `@/*` + the `server-only` guard; none added (no `tsx`/`ts-node` in repo). Decide between approving `tsx` + a `seed:admin` script, or a `node --conditions=react-server` + path-alias loader. Pure logic + DB effect are already test-covered. Accepted by Opus as non-blocking at AURA-104 merge.
 - **Production `enable_signup = false` (D-40):** hosted-Supabase deployment/config requirement. Local `config.toml` stays `true` (unchanged); the app-layer guard rejects any non-admin session.
@@ -62,8 +63,8 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-103**~~ | RLS policies for all sensitive tables | ✅ merged (`1a35958`) |
 | ~~**AURA-104**~~ | Auth guard + super-admin bootstrap | ✅ merged (`44a7fd4`) |
 | ~~**AURA-105**~~ | Storage bucket policies + media path strategy | ✅ merged (`fae3d62`) |
-| **AURA-106** | Rate-limit service + salted-hash key + TTL cleanup (D-51) | Implemented on `feature/aura-106-rate-limit-service` — NOT merged; awaiting Opus review |
-| **AURA-107** | DAL test harness + security negative scaffold (Dockerized CI stack) | Not started — next; requires a new session + per-task approval |
+| ~~**AURA-106**~~ | Rate-limit service + salted-hash key + TTL cleanup (D-51) | ✅ merged (`dd21edd`) |
+| **AURA-107** | DAL test harness + security negative scaffold (Dockerized CI stack) | Not started — next; Phase 1 exit gate; requires a new session + per-task approval |
 
 ---
 
@@ -146,8 +147,9 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - ~~Do not start AURA-009 before AURA-008 merges~~ ✅ AURA-008 merged
 - ~~Do not start AURA-104 in this session~~ ✅ AURA-104 merged (`44a7fd4`)
 - ~~Do not start AURA-105~~ ✅ AURA-105 merged at `fae3d62`
+- ~~Do not start AURA-106~~ ✅ AURA-106 merged at `dd21edd`
 - Do not fix audit without explicit dep-change approval
-- Do not start AURA-106 — AURA-106 requires a new session + explicit per-task approval (migration / pg_cron)
+- Do not start AURA-107 — AURA-107 requires a new session + explicit per-task approval (DAL/security test harness + Dockerized CI stack; Phase 1 exit gate)
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`
