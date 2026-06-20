@@ -1,17 +1,19 @@
 # Next Steps
 
 **Updated:** 2026-06-20
-**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`.** `develop` is the source of truth at `fae3d62`. AURA-106 is next, not started.
+**Current Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`.** `develop` is the source of truth at `fae3d62`. **AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) is implemented on `feature/aura-106-rate-limit-service` — NOT merged (awaiting Opus review).** AURA-107 is next, not started.
 
 ---
 
 ## Immediate Next Action
 
-**AURA-105 (storage bucket policies + media path strategy) is MERGED** into `develop` at `fae3d62`. Opus 4.8 APPROVE; required checks green; feature branch deleted.
+**AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) is IMPLEMENTED on `feature/aura-106-rate-limit-service` — NOT merged.** Full scope delivered (the task is the rate-limit *service*, not cleanup-only): pure key/threshold policy (`src/services/rate-limit/key.ts`), server-only enforcement runtime (`limit.ts`) + barrel (`index.ts`); a new migration (`20260619230918_rate_limit_functions.sql`) adding `consume_rate_limit` + `cleanup_rate_limits` (both `SECURITY DEFINER`, empty `search_path`, service-role-only), the `rate_limits_expires_at_idx`, and a **guarded** hourly pg_cron job (`aura-rate-limits-cleanup`) that degrades to a NOTICE where pg_cron is unavailable; unit + gated DAL + gated security tests; regenerated `database.ts`. All gates pass; local `supabase db reset` applies clean (pg_cron present locally → job scheduled). **Awaiting Opus 4.8 review before merge (D-51 merge blocker).**
 
-**Immediate next action — AURA-106 discovery / planning (NOT implementation).** AURA-106 (rate_limits cleanup job / pg_cron, D-51) is the next task — **not started**. It is a migration task and touches security boundaries (rate-limit key strategy, D-18/D-51 merge blocker), so it **requires a new session + explicit per-task approval before any work begins**. The next safe step is to read `docs/TASKS_Project.md` (AURA-106), `docs/SECURITY_BASELINE.md` (rate-limit rules), and `.claude/rules/no-raw-ip-in-events.md` to scope the task — then surface it for approval. Do not write code, migrations, or config in advance of that approval. Branch (when approved): `feature/aura-106-rate-limit-cleanup`.
+**Immediate next action — open the AURA-106 PR to `develop` and request Opus 4.8 review.** Do NOT merge until Opus approves. After merge, **AURA-107** (DAL/security test harness + Dockerized CI stack) is next — not started; requires its own per-task approval.
 
 **Carry-forward / open items still in force:**
+- **AURA-106 live tests are local-only** (`SUPABASE_LOCAL_TESTS=1`): the `consume_rate_limit`/`cleanup_rate_limits` behavioural + security-negative tests run against the local stack until AURA-107 wires the Dockerized stack into CI (static migration-text + pure unit tests run in CI now). The rate-limit service has **no route consumer yet** — lead/whatsapp/login routes (Phases 3-4) are its first importers; remove `src/services/rate-limit/index.ts` from the Knip `entry` list then.
+- **pg_cron is environment-dependent.** The cleanup schedule is registered defensively: where pg_cron is unavailable, the function + index still apply and `public.cleanup_rate_limits()` must be driven by an equivalent external scheduler (A-16 "pg_cron or equivalent"). On hosted Supabase, confirm pg_cron is enabled so the hourly job runs.
 - **Live storage catalog/behavioural tests are local-only** (`SUPABASE_LOCAL_TESTS=1`) until AURA-107 wires the Dockerized stack into CI. AURA-304 is the first real importer of the media/storage modules — remove their Knip `entry` lines then. **Public-read bucket limitation** (retained URL fetchable after unpublish/archive) is documented + deferred (signed URLs out of MVP).
 - **Runner decision (seed-admin, non-blocking follow-up):** executing `scripts/seed-admin.ts` needs a TS runner resolving `@/*` + the `server-only` guard; none added (no `tsx`/`ts-node` in repo). Decide between approving `tsx` + a `seed:admin` script, or a `node --conditions=react-server` + path-alias loader. Pure logic + DB effect are already test-covered. Accepted by Opus as non-blocking at AURA-104 merge.
 - **Production `enable_signup = false` (D-40):** hosted-Supabase deployment/config requirement. Local `config.toml` stays `true` (unchanged); the app-layer guard rejects any non-admin session.
@@ -60,7 +62,8 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-103**~~ | RLS policies for all sensitive tables | ✅ merged (`1a35958`) |
 | ~~**AURA-104**~~ | Auth guard + super-admin bootstrap | ✅ merged (`44a7fd4`) |
 | ~~**AURA-105**~~ | Storage bucket policies + media path strategy | ✅ merged (`fae3d62`) |
-| **AURA-106** | rate_limits cleanup job / pg_cron | Not started — next; requires a new session + per-task approval |
+| **AURA-106** | Rate-limit service + salted-hash key + TTL cleanup (D-51) | Implemented on `feature/aura-106-rate-limit-service` — NOT merged; awaiting Opus review |
+| **AURA-107** | DAL test harness + security negative scaffold (Dockerized CI stack) | Not started — next; requires a new session + per-task approval |
 
 ---
 
@@ -87,6 +90,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - `client.ts`, `service-role.ts` entries remain — `client.ts` has no Client Component consumer yet; `service-role.ts` is only **dynamically** imported by `scripts/seed-admin.ts`, so its entry is retained until a server DAL op imports it statically.
 - `src/services/auth/guard.ts`, `src/services/auth/index.ts`, `scripts/seed-admin.ts` entries added in AURA-104 — remove the guard/index entries when the first admin Route Handler / admin layout (AURA-301) imports the guard.
 - `src/domain/properties/media.ts`, `src/services/storage/policy.ts` entries added in AURA-105 — remove when the media upload route (AURA-304) becomes their first real importer.
+- `src/services/rate-limit/index.ts` entry added in AURA-106 — the server-only rate-limit barrel has no route consumer yet; remove when the first lead/whatsapp/login Route Handler (Phases 3-4) imports it. (`key.ts` is already imported by the unit test; `limit.ts` is reachable via the barrel.)
 
 ---
 

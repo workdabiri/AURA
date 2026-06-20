@@ -1,8 +1,8 @@
 # Current State
 
 **Updated:** 2026-06-20
-**Branch:** `develop` (source of truth). Latest merged commit: `fae3d62`.
-**Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) merged at `44a7fd4`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. AURA-106 is next — not started.
+**Branch:** `feature/aura-106-rate-limit-service` (work in progress). `develop` source of truth at `fae3d62`.
+**Phase:** Phase 1 — in progress. AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) merged at `44a7fd4`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. **AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) is IMPLEMENTED on `feature/aura-106-rate-limit-service` — NOT merged; awaiting Opus 4.8 review (D-51 merge blocker).** AURA-107 is next — not started.
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 > Note: AURA-101 task is labelled "AURA-009" in continuity docs written during AURA-008; the real task-plan ID is AURA-101.
@@ -180,12 +180,32 @@ Supabase Storage layer for property media: the `property-media` bucket + admin-o
 
 ---
 
+### Rate-Limit Service + Salted-Hash Key + TTL Cleanup (AURA-106) ← IMPLEMENTED, NOT MERGED (`feature/aura-106-rate-limit-service`)
+
+Full server-side rate-limit service (D-51) — the salted-hash key strategy, threshold enforcement, AND the 24h-TTL cleanup. **Not wired into any route** (lead/whatsapp/login consume it in Phases 3-4); **no `.env`/`config.toml`/lockfile change**; `rate_limits` table shape, RLS, and grants are unchanged from AURA-102/103.
+
+- `src/services/rate-limit/key.ts` — **pure** (no `server-only`, no env, no I/O): `hashRateLimitKey(salt, ip, route)` = `HMAC-SHA256(salt, `${ip}:${route}`)` hex; `RATE_LIMIT_RULES` (A-03: `lead_submit` 5/h, `whatsapp_click` 30/h, `login` 5/15min); `getRateLimitRule`/`isRateLimitRoute`; `RateLimitResult`/`RateLimitRoute`/`RateLimitRule` types. Raw IP is an in-memory arg only — never in the output.
+- `src/services/rate-limit/limit.ts` — **`server-only`** enforcement runtime: reads `RATE_LIMIT_SALT` via `getServerEnv()`, derives the key, calls `consume_rate_limit` via the service-role client, returns the structured `RateLimitResult`. Raw IP never stored/returned/logged.
+- `src/services/rate-limit/index.ts` — barrel (server-only-tainted; `entry` in Knip until a route imports it).
+- `supabase/migrations/20260619230918_rate_limit_functions.sql` — **new** migration (existing migrations untouched): `public.consume_rate_limit(p_key_hash, p_route, p_limit, p_window_seconds)` (atomic check-and-increment: insert / window-reset / increment / deny; `expires_at` refreshed to now()+24h on allow, untouched on deny) and `public.cleanup_rate_limits()` (deletes `expires_at < now()`, returns count, idempotent). Both **`SECURITY DEFINER`, `search_path=''`**, EXECUTE revoked from public → granted only to `service_role`. Adds `rate_limits_expires_at_idx`. **Guarded** hourly pg_cron job `aura-rate-limits-cleanup` (`0 * * * *`) wrapped so a missing pg_cron degrades to a `NOTICE` (never fails `db reset`); equivalent external scheduler is the A-16 fallback. Documented rollback (unschedule → drop functions → drop index; never drops the table).
+- `src/types/database.ts` — regenerated: `Functions` now includes `consume_rate_limit` + `cleanup_rate_limits` (no table/enum change).
+- Tests: `src/tests/unit/rate-limit.test.ts` (pure: HMAC determinism, no-raw-IP, thresholds, unknown-route); `src/tests/dal/rate-limit.test.ts` (gated behavioural: consume increment/deny/reset/TTL, cleanup expired/fresh/idempotent); `src/tests/security/rate-limit-functions.test.ts` (static migration hardening + gated negatives: SECURITY DEFINER, anon/auth cannot execute, rate_limits still 0 policies / no grants / no IP column).
+- `knip.jsonc` — added `src/services/rate-limit/index.ts` as `entry` (no route consumer yet).
+
+**Local verification (CLI 2.106.0):** `supabase db reset` applies all four migrations clean (pg_cron present on this stack → job scheduled; NOTICE confirms). `SUPABASE_LOCAL_TESTS=1 npm run test:dal` PASS (5 files, 49); `… test:security` PASS (8 files, 94); `npm run quality` PASS; `npm run test:unit` 65 PASS; `npm run audit` PASS (exit 0; 2 moderate postcss carry-forward). Forbidden-path greps clean (no `.env`/lockfile/`config.toml`; no `client_id`/tenant; no raw IP; no new rate_limits policy/anon-auth grant; no service-role in components/app/domain).
+
+**Opus 4.8 review:** **REQUIRED before merge** (D-51 merge blocker) — pending.
+
+**Carry-forward:** (1) live consume/cleanup tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until **AURA-107**; (2) the rate-limit service has **no route importer yet** — Phases 3-4 (lead/whatsapp/login) are first; remove the `src/services/rate-limit/index.ts` Knip `entry` then; (3) **pg_cron is environment-dependent** — where unavailable, `cleanup_rate_limits()` must be driven by an equivalent external scheduler (A-16); on hosted Supabase confirm pg_cron is enabled.
+
+---
+
 ## What Does NOT Exist
 
 - No root-level `tests/` directory
 - RLS policies are **merged to `develop` in AURA-103** (`1a35958`) — 36 policies across 10 tables + 3 role helpers; `rate_limits` intentionally has 0 policies (service-role only)
 - No seed data / seed users; no `supabase/seed.sql`
-- No rate_limits cleanup job / pg_cron (AURA-106)
+- Rate-limit service + TTL cleanup **now exist on `feature/aura-106-rate-limit-service`** (AURA-106, NOT merged): `src/services/rate-limit/{key,limit,index}.ts` + migration `20260619230918_rate_limit_functions.sql` (`consume_rate_limit`, `cleanup_rate_limits`, `rate_limits_expires_at_idx`, guarded hourly pg_cron `aura-rate-limits-cleanup`). Still **not wired into any route** (lead/whatsapp/login consume it in Phases 3-4)
 - No `.env` or `.env.local` file (`.env.example` placeholders only)
 - No product UI features beyond the minimal homepage shell
 - No UI components (Button, Card, etc.) — component layer is Phase 2+
@@ -193,8 +213,8 @@ Supabase Storage layer for property media: the `property-media` bucket + admin-o
 - No Stage 2 skills, MCPs, hooks, or plugins
 - No Lighthouse advisory run yet (stub disabled until AURA-206)
 - No Dockerized Supabase stack in CI yet (attached in AURA-107); local-stack connection tests require `SUPABASE_LOCAL_TESTS=1`
-- Admin auth guard + first-`super_admin` bootstrap script **now exist** — merged in AURA-104 (`44a7fd4`): `src/services/auth/**` guard + `scripts/seed-admin.ts`. Still missing: no DAL functions yet; no login UI/route (AURA-301); no admin routes/UI; no signup path anywhere (D-40); no rate-limit service (AURA-106)
-- Storage bucket policies + media path contract **now exist** — merged in AURA-105 (`fae3d62`): `property-media` bucket + admin-only `storage.objects` policies + `src/domain/properties/media.ts` + `src/services/storage/policy.ts`. Still missing: no upload route/UI (AURA-304); no signed URLs (deferred out of MVP); no rate-limit service (AURA-106)
+- Admin auth guard + first-`super_admin` bootstrap script **now exist** — merged in AURA-104 (`44a7fd4`): `src/services/auth/**` guard + `scripts/seed-admin.ts`. Still missing: no DAL functions yet; no login UI/route (AURA-301); no admin routes/UI; no signup path anywhere (D-40); rate-limit service now implemented on `feature/aura-106-rate-limit-service` (AURA-106, not merged), not yet route-wired
+- Storage bucket policies + media path contract **now exist** — merged in AURA-105 (`fae3d62`): `property-media` bucket + admin-only `storage.objects` policies + `src/domain/properties/media.ts` + `src/services/storage/policy.ts`. Still missing: no upload route/UI (AURA-304); no signed URLs (deferred out of MVP); rate-limit service now implemented on `feature/aura-106-rate-limit-service` (AURA-106, not merged), not yet route-wired
 - No real data layer (beyond the auth guard), admin UI, lead capture, CRM, GSAP, business logic, or search
 
 ---

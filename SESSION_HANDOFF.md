@@ -1,7 +1,43 @@
 # Session Handoff
 
 **Last Updated:** 2026-06-20
-**Branch:** `develop` — source of truth at `fae3d62`. **AURA-105 (storage bucket policies + media path strategy) MERGED at `fae3d62`** — Opus 4.8 APPROVE, no blocking issues; required checks green; feature branch deleted. **AURA-104 merged at `44a7fd4`**; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. AURA-106 is next — not started.
+**Branch:** `feature/aura-106-rate-limit-service` — **AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) IMPLEMENTED, NOT merged; awaiting Opus 4.8 review (D-51 merge blocker).** `develop` source of truth at `fae3d62`. AURA-105 merged at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. AURA-107 is next — not started.
+
+---
+
+## AURA-106 — IMPLEMENTED, NOT MERGED (`feature/aura-106-rate-limit-service`)
+
+**AURA-106: Rate-limit table + salted-hash key strategy (D-51).** Full server-side rate-limit **service** (not cleanup-only — the authoritative `docs/TASKS_Project.md` task is the whole service): salted-hash key derivation, config-tunable threshold enforcement, and the 24h-TTL cleanup. **Not wired into any route** — lead/whatsapp/login routes consume it in Phases 3-4 (`Out of Scope` per the task). **No `.env`/`supabase/config.toml`/`package-lock.json` change; `rate_limits` table shape, RLS, and grants unchanged.**
+
+**Awaiting Opus 4.8 review before merge** (`Model Assignment`: execute Sonnet 4.6, Opus review required — D-51 merge blocker). PR to `develop` only.
+
+### What was built
+
+- **`src/services/rate-limit/key.ts`** — PURE (no `server-only`, no env, no I/O), unit-testable: `hashRateLimitKey(salt, ip, route)` = `HMAC-SHA256(salt, `${ip}:${route}`)` hex; `RATE_LIMIT_RULES` (A-03 — `lead_submit` 5/h, `whatsapp_click` 30/h, `login` 5/15min); `getRateLimitRule`/`isRateLimitRoute` (unknown route throws); `RateLimitResult`/`RateLimitRoute`/`RateLimitRule` types. The raw IP is an **in-memory argument only** and never appears in the output.
+- **`src/services/rate-limit/limit.ts`** — **`server-only`** runtime: `enforceRateLimit({ route, ip })` reads `RATE_LIMIT_SALT` via `getServerEnv()`, derives the key, calls `consume_rate_limit` through the service-role client, maps the typed `RateLimitResult`. Raw IP never stored/returned/logged.
+- **`src/services/rate-limit/index.ts`** — barrel (server-only-tainted; Knip `entry` until a route imports it). Tests import `./key` directly to avoid the `server-only` guard.
+- **Migration `supabase/migrations/20260619230918_rate_limit_functions.sql`** (new; existing migrations untouched):
+  - `public.consume_rate_limit(p_key_hash text, p_route text, p_limit integer, p_window_seconds integer)` → `(allowed, limit_value, remaining, current_count, reset_at)`. Atomic check-and-increment via `SELECT … FOR UPDATE` + `INSERT … ON CONFLICT DO NOTHING` race handling: no row → insert count=1; window elapsed → reset; under limit → increment; at/over limit → deny (row & `expires_at` untouched). `expires_at` (24h row TTL, A-16) refreshed to `now()+24h` on every allow. Accepts **only** hash+route+limit+window — never an IP.
+  - `public.cleanup_rate_limits()` → integer: `delete from public.rate_limits where expires_at < now()`, returns deleted count, idempotent.
+  - Both **`SECURITY DEFINER`, `set search_path = ''`** (same hardening as `current_user_role`); EXECUTE revoked from `public`, granted only to `service_role`. **No new RLS policy, no anon/authenticated grant** — `rate_limits` stays service-role-only.
+  - `rate_limits_expires_at_idx` on `(expires_at)` for the cleanup sweep.
+  - **Guarded** hourly pg_cron job `aura-rate-limits-cleanup` (`'0 * * * *'` → `select public.cleanup_rate_limits();`), wrapped in a `DO` block that catches a missing/unpreloaded pg_cron and degrades to a `NOTICE` so `supabase db reset` never fails; idempotent (unschedule-then-schedule). A-16 "or equivalent": where pg_cron is absent, an external scheduler drives the function.
+  - Documented rollback: guarded unschedule → drop both functions → drop index; **never drops the `rate_limits` table** (owned by AURA-102).
+- **`src/types/database.ts`** — regenerated (`npm run db:types`): `Functions` gains `consume_rate_limit` + `cleanup_rate_limits` (+16 lines; no table/enum change).
+- **Tests:** `src/tests/unit/rate-limit.test.ts` (pure — HMAC determinism same/diff route/diff ip/diff salt, 64-hex, no-raw-IP, A-03 thresholds, unknown-route throws); `src/tests/dal/rate-limit.test.ts` (gated — first-allow, increment-then-deny, denial-doesn't-increment, window reset, result shape, 24h TTL refresh, cleanup deletes-expired/keeps-fresh/idempotent/no-op); `src/tests/security/rate-limit-functions.test.ts` (CI-safe static migration hardening + gated negatives — SECURITY DEFINER, empty search_path, anon/auth cannot execute either function, rate_limits still 0 policies / no anon-auth grants / no IP column).
+- **`knip.jsonc`** — added `src/services/rate-limit/index.ts` as `entry`.
+
+### Verification (this branch)
+
+- **Local stack (CLI 2.106.0):** `supabase start` ✓ → `supabase db reset` applies **all 4 migrations clean** ✓ (pg_cron present on this stack → `NOTICE: scheduled hourly pg_cron job aura-rate-limits-cleanup`; cron.job row confirmed) → `SUPABASE_LOCAL_TESTS=1 npm run test:dal` **PASS (5 files, 49)** → `SUPABASE_LOCAL_TESTS=1 npm run test:security` **PASS (8 files, 94)**.
+- **Full gates (CI mode):** `npm run quality` **PASS** (lint, typecheck, format:check, `npm run test` 17 files/118 + 97 gated-skips, unused/knip clean, deps:check 0 violations/32 modules, `next build`). `npm run test:unit` **65 PASS**; `npm run test:integration` **PASS (1 + 6 gated-skips)**. `npm run audit` **PASS** (exit 0; 2 moderate `postcss`-via-`next` carry-forward only).
+- **Blocker greps clean:** no `.env`/`package-lock.json`/`config.toml` change; no `clients`/`client_id`/tenant (only the D-05 invariant comment); no raw IP (`ip_address`/`user_ip`/`client_ip`/`x-forwarded-for`/`request.ip`/`p_ip`); no new `rate_limits` policy or anon/authenticated grant; no service-role in `src/components`/`src/app`/`src/domain`.
+
+### Carry-forward / open items
+
+1. Live consume/cleanup behavioural + security-negative tests are **local-only** (`SUPABASE_LOCAL_TESTS=1`) until **AURA-107** wires the Dockerized stack into CI (static migration-text + pure unit tests run in CI now).
+2. The rate-limit service has **no route importer yet** — Phases 3-4 (lead/whatsapp/login Route Handlers) are first; remove the `src/services/rate-limit/index.ts` Knip `entry` then.
+3. **pg_cron is environment-dependent.** It is preloaded on this local CLI stack (job scheduled), but where unavailable the migration degrades gracefully and `public.cleanup_rate_limits()` must be driven by an equivalent external scheduler (A-16). On hosted Supabase, confirm pg_cron is enabled so the hourly job runs.
 
 ---
 
