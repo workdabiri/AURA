@@ -8,11 +8,13 @@
 # Authority: A-01 (one workflow: npm run quality + Playwright on PR; CodeQL
 # scheduled/PR), docs/CI_CD_STRATEGY.md (CI pipeline), docs/QUALITY_GATES.md.
 #
-# Scope notes for this phase (Phase 0):
-#   - DAL / integration / security suites currently run as plain Vitest
-#     placeholders (no DB required). The Supabase CLI local stack in Docker is
-#     wired into this workflow by AURA-107 (A-02), at which point those jobs gain
-#     a `services:`/Docker step. Do NOT mock the DB layer when that lands.
+# Scope notes:
+#   - In the `quality` job the DAL / integration / security suites run as plain
+#     Vitest: their static assertions run, and the gated live-DB tests self-skip
+#     without SUPABASE_LOCAL_TESTS=1. AURA-107 added the separate `db-tests` job
+#     below, which boots the Supabase CLI local stack in Docker and runs those
+#     same suites in live DB mode (SUPABASE_LOCAL_TESTS=1). Do NOT mock the DB
+#     layer (A-02).
 #   - Playwright/e2e is deferred to AURA-008 (smoke spec is `test.describe.skip`
 #     until then; `/`→`/en` does not exist yet). See the disabled `e2e` job below.
 #   - Lighthouse is a separate, disabled stub (lighthouse.yml), enabled as an
@@ -75,8 +77,9 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
-      # DAL / integration / security: plain Vitest placeholders today.
-      # AURA-107 attaches the Dockerized Supabase local stack here (A-02).
+      # DAL / integration / security here run the static + gated suites only —
+      # the live-DB tests self-skip without SUPABASE_LOCAL_TESTS=1. The live DB
+      # run is the separate `db-tests` job below (Dockerized Supabase, A-02).
       - name: DAL tests
         run: npm run test:dal
 
@@ -149,3 +152,81 @@ jobs:
         env:
           BASE_URL: http://localhost:3000
           CI: true
+
+  # ---------------------------------------------------------------------------
+  # AURA-107 (Phase 1 exit gate): live DB tests against a Dockerized Supabase
+  # local stack. Boots the Supabase CLI stack, applies all migrations via
+  # `supabase db reset`, then runs the DAL / security / integration suites in
+  # live mode (SUPABASE_LOCAL_TESTS=1) — the gated tests that self-skip in the
+  # `quality` job. No DB mocking (A-02). This job is NOT yet a required branch-
+  # protection check; the owner adds `db-tests` to the `develop` rule after the
+  # first green run (docs/BRANCH_PROTECTION.md).
+  # ---------------------------------------------------------------------------
+  db-tests:
+    name: db-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Live-DB gating for the suites. SUPABASE_DB_URL points at the Supabase CLI
+    # local Postgres (port 54322); the test harness shells out to `psql` against it.
+    env:
+      SUPABASE_LOCAL_TESTS: '1'
+      SUPABASE_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Pin npm version
+        run: npm install -g npm@11.12.1
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure psql client is available
+        run: |
+          if ! command -v psql > /dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+          psql --version
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local stack
+        run: supabase start
+
+      - name: Reset database (apply all migrations)
+        run: supabase db reset
+
+      - name: Wait for Postgres to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if pg_isready -h 127.0.0.1 -p 54322 -U postgres > /dev/null 2>&1; then
+              echo "Postgres ready after ${i} attempt(s)"
+              break
+            fi
+            echo "Waiting for Postgres... ($i/30)"
+            sleep 2
+          done
+          pg_isready -h 127.0.0.1 -p 54322 -U postgres
+
+      - name: DAL tests (live DB)
+        run: npm run test:dal
+
+      - name: Security negative tests (live DB)
+        run: npm run test:security
+
+      - name: Integration tests (live DB)
+        run: npm run test:integration
+
+      - name: Stop Supabase local stack
+        if: always()
+        run: supabase stop
