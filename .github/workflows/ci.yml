@@ -195,10 +195,13 @@ jobs:
           fi
           psql --version
 
+      # Pin the CLI version: `latest` resolves via a GitHub API call that is
+      # rate-limited on shared runners (observed flake), and a pinned version is
+      # deterministic. 2.106.0 matches the locally-verified stack (CURRENT_STATE.md).
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.106.0
 
       - name: Start Supabase local stack
         run: supabase start
@@ -227,6 +230,8 @@ jobs:
       - name: Integration tests (live DB)
         run: npm run test:integration
 
+      # Tolerate a teardown when the CLI never installed (e.g. setup-cli failed),
+      # so the real failure surfaces instead of a misleading "command not found".
       - name: Stop Supabase local stack
         if: always()
-        run: supabase stop
+        run: command -v supabase >/dev/null 2>&1 && supabase stop || echo "supabase CLI not installed; nothing to stop"
