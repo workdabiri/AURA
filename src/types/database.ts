@@ -654,6 +654,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_rate_limits: { Args: never; Returns: number }
+      consume_rate_limit: {
+        Args: {
+          p_key_hash: string
+          p_limit: number
+          p_route: string
+          p_window_seconds: number
+        }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          limit_value: number
+          remaining: number
+          reset_at: string
+        }[]
+      }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
