@@ -9,7 +9,7 @@
 
 **AURA-107 (live DAL/security/integration tests in CI via a Dockerized Supabase stack — the Phase 1 exit gate) is MERGED at `04d3522`** (PR #23 squash-merged into `develop`; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; required checks `quality` / `e2e` / `analyze (javascript-typescript)` / `CodeQL` + the new **`db-tests`** green before merge; feature branch `feature/aura-107-dal-security-ci-harness` deleted). CI/test-infrastructure only (two files: `.github/workflows/ci.yml` + `src/tests/dal/supabase-smoke.test.ts`). The new `db-tests` job boots the Dockerized Supabase CLI stack (CLI pinned `2.106.0`), applies all 4 migrations via `supabase db reset`, and runs the suites live (`SUPABASE_LOCAL_TESTS=1`): **DAL 49 passed, Security 94 passed, Integration 7 passed** (zero skips). **Phase 1 is now complete.**
 
-**Owner action required (branch protection):** `db-tests` is green on PR #23 but **not yet a required check** on `develop` — verified via API, current required checks are `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`. The owner must add **`db-tests`** to the `develop` branch-protection rule in GitHub Settings (`docs/BRANCH_PROTECTION.md`). This session does not modify branch protection.
+**Branch protection (done):** **`db-tests` is now required on `develop`** — verified via API, `develop` required checks are: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`. **The AURA-107 Phase 1 exit gate is now fully enforced by branch protection.**
 
 **Immediate next action — Phase 2 discovery / planning, not implementation.** The first Phase 2 task is **AURA-201 (Public layout + header/footer + i18n shell)**: build the public `/[locale]` layout (header, footer, navigation) reading agency settings via a safe server selector. It is **not started** and requires a new session + its own explicit per-task discovery/planning approval before any work begins. Do not implement AURA-201 in this docs-sync session.
 
@@ -28,7 +28,7 @@ Branch protection active on `develop` (verified via API 2026-06-20):
 - `e2e` — required
 - `analyze (javascript-typescript)` — required
 - `CodeQL` — required
-- **`db-tests` — NOT yet required (owner action: add it to the `develop` rule; AURA-107 added the check)**
+- **`db-tests` — required** (added to the `develop` rule; AURA-107 Phase 1 exit gate)
 
 GitHub required approvals are disabled for solo-operator mode; required checks remain enforced.
 
@@ -161,7 +161,7 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - ~~Do not start AURA-107~~ ✅ AURA-107 merged at `04d3522` (Phase 1 complete)
 - Do not fix audit without explicit dep-change approval
 - Do not start AURA-201 — AURA-201 (first Phase 2 task) requires a new session + explicit per-task discovery/planning approval before implementation
-- Do not modify `develop` branch protection from a code/docs session — adding `db-tests` as a required check is a manual owner action in GitHub Settings
+- Do not modify `develop` branch protection from a code/docs session — branch-protection changes are manual owner actions in GitHub Settings (the `db-tests` required check has already been added)
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`

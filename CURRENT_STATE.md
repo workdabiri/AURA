@@ -217,7 +217,7 @@ CI/test-infrastructure only — brings the previously local-only gated suites in
 
 **Opus 4.8 phase-exit review (PR #23):** Verdict **APPROVE**, merge recommendation **YES**, **no blocking issues**.
 
-**Carry-forward / owner action:** **`db-tests` is NOT yet a required branch-protection check on `develop`** (verified via API: current required checks are `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`). The owner must add **`db-tests`** to the `develop` protection rule in GitHub Settings (see `docs/BRANCH_PROTECTION.md`). With AURA-107 merged, the previously local-only carry-forwards from AURA-103/104/105/106 ("live tests are local-only until AURA-107") are now resolved — those suites run live in CI.
+**Branch protection:** **`db-tests` is now required on `develop`** (verified via API: required checks are `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`). **The AURA-107 Phase 1 exit gate is now fully enforced by branch protection.** With AURA-107 merged, the previously local-only carry-forwards from AURA-103/104/105/106 ("live tests are local-only until AURA-107") are now resolved — those suites run live in CI.
 
 ---
 
@@ -227,7 +227,7 @@ CI/test-infrastructure only — brings the previously local-only gated suites in
 - RLS policies are **merged to `develop` in AURA-103** (`1a35958`) — 36 policies across 10 tables + 3 role helpers; `rate_limits` intentionally has 0 policies (service-role only)
 - No seed data / seed users; no `supabase/seed.sql`
 - Rate-limit service + TTL cleanup **now exist — merged in AURA-106 (`dd21edd`)**: `src/services/rate-limit/{key,limit,index}.ts` + migration `20260619230918_rate_limit_functions.sql` (`consume_rate_limit`, `cleanup_rate_limits`, `rate_limits_expires_at_idx`, guarded hourly pg_cron `aura-rate-limits-cleanup`). Still **not wired into any route** (lead/whatsapp/login consume it in Phases 3-4)
-- **AURA-107 Dockerized Supabase CI stack now EXISTS** — merged in AURA-107 (`04d3522`): the `db-tests` CI job boots the Dockerized Supabase stack and runs DAL/security/integration suites live (`SUPABASE_LOCAL_TESTS=1`, 49/94/7 passed). The previously local-only carry-forwards are resolved. **Still pending owner action:** `db-tests` is not yet a required branch-protection check on `develop`
+- **AURA-107 Dockerized Supabase CI stack now EXISTS** — merged in AURA-107 (`04d3522`): the `db-tests` CI job boots the Dockerized Supabase stack and runs DAL/security/integration suites live (`SUPABASE_LOCAL_TESTS=1`, 49/94/7 passed). The previously local-only carry-forwards are resolved. **`db-tests` is now a required branch-protection check on `develop`** — the Phase 1 exit gate is fully enforced
 - **Phase 2 (Public Website) does NOT exist yet** — not started. The first Phase 2 task is **AURA-201 (Public layout + header/footer + i18n shell)** — not started; requires a new session + per-task discovery/planning approval
 - **Route wiring for lead/whatsapp/login does NOT exist** — the rate-limit service has no route consumer yet; Phases 3-4 Route Handlers are its first importers
 - No `.env` or `.env.local` file (`.env.example` placeholders only)
@@ -364,9 +364,10 @@ quality
 e2e
 analyze (javascript-typescript)
 CodeQL
+db-tests
 ```
 
-**Owner action required:** AURA-107 added the new **`db-tests`** check (live DAL/security/integration against the Dockerized Supabase stack). It is **green on PR #23 but NOT yet in the required-checks list above** — the owner must add `db-tests` to the `develop` branch-protection rule in GitHub Settings (`docs/BRANCH_PROTECTION.md`). This is the only remaining item to fully harden the Phase 1 exit gate.
+**`db-tests` is now required on `develop`.** AURA-107 added the new **`db-tests`** check (live DAL/security/integration against the Dockerized Supabase stack), and it has been added to the `develop` branch-protection rule. **`develop` required checks are: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`.** The AURA-107 Phase 1 exit gate is now fully enforced by branch protection.
 
 GitHub required approvals are disabled for solo-operator mode; status checks remain enforced.
 

@@ -21,9 +21,9 @@ Merged via PR #23 (squash) into `develop` at `04d3522 ci: run live Supabase DAL 
 - All 4 migrations applied (`20260616183318_init`, `20260617025449_rls_policies`, `20260619201518_storage_policies`, `20260619230918_rate_limit_functions`); Postgres readiness confirmed (`Postgres ready after 1 attempt(s)`); stack stopped cleanly (`Stopped supabase local development setup.`).
 - **`test:dal` PASS — 49** (5 files); **`test:security` PASS — 94** (8 files); **`test:integration` PASS — 7** (3 files). **Zero skips in live mode.** Counts match the local pre-PR verification.
 
-### Carry-forward / owner action
+### Carry-forward / status
 
-1. **`db-tests` is NOT yet a required branch-protection check on `develop`.** Verified via GitHub API on 2026-06-20: current required checks are `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`. **The owner must add `db-tests` to the `develop` protection rule in GitHub Settings** (`docs/BRANCH_PROTECTION.md`). This session does not modify branch protection.
+1. **`db-tests` is now a required branch-protection check on `develop`.** Verified via GitHub API on 2026-06-20: `develop` required checks are `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`. **The AURA-107 Phase 1 exit gate is now fully enforced by branch protection.**
 2. **Local-only carry-forward resolved.** The AURA-103/104/105/106 "live tests are local-only (`SUPABASE_LOCAL_TESTS=1`) until AURA-107" posture is now satisfied — those suites run live in CI. Local manual runs still use `SUPABASE_LOCAL_TESTS=1` + `supabase start`.
 3. **Phase 2 is next.** First task **AURA-201 (Public layout + header/footer + i18n shell)** — not started; requires a new session + per-task discovery/planning approval.
 
@@ -426,7 +426,7 @@ GitHub required approvals are disabled for solo-operator mode; status checks rem
 
 AURA-106 remains merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`; AURA-101 at `95f9df3`.
 
-`develop` branch protection active (verified via API 2026-06-20): `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL` all required. **`db-tests` is green on PR #23 but NOT yet required — owner must add it to the `develop` rule (`docs/BRANCH_PROTECTION.md`).** GitHub required approvals disabled for solo-operator mode.
+`develop` branch protection active (verified via API 2026-06-20): `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests` all required. **The AURA-107 Phase 1 exit gate is now fully enforced by branch protection.** GitHub required approvals disabled for solo-operator mode.
 
 ---
 
@@ -434,4 +434,4 @@ AURA-106 remains merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd
 
 **AURA-107 is merged** into `develop` at `04d3522` (PR #23; Opus 4.8 phase-exit review **APPROVE**, no blocking issues; feature branch deleted). **Phase 1 is complete.** `develop` is the current source of truth.
 
-**Two follow-ups:** (1) **Owner action** — add `db-tests` to the `develop` branch-protection required checks in GitHub Settings (`docs/BRANCH_PROTECTION.md`); not done from this session. (2) **AURA-201 (Public layout + header/footer + i18n shell)** is the next task and the start of Phase 2 — **not started**; requires a new session + explicit per-task discovery/planning approval before any work begins. Do not start AURA-201 in this docs-sync session.
+**Branch protection (done):** `db-tests` is now required on `develop` (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`) — the AURA-107 Phase 1 exit gate is fully enforced. **Next task: AURA-201 (Public layout + header/footer + i18n shell)** — the start of Phase 2; **not started**; requires a new session + explicit per-task discovery/planning approval before any work begins. Do not start AURA-201 in this docs-sync session.
