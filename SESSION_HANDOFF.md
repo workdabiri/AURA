@@ -1,7 +1,41 @@
 # Session Handoff
 
-**Last Updated:** 2026-06-20
-**Branch:** `develop` — source of truth at `04d3522`. **Phase 1 is COMPLETE.** **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) MERGED at `04d3522`** (PR #23 squash-merged; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-107-dal-security-ci-harness` deleted). AURA-106 merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. **Phase 2 (Public Website) is next; first task AURA-201 — not started; requires its own per-task discovery/planning approval.**
+**Last Updated:** 2026-06-21
+**Branch:** `develop` — source of truth at `f17b429`. **Phase 1 is COMPLETE; Phase 2 (Public Website) has STARTED.** **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) MERGED at `f17b429`** (PR #25 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-201-public-layout-i18n-shell` deleted local + remote). **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) MERGED at `04d3522`** (PR #23 squash-merged; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-107-dal-security-ci-harness` deleted). AURA-106 merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. **Next task: AURA-202 (Properties listing + `GET /api/properties` + featured) — not started; requires its own per-task discovery/planning approval.**
+
+---
+
+## AURA-201 — MERGED (`f17b429`) — **PHASE 2 STARTED (1/7)**
+
+**AURA-201: Public layout + header/footer + i18n shell + server-only public settings selector.** First Phase 2 task — the public site shell. Builds the public `/[locale]` layout (header, navigation, footer), a minimal **next-intl v4** i18n shell (English-only visible UI; RTL-ready direction helper), and a **server-only public settings safe selector** backing a settings-driven footer. **No migration, no `package.json`/`package-lock.json` change, no `.env`/`supabase/config.toml` change, no admin code, no property listing/detail, no areas, no legal pages, no lead/WhatsApp implementation, no AURA-202+ work.**
+
+Merged via PR #25 (squash) into `develop` at `f17b429 feat: add public layout and settings-driven footer`. Feature branch `feature/aura-201-public-layout-i18n-shell` deleted (local + remote). **Targeted Opus 4.8 review (PR #25): APPROVE, merge recommendation YES, no blocking issues** (four non-blocking carry-forwards preserved below). Required checks passed before merge: `quality`, `e2e`, `db-tests`, `analyze (javascript-typescript)`, `CodeQL`. Current source of truth is `develop` at `f17b429`.
+
+### What was built (16 files)
+
+- **`src/app/layout.tsx`** — root layout reduced to a **passthrough** (`return children`). The `[locale]` layout now owns `<html>`/`<body>`, `lang`/`dir`, global styles, and the next-intl provider (the canonical next-intl App Router pattern; no double `<html>`/`<body>` — confirmed by build + e2e).
+- **`src/app/[locale]/layout.tsx`** — localized layout: `hasLocale(routing.locales, locale)` → `notFound()` on unknown locale; `setRequestLocale(locale)`; `Promise.all([getMessages(), getPublicSettings()])`; renders `<html lang={locale} dir={getLocaleDirection(locale)}>` + `<body>` + `NextIntlClientProvider` + `<Header/>` + page `children` + settings-driven `<Footer settings={…}/>`. `export const dynamic = 'force-dynamic'` (settings read at request time; build never needs a DB).
+- **`src/components/layout/{Header,Navigation,Footer}.tsx`** — presentational server components; **no Supabase/DAL/service-role import**. `Footer` receives only the `PublicSettings` DTO as a prop. Q-13 AUTEX disclosure is static UI copy (not DB-driven). `Navigation` links are locale-prefixed to not-yet-built AURA-202+ routes (intentional).
+- **`src/dal/settings.dal.ts`** — **`import 'server-only'`** `getPublicSettings()`: service-role client (RLS-bypass, server-only), `select('key, value')` only, `.in('key', PUBLIC_SETTING_KEYS)` allowlist at the query level, projects through `projectPublicSettings`, **fails closed** to `defaultPublicSettings()` on any error. `settings` has no anon RLS policy → this is the only public read path.
+- **`src/domain/settings/public-settings.ts` + `index.ts`** — **pure** (no Supabase/`server-only`/I/O): `PUBLIC_SETTING_KEYS` allowlist (7 keys: `agency_name`, `agency_phone`, `agency_email`, `agency_whatsapp`, `agency_address`, `footer_tagline`, `social_links`), `PublicSettings` DTO, `defaultPublicSettings()` (fresh safe demo defaults each call), `projectPublicSettings(rows)` — allowlist filter + per-key Zod (non-empty strings, `.email()`, fixed-platform `social_links` partial that strips unknown platforms); malformed/missing → safe defaults; only `key`+`value` consumed so row metadata (`updated_by`/timestamps) can never leak.
+- **`src/i18n/request.ts`** — next-intl v4 `getRequestConfig` (locale resolve + `en` catalog static import). **`next.config.js`** — wires `createNextIntlPlugin('./src/i18n/request.ts')`. **`src/lib/i18n/direction.ts`** — pure `getLocaleDirection` (`ltr`/`rtl`; `ar` pre-mapped; Arabic UI NOT implemented). **`src/messages/en.json`** — Header/Nav/Footer catalog incl. AUTEX disclosure.
+- **Tests:** `src/tests/unit/settings-public.test.ts` (pure projector — allowlist exactness, defaults, per-key fail-closed validation, social stripping, metadata/internal-key no-leak); `src/tests/dal/settings.dal.test.ts` (gated `SUPABASE_LOCAL_TESTS=1` live-DB `psql` contract inside `begin … rollback` — proves the allowlist/`key,value`-only/no-metadata guarantees the `server-only` selector relies on, since it cannot be imported into Vitest); `src/tests/e2e/smoke.spec.ts` (extended — banner/nav[Primary]/main/contentinfo landmarks, footer agency name, AUTEX disclosure, `lang=en`/`dir=ltr`).
+- **`knip.jsonc`** — removed `src/lib/supabase/service-role.ts` from `entry` (now statically imported by `src/dal/settings.dal.ts`, reached by the public `[locale]` layout via `getPublicSettings()`). No allowlist weakened.
+
+### CI evidence (PR #25 — all required checks green)
+
+`quality` · `e2e` · `db-tests` · `analyze (javascript-typescript)` · `CodeQL` — all **pass**. `db-tests` ran the live DAL selector contract against the Dockerized Supabase stack. PR was OPEN / MERGEABLE / `mergeStateStatus: CLEAN` before squash-merge.
+
+### Carry-forward / non-blocking (from the targeted Opus review; preserved for future tasks)
+
+1. **Settings selector observability** — `getPublicSettings()` fail-closed branches (`catch` / `if (error)`) swallow errors silently; a misconfigured service-role env or downed DB renders demo defaults with no signal. Add server-side logging/Sentry breadcrumb (defer to observability work, Phase 6).
+2. **Stricter phone/WhatsApp validation later** — `agency_phone`/`agency_whatsapp` validate only as non-empty strings (safe at render: WhatsApp strips to digits, phone via `tel:`). Tighten when `libphonenumber-js` is wired for lead/contact work (Phase 2–3).
+3. **Skip-to-content cleanup** — `Header.skipToContent` message key exists in `en.json` but no skip link is rendered; wire a skip link (a11y) or drop the key.
+4. **Future settings caching/revalidate** — `force-dynamic` does a service-role settings read per request with no caching; revisit with `revalidate`/tag-based caching if settings reads become hot.
+
+### Next safe action
+
+**AURA-202 (Properties listing + `GET /api/properties` + featured) — discovery/planning only.** Not started; requires a new session + explicit per-task discovery/planning approval before any work begins. Do not start AURA-202 implementation in the docs-sync session.
 
 ---
 
@@ -422,9 +456,9 @@ GitHub required approvals are disabled for solo-operator mode; status checks rem
 
 ## Validation Status
 
-**AURA-107 is merged. Phase 1 is complete.** Squash-merged PR #23 (`feature/aura-107-dal-security-ci-harness` → `develop`) at `04d3522`. Feature branch deleted. `develop` is the source of truth — clean and synced with `origin/develop`. GitHub required checks (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`) plus the new `db-tests` all PASSED before merge. Opus 4.8 phase-exit review: **APPROVE**, merge recommendation **YES**, no blocking issues.
+**AURA-201 is merged. Phase 2 has started (1/7).** Squash-merged PR #25 (`feature/aura-201-public-layout-i18n-shell` → `develop`) at `f17b429`. Feature branch deleted (local + remote). `develop` is the source of truth — clean and synced with `origin/develop`. GitHub required checks (`quality`, `e2e`, `db-tests`, `analyze (javascript-typescript)`, `CodeQL`) all PASSED before merge. Targeted Opus 4.8 review: **APPROVE**, merge recommendation **YES**, no blocking issues.
 
-AURA-106 remains merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`; AURA-101 at `95f9df3`.
+**AURA-107 remains merged at `04d3522`; Phase 1 is complete.** AURA-106 at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`; AURA-101 at `95f9df3`.
 
 `develop` branch protection active (verified via API 2026-06-20): `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests` all required. **The AURA-107 Phase 1 exit gate is now fully enforced by branch protection.** GitHub required approvals disabled for solo-operator mode.
 
@@ -432,6 +466,6 @@ AURA-106 remains merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd
 
 ## Next Safe Action
 
-**AURA-107 is merged** into `develop` at `04d3522` (PR #23; Opus 4.8 phase-exit review **APPROVE**, no blocking issues; feature branch deleted). **Phase 1 is complete.** `develop` is the current source of truth.
+**AURA-201 is merged** into `develop` at `f17b429` (PR #25; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted local + remote). **Phase 2 has started (1 of 7 tasks done).** `develop` is the current source of truth. **AURA-107 remains merged at `04d3522`; Phase 1 is complete.**
 
-**Branch protection (done):** `db-tests` is now required on `develop` (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`) — the AURA-107 Phase 1 exit gate is fully enforced. **Next task: AURA-201 (Public layout + header/footer + i18n shell)** — the start of Phase 2; **not started**; requires a new session + explicit per-task discovery/planning approval before any work begins. Do not start AURA-201 in this docs-sync session.
+**Branch protection (unchanged by AURA-201):** `db-tests` remains required on `develop` (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`). **Next task: AURA-202 (Properties listing + `GET /api/properties` + featured)** — the second Phase 2 task; **not started**; requires a new session + explicit per-task discovery/planning approval before any work begins. Discovery/planning only — do not start AURA-202 implementation in this docs-sync session.

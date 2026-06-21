@@ -1,8 +1,8 @@
 # Current State
 
-**Updated:** 2026-06-20
-**Branch:** `develop` — source of truth at `04d3522`.
-**Phase:** **Phase 1 — COMPLETE** (all 7 tasks AURA-101–AURA-107 merged). **Phase 2 (Public Website) is next.** AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) merged at `44a7fd4`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. **AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) merged at `dd21edd`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch `feature/aura-106-rate-limit-service` deleted. **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — the Phase 1 exit gate) MERGED at `04d3522`** — Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; required checks green before merge; feature branch `feature/aura-107-dal-security-ci-harness` deleted. **The next task is AURA-201 (Public layout + header/footer + i18n shell) — not started; requires a new session + per-task discovery/planning approval before implementation.**
+**Updated:** 2026-06-21
+**Branch:** `develop` — source of truth at `f17b429`.
+**Phase:** **Phase 1 — COMPLETE** (all 7 tasks AURA-101–AURA-107 merged). **Phase 2 (Public Website) has STARTED — AURA-201 merged; 1 of 7 Phase 2 tasks done.** AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 (admin auth guard + first-`super_admin` bootstrap script, D-40) merged at `44a7fd4`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch deleted. **AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) merged at `dd21edd`** — Opus 4.8 **APPROVE**, no blocking issues; required checks green before merge; feature branch `feature/aura-106-rate-limit-service` deleted. **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — the Phase 1 exit gate) MERGED at `04d3522`** — Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; required checks green before merge; feature branch `feature/aura-107-dal-security-ci-harness` deleted. **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) MERGED at `f17b429`** — targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; required checks green before merge (`quality`, `e2e`, `db-tests`, `analyze (javascript-typescript)`, `CodeQL`); feature branch `feature/aura-201-public-layout-i18n-shell` deleted. **The next task is AURA-202 (Properties listing + `GET /api/properties` + featured) — not started; requires a new session + per-task discovery/planning approval before implementation.**
 
 > Note: AURA-007 (`feat/aura-007-ci-codeql`) was committed and merged to `develop` before this session.
 > Note: AURA-101 task is labelled "AURA-009" in continuity docs written during AURA-008; the real task-plan ID is AURA-101.
@@ -64,13 +64,13 @@
 - `src/lib/i18n/routing.ts` — next-intl routing config; `locales: ['en']`, `defaultLocale: 'en'`
 - `src/middleware.ts` — explicit HTTP 301 redirect from `/` → `/en`; delegates other paths to next-intl locale middleware; matcher excludes `api`, `_next`, `_vercel`, and static assets
 
-### Homepage Shell (AURA-008) ← NEW
-- `src/app/[locale]/layout.tsx` — minimal nested locale layout; does not re-render `<html>`/`<body>` (root layout owns those)
-- `src/app/[locale]/page.tsx` — minimal luxury-dark homepage shell using all design token Tailwind classes: `bg-surface-page`, `text-text-primary`, `text-text-secondary`, `text-brand-secondary`, `font-display`, `text-display`, `text-caption`, `text-body`. No data fetching, Supabase, auth, GSAP, or CRM.
+### Homepage Shell (AURA-008)
+- `src/app/[locale]/layout.tsx` — **SUPERSEDED by AURA-201:** this layout now owns `<html>`/`<body>`, `lang`/`dir`, global styles, and the next-intl provider, and renders Header/Footer (the AURA-008 version was a minimal nested layout that left `<html>`/`<body>` to the root). See the AURA-201 section below.
+- `src/app/[locale]/page.tsx` — minimal luxury-dark homepage shell using all design token Tailwind classes: `bg-surface-page`, `text-text-primary`, `text-text-secondary`, `text-brand-secondary`, `font-display`, `text-display`, `text-caption`, `text-body`. Provides the `<main>` landmark. No data fetching, Supabase, auth, GSAP, or CRM. (Unchanged by AURA-201.)
 - `src/app/page.tsx` — updated to defensive fallback `permanentRedirect('/en')` (fires only if middleware is bypassed; middleware handles 301 first)
 
 ### Application Scaffold (AURA-001)
-- `next.config.js`, `src/app/layout.tsx` (root, static `lang="en"`)
+- `next.config.js`, `src/app/layout.tsx` — **root layout SUPERSEDED by AURA-201:** now a bare `return children` passthrough (the `[locale]` layout owns `<html>`/`lang`/`dir`/styles); the original static `lang="en"` root no longer applies.
 - Full `src/` folder architecture per `docs/ARCHITECTURE.md`
 
 ### Continuity Files
@@ -221,6 +221,34 @@ CI/test-infrastructure only — brings the previously local-only gated suites in
 
 ---
 
+### Public Layout + i18n Shell + Public Settings Selector (AURA-201) ← MERGED (`f17b429`) — **PHASE 2 STARTED**
+
+First Phase 2 task: the public site shell. Delivers the public `/[locale]` layout (header / navigation / footer), a minimal next-intl v4 i18n shell (English-only visible UI, RTL-ready), and a **server-only public settings safe selector** backing a settings-driven footer. **No migration, no `package.json`/lockfile change, no `.env`/`supabase/config.toml` change, no admin code, no property listing/detail, no areas, no legal pages, no lead/WhatsApp implementation, no AURA-202+ work.** Diff is 16 files (layouts, layout components, settings selector + domain contract, i18n config, messages, tests, `knip.jsonc`, `next.config.js`).
+
+- `src/app/layout.tsx` — root layout reduced to a **passthrough** (`return children`); the `[locale]` layout now owns `<html>`/`<body>`, `lang`/`dir`, global styles, and the next-intl provider.
+- `src/app/[locale]/layout.tsx` — localized layout: validates the locale via `hasLocale(routing.locales, …)` → `notFound()`; `setRequestLocale`; resolves messages + public settings in parallel; renders `<html lang={locale} dir={getLocaleDirection(locale)}>` with `NextIntlClientProvider`, `<Header />`, page `children`, and the settings-driven `<Footer />`. `export const dynamic = 'force-dynamic'` so the settings-backed footer reads at request time (build never needs a running DB).
+- `src/components/layout/{Header,Navigation,Footer}.tsx` — presentational server components. **No Supabase/DAL/service import.** `Header` = brand wordmark + `Navigation`; `Navigation` = locale-prefixed links to the not-yet-built AURA-202+ routes (`properties`/`areas`/`about`/`legal`) inside a `<nav aria-label>`; `Footer` receives only the `PublicSettings` DTO as a prop and renders agency name/tagline/address, contact links (tel/WhatsApp/email), social links, and the static **Q-13 AUTEX disclosure** (UI copy, not DB-driven).
+- `src/dal/settings.dal.ts` — **`import 'server-only'`** safe selector `getPublicSettings()`: uses the service-role client (RLS-bypass, server-only), `select('key, value')` only, filters to the public allowlist at the query level, projects through `projectPublicSettings`, and **fails closed** (any error → `defaultPublicSettings()`). No raw rows ever returned. (`settings` has no anon RLS policy → this is the only public read path.)
+- `src/domain/settings/public-settings.ts` + `index.ts` — **pure** contract (no Supabase/`server-only`/I/O): `PUBLIC_SETTING_KEYS` allowlist (`agency_name`, `agency_phone`, `agency_email`, `agency_whatsapp`, `agency_address`, `footer_tagline`, `social_links`), `PublicSettings` DTO, `defaultPublicSettings()` (fresh safe demo defaults), and `projectPublicSettings(rows)` — allowlist filter + per-key Zod (non-empty strings, `.email()`, fixed-platform `social_links` partial schema that strips unknown platforms); malformed/missing values fail closed to safe defaults; row metadata (`updated_by`/timestamps) can never leak (only `key`+`value` consumed).
+- `src/i18n/request.ts` — next-intl v4 `getRequestConfig`: resolves the active locale (`hasLocale` + `defaultLocale` fallback) and supplies the statically-imported `en` catalog; documented upgrade path to dynamic import for a second locale.
+- `src/lib/i18n/direction.ts` — pure `getLocaleDirection(locale)` → `'ltr'`/`'rtl'`; RTL locale set pre-mapped (`ar`) so Arabic can later flip `<html dir>` with no structural change. **Arabic UI is NOT implemented** (`routing.locales` is `['en']`).
+- `src/messages/en.json` — Header/Navigation/Footer message catalog incl. the AUTEX disclosure copy.
+- `next.config.js` — wires `createNextIntlPlugin('./src/i18n/request.ts')` (the next-intl v4 plugin; previously middleware-only).
+- Tests: `src/tests/unit/settings-public.test.ts` (pure projector — allowlist exactness, defaults, per-key fail-closed validation, social stripping, metadata/internal-key no-leak); `src/tests/dal/settings.dal.test.ts` (live-DB `psql` contract inside `begin … rollback`, gated `SUPABASE_LOCAL_TESTS=1` — proves the same allowlist/`key,value`-only/no-metadata guarantees the `server-only` selector relies on, since it cannot be imported into Vitest); `src/tests/e2e/smoke.spec.ts` (extended — header/nav/main/footer landmarks, footer agency name, AUTEX disclosure, `lang`/`dir`).
+- `knip.jsonc` — removed `src/lib/supabase/service-role.ts` from `entry` (now statically imported by `src/dal/settings.dal.ts`, reached by the public `[locale]` layout via `getPublicSettings()`). No other Knip change; no allowlist weakened.
+
+**Merged:** PR #25 squash-merged into `develop` at `f17b429 feat: add public layout and settings-driven footer`. Feature branch `feature/aura-201-public-layout-i18n-shell` deleted (local + remote). Required checks passed before merge: `quality`, `e2e`, `db-tests`, `analyze (javascript-typescript)`, `CodeQL`.
+
+**Targeted Opus 4.8 review (PR #25):** Verdict **APPROVE**, merge recommendation **YES**, **no blocking issues**. The review specifically cleared the service-role public-settings selector (server-only boundary intact, double allowlist, fail-closed, no metadata/secret leak), the component data-boundary (no Supabase/DAL in layout components), the root/`[locale]` layout structure (no double `<html>`/`<body>`), and the next-intl v4 setup.
+
+**Carry-forward / non-blocking (from the Opus review; preserved for future tasks):**
+1. **Settings selector observability** — `getPublicSettings()` fail-closed branches (`catch`/`if (error)`) swallow errors silently; a misconfigured service-role env or downed DB renders demo defaults with no signal. Add server-side logging/Sentry breadcrumb (defer to observability work, Phase 6).
+2. **Stricter phone/WhatsApp validation later** — `agency_phone`/`agency_whatsapp` validate only as non-empty strings (safe at render: WhatsApp strips to digits, phone via `tel:`). Tighten when `libphonenumber-js` is wired for lead/contact work (Phase 2–3).
+3. **Skip-to-content cleanup** — `Header.skipToContent` message key exists in `en.json` but no skip link is rendered; either wire a skip link (a11y) or drop the key.
+4. **Future settings caching/revalidate** — `force-dynamic` means every public page does a service-role settings read per request with no caching; revisit with `revalidate`/tag-based caching if settings reads become hot.
+
+---
+
 ## What Does NOT Exist
 
 - No root-level `tests/` directory
@@ -228,7 +256,7 @@ CI/test-infrastructure only — brings the previously local-only gated suites in
 - No seed data / seed users; no `supabase/seed.sql`
 - Rate-limit service + TTL cleanup **now exist — merged in AURA-106 (`dd21edd`)**: `src/services/rate-limit/{key,limit,index}.ts` + migration `20260619230918_rate_limit_functions.sql` (`consume_rate_limit`, `cleanup_rate_limits`, `rate_limits_expires_at_idx`, guarded hourly pg_cron `aura-rate-limits-cleanup`). Still **not wired into any route** (lead/whatsapp/login consume it in Phases 3-4)
 - **AURA-107 Dockerized Supabase CI stack now EXISTS** — merged in AURA-107 (`04d3522`): the `db-tests` CI job boots the Dockerized Supabase stack and runs DAL/security/integration suites live (`SUPABASE_LOCAL_TESTS=1`, 49/94/7 passed). The previously local-only carry-forwards are resolved. **`db-tests` is now a required branch-protection check on `develop`** — the Phase 1 exit gate is fully enforced
-- **Phase 2 (Public Website) does NOT exist yet** — not started. The first Phase 2 task is **AURA-201 (Public layout + header/footer + i18n shell)** — not started; requires a new session + per-task discovery/planning approval
+- **Phase 2 (Public Website) has STARTED — AURA-201 (public layout + header/footer/navigation + i18n shell + server-only public settings selector) is MERGED at `f17b429`** (1 of 7 Phase 2 tasks done). The public site shell + settings-driven footer now exist. The next Phase 2 task is **AURA-202 (Properties listing + `GET /api/properties` + featured)** — not started; requires a new session + per-task discovery/planning approval. AURA-203–207 (detail, areas, legal, SEO/noindex, about) remain not started. **No property listing/detail, areas, legal, or SEO/noindex pages exist yet** — only the shared layout shell + homepage
 - **Route wiring for lead/whatsapp/login does NOT exist** — the rate-limit service has no route consumer yet; Phases 3-4 Route Handlers are its first importers
 - No `.env` or `.env.local` file (`.env.example` placeholders only)
 - No product UI features beyond the minimal homepage shell
