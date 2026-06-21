@@ -1,17 +1,23 @@
 # Next Steps
 
-**Updated:** 2026-06-20
-**Current Phase:** **Phase 1 — COMPLETE** (AURA-101–AURA-107 all merged). **Phase 2 (Public Website) is next.** AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 (storage bucket policies + media path strategy) merged at `fae3d62`.** **AURA-106 (rate-limit service + salted-hash key + TTL cleanup, D-51) merged at `dd21edd`** (PR #21; Opus 4.8 **APPROVE**, no blocking issues; feature branch deleted). **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) merged at `04d3522`** (PR #23; Opus 4.8 phase-exit review **APPROVE**, no blocking issues; feature branch deleted). `develop` is the source of truth at `04d3522`. The next task is **AURA-201 (Public layout + header/footer + i18n shell)** — not started.
+**Updated:** 2026-06-21
+**Current Phase:** **Phase 1 — COMPLETE** (AURA-101–AURA-107 all merged); **Phase 2 (Public Website) has STARTED — AURA-201 merged; 1 of 7 done.** AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 merged at `fae3d62`.** **AURA-106 merged at `dd21edd`.** **AURA-107 (Phase 1 exit gate) merged at `04d3522`** (PR #23; Opus 4.8 phase-exit review **APPROVE**, no blocking issues; feature branch deleted). **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) merged at `f17b429`** (PR #25; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted local + remote). `develop` is the source of truth at `f17b429`. The next task is **AURA-202 (Properties listing + `GET /api/properties` + featured)** — not started.
 
 ---
 
 ## Immediate Next Action
 
-**AURA-107 (live DAL/security/integration tests in CI via a Dockerized Supabase stack — the Phase 1 exit gate) is MERGED at `04d3522`** (PR #23 squash-merged into `develop`; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; required checks `quality` / `e2e` / `analyze (javascript-typescript)` / `CodeQL` + the new **`db-tests`** green before merge; feature branch `feature/aura-107-dal-security-ci-harness` deleted). CI/test-infrastructure only (two files: `.github/workflows/ci.yml` + `src/tests/dal/supabase-smoke.test.ts`). The new `db-tests` job boots the Dockerized Supabase CLI stack (CLI pinned `2.106.0`), applies all 4 migrations via `supabase db reset`, and runs the suites live (`SUPABASE_LOCAL_TESTS=1`): **DAL 49 passed, Security 94 passed, Integration 7 passed** (zero skips). **Phase 1 is now complete.**
+**AURA-201 (Public layout + header/footer + i18n shell + server-only public settings selector — the first Phase 2 task) is MERGED at `f17b429`** (PR #25 squash-merged into `develop`; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; required checks `quality` / `e2e` / `db-tests` / `analyze (javascript-typescript)` / `CodeQL` green before merge; feature branch `feature/aura-201-public-layout-i18n-shell` deleted local + remote). Delivered: public `/[locale]` layout (header / navigation / footer), minimal next-intl v4 i18n shell (English-only visible UI, RTL-ready direction helper), server-only public settings safe selector (allowlist + per-key Zod + fail-closed defaults), settings-driven footer, Q-13 AUTEX disclosure, and unit/live-DAL/e2e tests. **No migration, no package/`.env`/`config.toml` change, no admin/property/area/legal/lead/WhatsApp code, no AURA-202+ work.** **Phase 2 has started (1 of 7 tasks done).**
 
-**Branch protection (done):** **`db-tests` is now required on `develop`** — verified via API, `develop` required checks are: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`. **The AURA-107 Phase 1 exit gate is now fully enforced by branch protection.**
+**Branch protection (unchanged by AURA-201):** `db-tests` remains required on `develop` — `develop` required checks are: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`. AURA-201 did not change branch protection.
 
-**Immediate next action — Phase 2 discovery / planning, not implementation.** The first Phase 2 task is **AURA-201 (Public layout + header/footer + i18n shell)**: build the public `/[locale]` layout (header, footer, navigation) reading agency settings via a safe server selector. It is **not started** and requires a new session + its own explicit per-task discovery/planning approval before any work begins. Do not implement AURA-201 in this docs-sync session.
+**Immediate next action — Phase 2 discovery / planning, not implementation.** The next Phase 2 task is **AURA-202 (Properties listing + `GET /api/properties` + featured)**: the first public data page, reusing the AURA-201 layout shell. It is **not started** and requires a new session + its own explicit per-task discovery/planning approval before any work begins. Do not implement AURA-202 in this docs-sync session.
+
+**AURA-201 non-blocking carry-forwards (from the targeted Opus review; preserved for future tasks, not actioned at merge):**
+1. **Settings selector observability** — `getPublicSettings()` fail-closed branches (`catch` / `if (error)`) swallow errors silently; a misconfigured service-role env or downed DB renders demo defaults with no signal. Add server-side logging/Sentry breadcrumb (defer to observability work, Phase 6).
+2. **Stricter phone/WhatsApp validation later** — `agency_phone`/`agency_whatsapp` validate only as non-empty strings (safe at render: WhatsApp strips to digits, phone via `tel:`); tighten when `libphonenumber-js` is wired for lead/contact work (Phase 2–3).
+3. **Skip-to-content cleanup** — `Header.skipToContent` message key exists in `en.json` but no skip link is rendered; wire a skip link (a11y) or drop the key.
+4. **Future settings caching/revalidate** — `force-dynamic` does a service-role settings read per request with no caching; revisit with `revalidate`/tag-based caching if settings reads become hot.
 
 **Carry-forward / open items still in force:**
 - **Live DAL/security/integration tests now run in CI** (AURA-107 `db-tests` job) — the prior "local-only (`SUPABASE_LOCAL_TESTS=1`) until AURA-107" posture from AURA-103/104/105/106 is **resolved**. Local manual runs still use `SUPABASE_LOCAL_TESTS=1` + `supabase start`. The rate-limit service still has **no route consumer yet** — lead/whatsapp/login routes (Phases 3-4) are its first importers; remove `src/services/rate-limit/index.ts` from the Knip `entry` list then.
@@ -69,12 +75,13 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-106**~~ | Rate-limit service + salted-hash key + TTL cleanup (D-51) | ✅ merged (`dd21edd`) |
 | ~~**AURA-107**~~ | DAL/security/integration live tests in CI (Dockerized stack) — Phase 1 exit gate | ✅ merged (`04d3522`) |
 
-### Phase 2 — Public Website — Not Started
+### Phase 2 — Public Website — Started (1/7)
 
 | Task | Description | Status |
 |---|---|---|
-| **AURA-201** | Public layout + header/footer + i18n shell | Not started — next; requires a new session + per-task discovery/planning approval |
-| AURA-202–207 | Listing, detail, areas, legal, SEO/noindex, about | Not started |
+| ~~**AURA-201**~~ | Public layout + header/footer + i18n shell + server-only public settings selector | ✅ merged (`f17b429`) |
+| **AURA-202** | Properties listing + `GET /api/properties` + featured | Not started — next; requires a new session + per-task discovery/planning approval |
+| AURA-203–207 | Detail, areas, legal, SEO/noindex, about | Not started |
 
 ---
 
@@ -98,7 +105,8 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 ### Knip `entry` debt
 - ~~`env.ts` entry~~ ✅ Removed in AURA-101 — real importer exists via `server.ts` and `service-role.ts`.
 - ~~`server.ts` entry~~ ✅ Removed in AURA-104 — now statically imported by `src/services/auth/guard.ts`.
-- `client.ts`, `service-role.ts` entries remain — `client.ts` has no Client Component consumer yet; `service-role.ts` is only **dynamically** imported by `scripts/seed-admin.ts`, so its entry is retained until a server DAL op imports it statically.
+- ~~`service-role.ts` entry~~ ✅ Removed in AURA-201 — now **statically** imported by `src/dal/settings.dal.ts`, reached by the public `[locale]` layout via `getPublicSettings()`.
+- `client.ts` entry remains — `client.ts` has no Client Component consumer yet; retain until the first Client Component imports the browser anon helper.
 - `src/services/auth/guard.ts`, `src/services/auth/index.ts`, `scripts/seed-admin.ts` entries added in AURA-104 — remove the guard/index entries when the first admin Route Handler / admin layout (AURA-301) imports the guard.
 - `src/domain/properties/media.ts`, `src/services/storage/policy.ts` entries added in AURA-105 — remove when the media upload route (AURA-304) becomes their first real importer.
 - `src/services/rate-limit/index.ts` entry added in AURA-106 — the server-only rate-limit barrel has no route consumer yet; remove when the first lead/whatsapp/login Route Handler (Phases 3-4) imports it. (`key.ts` is already imported by the unit test; `limit.ts` is reachable via the barrel.)
@@ -159,11 +167,12 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - ~~Do not start AURA-105~~ ✅ AURA-105 merged at `fae3d62`
 - ~~Do not start AURA-106~~ ✅ AURA-106 merged at `dd21edd`
 - ~~Do not start AURA-107~~ ✅ AURA-107 merged at `04d3522` (Phase 1 complete)
+- ~~Do not start AURA-201~~ ✅ AURA-201 merged at `f17b429` (Phase 2 started)
 - Do not fix audit without explicit dep-change approval
-- Do not start AURA-201 — AURA-201 (first Phase 2 task) requires a new session + explicit per-task discovery/planning approval before implementation
-- Do not modify `develop` branch protection from a code/docs session — branch-protection changes are manual owner actions in GitHub Settings (the `db-tests` required check has already been added)
+- Do not start AURA-202 — AURA-202 (next Phase 2 task) requires a new session + explicit per-task discovery/planning approval before implementation
+- Do not modify `develop` branch protection from a code/docs session — branch-protection changes are manual owner actions in GitHub Settings (unchanged by AURA-201; the `db-tests` required check remains in place)
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`
-- Do not implement UI components without AURA-201 approval (Phase 2)
+- Do not implement further public pages (listing/detail/areas/legal/about) without per-task approval (AURA-202+)
 - Do not load fonts via next/font without explicit task approval
