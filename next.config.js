@@ -1,3 +1,8 @@
+const createNextIntlPlugin = require('next-intl/plugin')
+
+// AURA-201: point the next-intl plugin at the request config under src/.
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -6,4 +11,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = withNextIntl(nextConfig)

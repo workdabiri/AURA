@@ -44,11 +44,11 @@
   // Entry points for modules with no application route caller yet. Each is REMOVED
   // by the task that wires its first real importer, so the list shrinks over time.
   //   client.ts        — browser anon helper; first Client Component consumer (Phase 2+)
-  //   service-role.ts  — privileged helper; only the operator bootstrap script imports
-  //                      it (dynamically), so it stays an entry until a server DAL op
-  //                      statically imports it.
   //   AURA-101 note: server.ts was an entry; REMOVED in AURA-104 because
   //                  src/services/auth/guard.ts now statically imports it.
+  //   AURA-201 note: service-role.ts was an entry; REMOVED here because
+  //                  src/dal/settings.dal.ts now statically imports it, reached by
+  //                  the public `[locale]` layout via getPublicSettings().
   // AURA-104 — the admin auth guard + bootstrap script have no route consumer yet.
   //   guard.ts / index.ts — first admin Route Handler / admin layout (AURA-301) will
   //                         import the guard; remove these entries then.
@@ -66,7 +66,6 @@
   //   src/services/rate-limit/index.ts — server-only rate-limit service surface.
   "entry": [
     "src/lib/supabase/client.ts",
-    "src/lib/supabase/service-role.ts",
     "src/services/auth/guard.ts",
     "src/services/auth/index.ts",
     "scripts/seed-admin.ts",
