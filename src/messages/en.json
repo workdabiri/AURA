@@ -1,0 +1,19 @@
+{
+  "Header": {
+    "brand": "AUTEX Estates",
+    "skipToContent": "Skip to main content"
+  },
+  "Navigation": {
+    "label": "Primary",
+    "properties": "Properties",
+    "areas": "Areas",
+    "about": "About",
+    "legal": "Legal"
+  },
+  "Footer": {
+    "contactHeading": "Contact",
+    "followHeading": "Follow us",
+    "rights": "All rights reserved.",
+    "disclosure": "AUTEX Estates Dubai is a fictional demonstration brand. This website is provided for demonstration purposes only and does not represent a real estate brokerage or an offer of property."
+  }
+}
