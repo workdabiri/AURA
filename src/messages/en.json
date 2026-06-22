@@ -73,14 +73,12 @@
   },
   "PropertyCard": {
     "priceOnApplication": "Price on application",
-    "currency": "AED",
     "featuredBadge": "Featured",
     "referenceLabel": "Ref",
     "bedrooms": "{count, plural, one {# bed} other {# beds}}",
     "bathrooms": "{count, plural, one {# bath} other {# baths}}",
     "size": "{value} sq ft",
-    "coverImageAltFallback": "Property photo",
-    "viewDetails": "View details"
+    "coverImageAltFallback": "Property photo"
   },
   "FeaturedProperties": {
     "title": "Featured properties",
@@ -94,5 +92,83 @@
     "error": "We couldn't load properties right now.",
     "validationError": "Some of your filters are invalid. Please adjust them and try again.",
     "retry": "Try again"
+  },
+  "PropertyDetail": {
+    "featuredBadge": "Featured",
+    "priceOnApplication": "Price on application",
+    "descriptionHeading": "About this property",
+    "loading": "Loading property…",
+    "error": "We couldn't load this property right now.",
+    "retry": "Try again",
+    "notFound": {
+      "title": "Property not found",
+      "body": "This property may have been removed or is no longer available.",
+      "backToListing": "Back to all properties"
+    },
+    "gallery": {
+      "heading": "Gallery",
+      "floorplans": "Floor plans",
+      "empty": "No images available",
+      "imageAltFallback": "Property photo"
+    },
+    "specs": {
+      "heading": "Key details",
+      "bedrooms": "Bedrooms",
+      "bathrooms": "Bathrooms",
+      "parking": "Parking",
+      "sizeSqft": "Size (sq ft)",
+      "sizeSqm": "Size (sq m)",
+      "furnishing": "Furnishing",
+      "reference": "Reference"
+    },
+    "location": {
+      "heading": "Location",
+      "community": "Community",
+      "subCommunity": "Sub-community",
+      "building": "Building",
+      "viewMap": "View on map"
+    },
+    "trust": {
+      "heading": "Verification",
+      "rera": "RERA number",
+      "permit": "Permit number"
+    },
+    "amenities": {
+      "heading": "Amenities"
+    },
+    "contact": {
+      "heading": "Interested in this property?",
+      "whatsapp": "Chat on WhatsApp",
+      "phone": "Call",
+      "email": "Email",
+      "none": "Contact us for more information."
+    },
+    "offPlan": {
+      "heading": "Off-plan details",
+      "developer": "Developer",
+      "handover": "Handover",
+      "completion": "Completion",
+      "downPayment": "Down payment",
+      "paymentPlan": "Payment plan"
+    },
+    "stakeholders": {
+      "heading": "Property partners"
+    },
+    "enums": {
+      "furnishingStatus": {
+        "furnished": "Furnished",
+        "semi_furnished": "Semi-furnished",
+        "unfurnished": "Unfurnished",
+        "unknown": "Not specified"
+      },
+      "stakeholderType": {
+        "developer": "Developer",
+        "owner": "Owner",
+        "seller": "Seller",
+        "landlord": "Landlord",
+        "sales_partner": "Sales partner",
+        "exclusive_agent": "Exclusive agent"
+      }
+    }
   }
 }
