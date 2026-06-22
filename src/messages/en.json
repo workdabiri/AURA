@@ -15,5 +15,84 @@
     "followHeading": "Follow us",
     "rights": "All rights reserved.",
     "disclosure": "AUTEX Estates Dubai is a fictional demonstration brand. This website is provided for demonstration purposes only and does not represent a real estate brokerage or an offer of property."
+  },
+  "Properties": {
+    "title": "Properties",
+    "intro": "Browse our curated collection of Dubai luxury residences and investments.",
+    "resultsCount": "{count, plural, =0 {No properties} one {# property} other {# properties}}",
+    "filters": {
+      "heading": "Refine results",
+      "searchLabel": "Search",
+      "searchPlaceholder": "Search by title",
+      "transactionType": "Transaction",
+      "marketType": "Market",
+      "propertyType": "Property type",
+      "community": "Community",
+      "communityPlaceholder": "e.g. Downtown Dubai",
+      "minPrice": "Min price (AED)",
+      "maxPrice": "Max price (AED)",
+      "bedrooms": "Min bedrooms",
+      "availabilityStatus": "Availability",
+      "anyOption": "Any",
+      "apply": "Apply filters",
+      "clear": "Clear"
+    },
+    "sort": {
+      "label": "Sort by",
+      "newest": "Newest",
+      "price_asc": "Price: low to high",
+      "price_desc": "Price: high to low"
+    },
+    "enums": {
+      "transactionType": {
+        "sale": "For sale",
+        "rent": "For rent"
+      },
+      "marketType": {
+        "ready": "Ready",
+        "off_plan": "Off-plan"
+      },
+      "propertyType": {
+        "apartment": "Apartment",
+        "villa": "Villa",
+        "townhouse": "Townhouse",
+        "penthouse": "Penthouse",
+        "office": "Office",
+        "plot": "Plot",
+        "retail": "Retail",
+        "warehouse": "Warehouse"
+      },
+      "availabilityStatus": {
+        "available": "Available",
+        "reserved": "Reserved",
+        "sold": "Sold",
+        "rented": "Rented",
+        "unavailable": "Unavailable"
+      }
+    }
+  },
+  "PropertyCard": {
+    "priceOnApplication": "Price on application",
+    "currency": "AED",
+    "featuredBadge": "Featured",
+    "referenceLabel": "Ref",
+    "bedrooms": "{count, plural, one {# bed} other {# beds}}",
+    "bathrooms": "{count, plural, one {# bath} other {# baths}}",
+    "size": "{value} sq ft",
+    "coverImageAltFallback": "Property photo",
+    "viewDetails": "View details"
+  },
+  "FeaturedProperties": {
+    "title": "Featured properties",
+    "intro": "A selection of our most distinguished listings.",
+    "empty": "Featured properties will appear here soon."
+  },
+  "ListingStates": {
+    "loading": "Loading properties…",
+    "empty": "No properties match your search.",
+    "emptyHint": "Try adjusting or clearing your filters.",
+    "error": "We couldn't load properties right now.",
+    "validationError": "Some of your filters are invalid. Please adjust them and try again.",
+    "retry": "Try again"
   }
 }
