@@ -1,7 +1,61 @@
 # Session Handoff
 
-**Last Updated:** 2026-06-21
-**Branch:** `develop` — source of truth at `f17b429`. **Phase 1 is COMPLETE; Phase 2 (Public Website) has STARTED.** **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) MERGED at `f17b429`** (PR #25 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-201-public-layout-i18n-shell` deleted local + remote). **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) MERGED at `04d3522`** (PR #23 squash-merged; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-107-dal-security-ci-harness` deleted). AURA-106 merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. **Next task: AURA-202 (Properties listing + `GET /api/properties` + featured) — not started; requires its own per-task discovery/planning approval.**
+**Last Updated:** 2026-06-22
+**Branch:** `develop` — source of truth at `1d4c514`. **Phase 1 is COMPLETE; Phase 2 (Public Website) is IN PROGRESS (2 of 7).** **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) MERGED at `f17b429`** (PR #25 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-201-public-layout-i18n-shell` deleted local + remote). **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) MERGED at `04d3522`** (PR #23 squash-merged; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-107-dal-security-ci-harness` deleted). AURA-106 merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. **AURA-202 (public properties listing + `GET /api/properties` + featured) MERGED at `1d4c514`** (PR #27 squash-merged; merged 2026-06-22T12:54:55Z; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch deleted). **Next task: AURA-203 (Property detail + stakeholder visibility) — not started; read-only discovery only, requires its own per-task discovery/planning approval.**
+
+---
+
+## AURA-202 — MERGED (`1d4c514`) — **PHASE 2 (2/7)**
+
+**AURA-202: Public properties listing + `GET /api/properties` + `GET /api/properties/featured`.** The first public **data** page: published-only property reads through an anon-client DAL behind the RLS public-read boundary, two Zod-validated public API routes, the `/[locale]/properties` listing page (reusing the AURA-201 layout shell) with full D-44 states, the presentational `PropertyCard`, and the homepage featured section. **No migration, no `package.json`/`package-lock.json` change, no `.env`/`supabase/config.toml` change, no CI change, no admin code, no property detail route/page (AURA-203), no stakeholder projection, no contact routing, no lead/WhatsApp routes, no media upload, no areas overview, no legal pages, no SEO/Lighthouse, no cinematic/GSAP, no AURA-203+ work.**
+
+Merged via PR #27 (squash) into `develop` at `1d4c514 feat: add public properties listing and API` (full SHA `1d4c514399da18249495733c10f4a1b0edf52fc3`; merged **2026-06-22T12:54:55Z**; pre-squash implementation commit `1b05e35`). Feature branch deleted. **Targeted Opus 4.8 review (PR #27): APPROVE, merge recommendation YES, no blocking issues** (six non-blocking carry-forwards preserved below). Required checks passed before merge: `quality`, `e2e`, `db-tests`, `analyze (javascript-typescript)`, `CodeQL`. Current source of truth is `develop` at `1d4c514`.
+
+### Implementation summary (19 files, all under `src/`)
+
+- **`src/dal/properties.dal.ts`** (`import 'server-only'`) — `listPublishedProperties()` (filters/search/sort/pagination, `count: 'exact'`) + `listFeaturedProperties(limit)`. Anon server client only; re-asserts `publish_status = 'published'` (and `is_featured = true` for featured); explicit public-safe column allowlist (never `select('*')`); raw rows never leave the DAL; batched cover-media query (no N+1); `storage_path` never selected.
+- **`src/app/api/properties/route.ts`** — `GET /api/properties`; Zod-validated; envelope `{ data, pagination: { page, limit, total, totalPages } }`; pagination default 1/12, hard cap 50 (clamps); 400 on invalid filter/page/limit and `max_price < min_price`; generic errors; `force-dynamic`.
+- **`src/app/api/properties/featured/route.ts`** — `GET /api/properties/featured`; Zod-validated `limit` (default 6, hard max 12); envelope `{ data }`; generic errors; `force-dynamic`.
+- **`src/app/[locale]/properties/{page,loading,error}.tsx` + `_components/PropertyFilters.tsx`** — Server-Component listing page reading `searchParams` → domain validation → DAL (no API round-trip, no client fetch, no react-query); D-44 loading/empty/validation-error/data-error(+retry)/success; GET-form filters (no client JS, no Supabase).
+- **`src/components/real-estate/PropertyCard.tsx`** — presentational, props-only `PropertyCardDTO`; no Supabase/DAL/services import; price via pure domain helpers.
+- **`src/app/[locale]/page.tsx`** — homepage featured section; **fails closed** to empty on any DB/env error (no cinematic/GSAP — AURA-502).
+- **`src/domain/properties/{query,card,format}.ts`** — pure Zod query contract, public-safe DTO + key-only projector, AED formatting (A-11, D-48); no React/Supabase/DAL imports.
+- **`src/messages/en.json`** — `Properties`/`PropertyCard`/`FeaturedProperties`/`ListingStates` namespaces only.
+- **Tests** — unit (`properties-query`, `property-card-formatting` incl. sensitive-field-drop projection), live-DB DAL (`properties.dal.test.ts`), security boundary (`properties-public-boundary.test.ts`), integration (`properties-api.test.ts`, DAL mocked), e2e (`properties.spec.ts`, data-independent).
+
+### Opus review summary
+
+- Verdict **APPROVE**
+- Merge Recommendation **YES**
+- Blocking Issues **None**
+
+### Checks summary (PR #27 — all required checks green before merge)
+
+- `CodeQL` — pass
+- `analyze (javascript-typescript)` — pass
+- `quality` — pass
+- `e2e` — pass
+- `db-tests` — pass
+
+### Public data boundary summary
+
+- **Anon server client** (`createSupabaseServerClient()`), **not** service-role — RLS is the enforcement boundary.
+- **RLS + DAL published-only re-assertion** — anon RLS scopes reads to published properties / active areas / published-parent media (`property_stakeholders` has no anon policy → default-deny); the DAL also re-asserts `publish_status = 'published'` (and `is_featured = true` for featured) as defence in depth.
+- **Explicit public-safe column allowlist** — never `select('*')`; raw rows never leave the DAL; output is a key-only DTO projection that structurally drops extras.
+- **No sensitive fields exposed** — `views_count`, `address`, `external_map_url`, `agent_*`, `internal_notes`, `storage_path`, `created_by`/`updated_by`, `description`, and off-plan/payment-plan detail are never selected or projected.
+
+### Next safe action
+
+**AURA-203 (Property detail + stakeholder visibility) — read-only discovery only.** Not started; requires a new session + explicit per-task discovery/planning approval before any work begins. **Do not start AURA-203 implementation** until discovery/planning is complete and the owner approves; do not create the AURA-203 branch until then. AURA-203 likely requires **Opus 4.8 review** (it touches the public property-detail data boundary and stakeholder visibility, D-15/D-16/D-14).
+
+### Carry-forward / non-blocking (from the targeted Opus review; preserved for future tasks, not actioned at merge)
+
+1. **FTS index expression/performance mismatch** — DAL search is correct, but the existing GIN index (`to_tsvector('english', coalesce(title_en,''))`) is not used by the query (`to_tsvector('english', title_en)`), so search falls back to a sequential scan. Future migration/performance task; **not** an AURA-202 blocker (the index lives in a pre-existing migration).
+2. **RTL badge class** — `PropertyCard` featured badge uses the physical `left-3`; future polish should use the logical `start-3`.
+3. **Static sensitive-token scan completeness** — expand the future static scan to include `agent_name`, `description`, `payment_plan_summary`. **Do not** add `off_plan` (it is a valid public enum/filter value).
+4. **E2E CI wiring** — `properties.spec.ts` passes locally, but CI's `e2e` job runs the smoke spec only; consider wiring full `test:e2e` into CI in a future task.
+5. **Unused i18n keys** — `PropertyCard.viewDetails` and `PropertyCard.currency` are currently unused; remove or use in a future cleanup.
+6. **Detail route** — `PropertyCard` links to `/{locale}/properties/{slug}`, but AURA-203 owns that route's implementation. This is expected (dead-until-AURA-203).
 
 ---
 
@@ -456,7 +510,9 @@ GitHub required approvals are disabled for solo-operator mode; status checks rem
 
 ## Validation Status
 
-**AURA-201 is merged. Phase 2 has started (1/7).** Squash-merged PR #25 (`feature/aura-201-public-layout-i18n-shell` → `develop`) at `f17b429`. Feature branch deleted (local + remote). `develop` is the source of truth — clean and synced with `origin/develop`. GitHub required checks (`quality`, `e2e`, `db-tests`, `analyze (javascript-typescript)`, `CodeQL`) all PASSED before merge. Targeted Opus 4.8 review: **APPROVE**, merge recommendation **YES**, no blocking issues.
+**AURA-202 is merged. Phase 2 is in progress (2/7).** Squash-merged PR #27 (`feature/aura-202-properties-listing-api` → `develop`) at `1d4c514` (merged 2026-06-22T12:54:55Z). Feature branch deleted. `develop` is the source of truth — clean and synced with `origin/develop`. GitHub required checks (`quality`, `e2e`, `db-tests`, `analyze (javascript-typescript)`, `CodeQL`) all PASSED before merge. Targeted Opus 4.8 review: **APPROVE**, merge recommendation **YES**, no blocking issues.
+
+**AURA-201 remains merged at `f17b429`** (PR #25; Phase 2 task 1/7). `develop` is the source of truth — clean and synced with `origin/develop`.
 
 **AURA-107 remains merged at `04d3522`; Phase 1 is complete.** AURA-106 at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`; AURA-101 at `95f9df3`.
 
@@ -466,6 +522,6 @@ GitHub required approvals are disabled for solo-operator mode; status checks rem
 
 ## Next Safe Action
 
-**AURA-201 is merged** into `develop` at `f17b429` (PR #25; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted local + remote). **Phase 2 has started (1 of 7 tasks done).** `develop` is the current source of truth. **AURA-107 remains merged at `04d3522`; Phase 1 is complete.**
+**AURA-202 is merged** into `develop` at `1d4c514` (PR #27; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted). **Phase 2 is in progress (2 of 7 tasks done).** `develop` is the current source of truth. **AURA-107 remains merged at `04d3522`; Phase 1 is complete.**
 
-**Branch protection (unchanged by AURA-201):** `db-tests` remains required on `develop` (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`). **Next task: AURA-202 (Properties listing + `GET /api/properties` + featured)** — the second Phase 2 task; **not started**; requires a new session + explicit per-task discovery/planning approval before any work begins. Discovery/planning only — do not start AURA-202 implementation in this docs-sync session.
+**Branch protection (unchanged by AURA-202):** `db-tests` remains required on `develop` (`quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`). **Next task: AURA-203 (Property detail + stakeholder visibility)** — the third Phase 2 task; **not started**; **read-only discovery only**, requires a new session + explicit per-task discovery/planning approval before any work begins. Do not start AURA-203 implementation in this docs-sync session; do not create the AURA-203 branch until discovery is complete and the owner approves. AURA-203 likely requires Opus 4.8 review (public property-detail data boundary + stakeholder visibility).
