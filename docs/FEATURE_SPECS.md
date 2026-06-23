@@ -93,6 +93,27 @@ registration/license, and internal notes are never exposed.
 
 ---
 
+## Areas Overview Page (implemented in AURA-204)
+
+`/en/areas` — public areas overview backed by `GET /api/areas`. Reads **active areas only**
+(D-22); inactive areas are hidden from the public (no-public-sensitive-reads rule).
+
+**Public-safe area DTO** (the only fields exposed):
+```
+{ slug, name, description, imageUrl }
+```
+No `id`, no `is_active`, no `sort_order`, no timestamps, **no property counts**, and **no property
+aggregation**. Raw rows never leave the DAL; output is a key-only projection.
+
+- **Ordering:** fixed — `sort_order ASC`, then `slug ASC`. No client-controlled sort.
+- **`GET /api/areas`:** Zod-validated; **no query params** accepted; envelope `{ data }`; generic
+  errors only; `force-dynamic`.
+- **Page states (D-44):** loading / empty / error (+ retry) / success.
+- **Not in AURA-204:** no area detail page (`/en/areas/[slug]`), no property counts/aggregation by
+  area, no admin area management (AURA-305).
+
+---
+
 ## Admin Routes
 
 | Route | Purpose |

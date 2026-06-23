@@ -1,7 +1,59 @@
 # Session Handoff
 
-**Last Updated:** 2026-06-23
-**Branch:** `develop` — source of truth at `b2f6129`. **Phase 1 is COMPLETE; Phase 2 (Public Website) is IN PROGRESS (3 of 7).** **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) MERGED at `f17b429`** (PR #25 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-201-public-layout-i18n-shell` deleted local + remote). **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) MERGED at `04d3522`** (PR #23 squash-merged; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-107-dal-security-ci-harness` deleted). AURA-106 merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. **AURA-202 (public properties listing + `GET /api/properties` + featured) MERGED at `1d4c514`** (PR #27 squash-merged; merged 2026-06-22T12:54:55Z; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch deleted). **AURA-203 (public property detail + `GET /api/properties/[slug]` + stakeholder visibility + contact routing + off-plan) MERGED at `b2f6129`** (PR #29 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-203-property-detail` deleted local + remote). **Next task: AURA-204 (Areas overview — DAL + `GET /api/areas`) — not started; read-only discovery only, requires its own per-task discovery/planning approval.**
+**Last Updated:** 2026-06-24
+**Branch:** `develop` — source of truth at `1fe2798`. **Phase 1 is COMPLETE; Phase 2 (Public Website) is IN PROGRESS (4 of 7).** **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) MERGED at `f17b429`** (PR #25 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-201-public-layout-i18n-shell` deleted local + remote). **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) MERGED at `04d3522`** (PR #23 squash-merged; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-107-dal-security-ci-harness` deleted). AURA-106 merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. **AURA-202 (public properties listing + `GET /api/properties` + featured) MERGED at `1d4c514`** (PR #27 squash-merged; merged 2026-06-22T12:54:55Z; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch deleted). **AURA-203 (public property detail + `GET /api/properties/[slug]` + stakeholder visibility + contact routing + off-plan) MERGED at `b2f6129`** (PR #29 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-203-property-detail` deleted local + remote). **AURA-204 (public areas overview + `GET /api/areas` + `/[locale]/areas` overview page + public-safe area DTO + D-44 states) MERGED at `1fe2798`** (PR #31 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-204-areas-overview` deleted local + remote). **Next task: AURA-205 (Legal page read — `GET /api/legal/[slug]` + safe Markdown render (D-12)) — not started; read-only discovery only, requires its own per-task discovery/planning approval.**
+
+---
+
+## AURA-204 — MERGED (`1fe2798`) — **PHASE 2 (4/7)**
+
+**AURA-204: Public areas overview + `GET /api/areas`.** The fourth Phase 2 task: the public areas overview — an **active-only** areas read through an anon-client DAL behind the RLS public-read boundary, a Zod-validated public API route, and the `/[locale]/areas` overview page (reusing the AURA-201 layout shell) with full D-44 states. **No migration, no `package.json`/`package-lock.json` change, no `.env`/`supabase/config.toml` change, no CI change, no admin code, no area detail page, no property counts, no property aggregation, no AURA-205+ work.**
+
+Merged via PR #31 (squash) into `develop` at `1fe2798 feat: add public areas overview`. Feature branch `feature/aura-204-areas-overview` deleted (local + remote). **Targeted Opus 4.8 review (PR #31): APPROVE, merge recommendation YES, no blocking issues** (three non-blocking carry-forwards preserved below). Required checks passed before merge: `CodeQL`, `analyze (javascript-typescript)`, `quality`, `e2e`, `db-tests`. Current source of truth is `develop` at `1fe2798`.
+
+### Implementation summary
+
+- **Public active-only areas DAL** — `src/dal/areas.dal.ts` (`import 'server-only'`): reads **active areas only** via the **anon server client** + RLS (DAL also re-asserts active as defence in depth); explicit public-safe column allowlist (never `select('*')`); raw rows never leave the DAL; fixed ordering `sort_order ASC`, then `slug ASC`.
+- **`GET /api/areas`** — `src/app/api/areas/route.ts`: Zod-validated; **no query params accepted**; envelope `{ data }`; generic errors only; `force-dynamic`.
+- **`/[locale]/areas` overview page** — server-rendered (no client-side data fetch); calls the DAL directly; full D-44 states (loading / empty / error + retry / success); presentational props-only `AreaCard`.
+- **Public-safe area DTO** — `{ slug, name, description, imageUrl }` only; no `id`, no `is_active`, no `sort_order`, no timestamps, **no property counts**, **no property aggregation**.
+- **Tests** — DAL (active-only), integration (API), security (anon cannot read inactive areas), e2e (areas page).
+
+### Opus review summary
+
+- Verdict **APPROVE**
+- Merge Recommendation **YES**
+- Blocking Issues **None**
+
+### Checks summary (PR #31 — all required checks green before merge)
+
+- `CodeQL` — pass
+- `analyze (javascript-typescript)` — pass
+- `quality` — pass
+- `e2e` — pass
+- `db-tests` — pass
+
+### Tests / gates summary
+
+- PR checks green (`CodeQL`, `analyze (javascript-typescript)`, `quality`, `e2e`, `db-tests`).
+- Live-DB DAL / security / integration suites passed per the implementation report (active-only reads; anon cannot read inactive areas).
+- The E2E stale-server diagnosis was reviewed and **accepted by Opus** (not a blocker).
+
+### Public data-boundary summary
+
+- **Anon server client** (not service-role) → RLS scopes anon area reads to **active** areas → the DAL re-asserts active + an explicit public-safe column allowlist → key-only DTO projection (`{ slug, name, description, imageUrl }`).
+- **Inactive areas are never exposed** to the public; no property counts / aggregation / area detail surface in AURA-204.
+
+### Next safe action
+
+**AURA-205 (Legal page read — `GET /api/legal/[slug]` + safe Markdown render, D-12) — read-only discovery only.** Not started; requires a new session + explicit per-task discovery/planning approval before any work begins. **Do not start AURA-205 implementation** and **do not create the AURA-205 branch** until discovery is complete and the owner approves. AURA-205 touches the public legal-content render boundary (D-12 merge blocker — no unsafe/raw HTML) and will require Opus review.
+
+### Carry-forward / non-blocking (preserved for future tasks, not actioned at merge)
+
+1. **Inline DAL-error retry affordance** — the `/en/areas` inline caught-DAL-error path renders an inline error without retry; the route `error.tsx` boundary has retry, but the inline caught error does not. Future improvement: either let the DAL error propagate to `error.tsx`, or add a refresh/retry affordance to the inline error.
+2. **Area i18n extraction is English-only** — acceptable for the current `/en` MVP; needs locale-aware extraction when Arabic / more locales are added.
+3. **`AreaCard` uses a plain `<img>`** — not `next/image`; acceptable for AURA-204, revisit in AURA-206 / Lighthouse / performance phase.
+4. **AURA-204 docs-sync** now records completion; no status boxes in `docs/TASKS_Project.md` unless the established pattern changes.
 
 ---
 
