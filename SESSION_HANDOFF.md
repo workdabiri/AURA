@@ -1,7 +1,57 @@
 # Session Handoff
 
-**Last Updated:** 2026-06-22
-**Branch:** `develop` — source of truth at `1d4c514`. **Phase 1 is COMPLETE; Phase 2 (Public Website) is IN PROGRESS (2 of 7).** **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) MERGED at `f17b429`** (PR #25 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-201-public-layout-i18n-shell` deleted local + remote). **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) MERGED at `04d3522`** (PR #23 squash-merged; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-107-dal-security-ci-harness` deleted). AURA-106 merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. **AURA-202 (public properties listing + `GET /api/properties` + featured) MERGED at `1d4c514`** (PR #27 squash-merged; merged 2026-06-22T12:54:55Z; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch deleted). **Next task: AURA-203 (Property detail + stakeholder visibility) — not started; read-only discovery only, requires its own per-task discovery/planning approval.**
+**Last Updated:** 2026-06-23
+**Branch:** `develop` — source of truth at `b2f6129`. **Phase 1 is COMPLETE; Phase 2 (Public Website) is IN PROGRESS (3 of 7).** **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) MERGED at `f17b429`** (PR #25 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-201-public-layout-i18n-shell` deleted local + remote). **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) MERGED at `04d3522`** (PR #23 squash-merged; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-107-dal-security-ci-harness` deleted). AURA-106 merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. **AURA-202 (public properties listing + `GET /api/properties` + featured) MERGED at `1d4c514`** (PR #27 squash-merged; merged 2026-06-22T12:54:55Z; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch deleted). **AURA-203 (public property detail + `GET /api/properties/[slug]` + stakeholder visibility + contact routing + off-plan) MERGED at `b2f6129`** (PR #29 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-203-property-detail` deleted local + remote). **Next task: AURA-204 (Areas overview — DAL + `GET /api/areas`) — not started; read-only discovery only, requires its own per-task discovery/planning approval.**
+
+---
+
+## AURA-203 — MERGED (`b2f6129`) — **PHASE 2 (3/7)**
+
+**AURA-203: Public property detail + `GET /api/properties/[slug]` + stakeholder visibility.** The third Phase 2 task: the public property **detail** surface — a published-only single-property read with a public-safe DTO, media gallery, price-on-application + conditional off-plan block, a safe public stakeholder projection, and locked contact routing — reusing the AURA-201 layout shell. **No migration, no `package.json`/`package-lock.json` change, no `.env`/`supabase/config.toml` change, no CI change, no admin code, no lead/WhatsApp routes, no media upload, no SEO/noindex, no similar properties, no cinematic/GSAP, no AURA-204+ work.** The AURA-202 listing DAL (`src/dal/properties.dal.ts`) is **untouched**; AURA-203 added a **separate** `src/dal/property-detail.dal.ts`.
+
+Merged via PR #29 (squash) into `develop` at `b2f6129 feat: add public property detail route`. Feature branch `feature/aura-203-property-detail` deleted (local + remote). **Targeted Opus 4.8 review (PR #29): APPROVE, merge recommendation YES, no blocking issues** (five non-blocking carry-forwards preserved below). Required checks passed before merge: `CodeQL`, `analyze (javascript-typescript)`, `quality`, `e2e`, `db-tests`. Current source of truth is `develop` at `b2f6129`.
+
+### Implementation summary
+
+- **Public property detail API/page** — `GET /api/properties/[slug]` (Zod slug; `{ data }`; `400`/`404`/generic `500`; no service role in handler; `force-dynamic`) + `/[locale]/properties/[slug]` server-rendered page (calls the DAL directly; no client-side fetch) with full D-44 states (loading / error + retry / not-found / success).
+- **Safe stakeholder visibility** — `{ name, type }` only, only for `visibility = public` on a published property; `internal_only` stakeholders and all stakeholder PII never exposed.
+- **Contact routing** — property override → agency fallback → never stakeholder; one resolved CTA.
+- **Off-plan block** — present only when `market_type = off_plan` (D-36); price-on-application rendering (D-48).
+- **Media gallery** — images + floorplans; public CDN `url` only (never `storage_path`); cover-first ordering.
+- **Tests** — unit (`property-contact-routing`, `property-detail`), live-DB DAL (`property-detail.dal`), security boundary (`property-detail-public-boundary`), integration (`property-detail-api`), e2e (`property-detail`).
+
+### Opus review summary
+
+- Verdict **APPROVE**
+- Merge Recommendation **YES**
+- Blocking Issues **None**
+
+### Checks summary (PR #29 — all required checks green before merge)
+
+- `CodeQL` — pass
+- `analyze (javascript-typescript)` — pass
+- `quality` — pass
+- `e2e` — pass
+- `db-tests` — pass
+
+### Public data-boundary summary
+
+- **Property/media reads use the anon server client + RLS** (the DAL also re-asserts `publish_status = 'published'`); draft/archived/missing → `404`.
+- **Stakeholder selector is server-only, narrow, and fail-closed** — service-role, `select('name, type')`, `visibility='public'`, `[]` on error; `propertyId` always comes from an already-published anon fetch (`property_stakeholders` has no anon policy/grant → this is the only public path).
+- **Public stakeholders projected as `{ name, type }`**; internal stakeholders and stakeholder PII (phone/email/whatsapp, registration/license, internal notes) are excluded.
+- **Contact never routes to stakeholders** (D-14); the public-safe DTO is key-only and structurally drops any sensitive field (`address`, `views_count`, `created_by`/`updated_by`, timestamps, `publish_status`, `area_id`, `storage_path`, raw `agent_*`).
+
+### Next safe action
+
+**AURA-204 (Areas overview — DAL + `GET /api/areas`) — read-only discovery only.** Not started; requires a new session + explicit per-task discovery/planning approval before any work begins. **Do not start AURA-204 implementation** and **do not create the AURA-204 branch** until discovery is complete and the owner approves. AURA-204 likely touches the public areas/listing taxonomy and must still follow read-only discovery first.
+
+### Carry-forward / non-blocking (from the targeted Opus review; preserved for future tasks, not actioned at merge)
+
+1. **CI e2e coverage** — CI's `e2e` job runs `test:smoke` only; `property-detail.spec.ts` (and AURA-202's `properties.spec.ts`) are full-`test:e2e`/local, not run by CI `e2e`. Future follow-up: decide whether CI should run full `npm run test:e2e`.
+2. **Detail e2e happy-path** — `property-detail.spec.ts` is data-independent and only verifies the not-found/error graceful states. Future follow-up: add a seeded happy-path detail e2e when the test-data strategy supports it.
+3. **FEATURE_SPECS contact-routing drift** — `docs/FEATURE_SPECS.md` had the old 4-step contact priority; **synced in this PR** to the implemented/locked 6-step priority: (1) property.agent_whatsapp (2) property.agent_phone (3) property.agent_email (4) settings.whatsapp / agencyWhatsapp (5) settings.phone / agencyPhone (6) settings.email / agencyEmail. **Never stakeholder.**
+4. **Optional stakeholder defense-in-depth** — make the service-role public-stakeholder selector's safety local to the query with an explicit published-parent check. The current control flow is approved and not blocking.
+5. **CI ergonomics** — pre-existing: the wait-for-server loop could fail earlier/more clearly. Not an AURA-203 blocker.
 
 ---
 
