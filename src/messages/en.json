@@ -93,6 +93,19 @@
     "validationError": "Some of your filters are invalid. Please adjust them and try again.",
     "retry": "Try again"
   },
+  "Areas": {
+    "title": "Areas",
+    "intro": "Explore the Dubai communities and neighbourhoods where we operate."
+  },
+  "AreaCard": {
+    "imageAltFallback": "Area photo"
+  },
+  "AreaStates": {
+    "loading": "Loading areas…",
+    "empty": "Areas will appear here soon.",
+    "error": "We couldn't load areas right now.",
+    "retry": "Try again"
+  },
   "PropertyDetail": {
     "featuredBadge": "Featured",
     "priceOnApplication": "Price on application",
