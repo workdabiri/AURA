@@ -75,13 +75,21 @@ Must include:
 
 **Off-plan block fields:** developer_name, handover_date, completion_percentage, down_payment_amount, payment_plan_summary.
 
-**Contact routing priority:**
+**Contact routing priority** (locked D-13/D-14; implemented in AURA-203):
 ```
 1. property.agent_whatsapp
 2. property.agent_phone
-3. settings.whatsapp
-4. settings.phone
+3. property.agent_email
+4. settings.whatsapp  (agencyWhatsapp)
+5. settings.phone     (agencyPhone)
+6. settings.email     (agencyEmail)
 ```
+The first non-empty candidate wins; if none are configured, no contact CTA is shown.
+**Contact never auto-routes to a stakeholder** (D-14).
+
+**Public stakeholders** are projected to safe public fields only — `{ name, type }` — and only when
+`visibility = public` **and** the property is published (D-16). Stakeholder phone/email/whatsapp,
+registration/license, and internal notes are never exposed.
 
 ---
 

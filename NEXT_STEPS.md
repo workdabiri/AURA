@@ -1,7 +1,7 @@
 # Next Steps
 
-**Updated:** 2026-06-22
-**Current Phase:** **Phase 1 — COMPLETE** (AURA-101–AURA-107 all merged); **Phase 2 (Public Website) is IN PROGRESS — AURA-201 + AURA-202 merged; 2 of 7 done.** AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 merged at `fae3d62`.** **AURA-106 merged at `dd21edd`.** **AURA-107 (Phase 1 exit gate) merged at `04d3522`** (PR #23; Opus 4.8 phase-exit review **APPROVE**, no blocking issues; feature branch deleted). **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) merged at `f17b429`** (PR #25; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted local + remote). **AURA-202 (public properties listing + `GET /api/properties` + `GET /api/properties/featured`) merged at `1d4c514`** (PR #27; merged 2026-06-22; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted). `develop` is the source of truth at `1d4c514`. The next task is **AURA-203 (Property detail + stakeholder visibility)** — not started (read-only discovery only).
+**Updated:** 2026-06-23
+**Current Phase:** **Phase 1 — COMPLETE** (AURA-101–AURA-107 all merged); **Phase 2 (Public Website) is IN PROGRESS — AURA-201 + AURA-202 + AURA-203 merged; 3 of 7 done.** AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 merged at `fae3d62`.** **AURA-106 merged at `dd21edd`.** **AURA-107 (Phase 1 exit gate) merged at `04d3522`** (PR #23; Opus 4.8 phase-exit review **APPROVE**, no blocking issues; feature branch deleted). **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) merged at `f17b429`** (PR #25; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted local + remote). **AURA-202 (public properties listing + `GET /api/properties` + `GET /api/properties/featured`) merged at `1d4c514`** (PR #27; merged 2026-06-22; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted). **AURA-203 (public property detail + `GET /api/properties/[slug]` + stakeholder visibility + contact routing + off-plan) merged at `b2f6129`** (PR #29; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch `feature/aura-203-property-detail` deleted). `develop` is the source of truth at `b2f6129`. The next task is **AURA-204 (Areas overview — DAL + `GET /api/areas`)** — not started (read-only discovery only).
 
 ---
 
@@ -11,9 +11,18 @@
 
 **AURA-202 (public properties listing + `GET /api/properties` + `GET /api/properties/featured` — the second Phase 2 task) is MERGED at `1d4c514`** (PR #27 squash-merged; merged 2026-06-22T12:54:55Z; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; required checks `quality` / `e2e` / `db-tests` / `analyze (javascript-typescript)` / `CodeQL` green before merge; feature branch deleted). Delivered: a published-only properties DAL (anon server client + RLS public-read boundary + DAL published-only re-assertion + explicit public-safe column allowlist), `GET /api/properties` + `GET /api/properties/featured` (Zod-validated; pagination cap 50 that clamps; generic errors), the `/[locale]/properties` listing page with all D-44 states (reusing the AURA-201 shell), `PropertyCard`, the homepage featured section (fails closed to empty), pure domain query/DTO/format modules, and unit/DAL/security/integration/e2e tests. **No migration, no package/`.env`/`config.toml`/CI change, no admin/detail/stakeholder/contact/lead-WhatsApp/media/areas/legal/SEO/cinematic code, no AURA-203+ work.** **Phase 2 is in progress (2 of 7 done).**
 
-**Branch protection (unchanged by AURA-202):** `db-tests` remains required on `develop` — `develop` required checks are: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`. AURA-202 did not change branch protection.
+**AURA-203 (public property detail + `GET /api/properties/[slug]` + stakeholder visibility + contact routing + off-plan — the third Phase 2 task) is MERGED at `b2f6129`** (PR #29 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; required checks `CodeQL` / `analyze (javascript-typescript)` / `quality` / `e2e` / `db-tests` green before merge; feature branch `feature/aura-203-property-detail` deleted local + remote). Delivered: `GET /api/properties/[slug]` (Zod slug; published-only; `400`/`404`/generic `500`; no service role in handler), the `/[locale]/properties/[slug]` server-rendered page with all D-44 states, a public-safe detail DTO + media gallery (no `storage_path`), price-on-application + conditional off-plan block (D-36), a safe `{ name, type }` public stakeholder projection (internal_only + PII excluded; narrow server-only fail-closed service-role selector), contact routing (property override → agency fallback → never stakeholder), and unit/DAL/security/integration/e2e tests. **The AURA-202 listing DAL (`src/dal/properties.dal.ts`) is untouched — a separate `src/dal/property-detail.dal.ts` was added.** **No migration, no package/`.env`/`config.toml`/CI change, no admin/lead/WhatsApp/media-upload/SEO/similar-properties/cinematic code, no AURA-204+ work.** **Phase 2 is in progress (3 of 7 done).**
 
-**Immediate next action — AURA-203 read-only discovery only.** The next Phase 2 task is **AURA-203 (Property detail + `GET /api/properties/[slug]` + stakeholder visibility)**: the public property-detail page, reusing the AURA-201 layout shell and the AURA-202 DAL/domain. It is **not started**. **Do not start implementation directly. Do not create the AURA-203 branch until discovery is complete and the owner approves.** Read-only discovery only this session; a new session + explicit per-task discovery/planning approval is required before any work begins. **AURA-203 likely requires Opus 4.8 review** because it touches the public property-detail data boundary and stakeholder visibility (D-15/D-16 — internal-only stakeholders must never be publicly exposed; D-14 — contact routing must never auto-route to a stakeholder).
+**Branch protection (unchanged by AURA-203):** `db-tests` remains required on `develop` — `develop` required checks are: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`. AURA-203 did not change branch protection.
+
+**Immediate next action — AURA-204 read-only discovery only.** The next Phase 2 task is **AURA-204 (Areas overview — DAL + `GET /api/areas`)**: the public areas overview, reusing the AURA-201 layout shell and the AURA-202/203 DAL/domain patterns. It is **not started**. **Do not start AURA-204 implementation directly. Do not create the AURA-204 branch until discovery is complete and the owner approves.** Read-only discovery only; a new session + explicit per-task discovery/planning approval is required before any work begins. AURA-204 likely touches the public areas/listing taxonomy (D-22) and must still follow read-only discovery first.
+
+**AURA-203 non-blocking carry-forwards (from the targeted Opus review; preserved for future tasks, not actioned at merge):**
+1. **CI e2e coverage** — CI's `e2e` job runs `test:smoke` only; `property-detail.spec.ts` (and AURA-202's `properties.spec.ts`) are full-`test:e2e`/local, not run by CI `e2e`. Future follow-up: decide whether CI should run full `npm run test:e2e`.
+2. **Detail e2e happy-path** — `property-detail.spec.ts` is data-independent and only verifies the not-found/error graceful states. Future follow-up: add a seeded happy-path detail e2e when the test-data strategy supports it.
+3. **FEATURE_SPECS contact-routing drift** — `docs/FEATURE_SPECS.md` had the old 4-step contact priority; **synced in this PR** to the implemented/locked 6-step priority: (1) property.agent_whatsapp (2) property.agent_phone (3) property.agent_email (4) settings.whatsapp / agencyWhatsapp (5) settings.phone / agencyPhone (6) settings.email / agencyEmail. **Never stakeholder.**
+4. **Optional stakeholder defense-in-depth** — make the service-role public-stakeholder selector's safety local to the query with an explicit published-parent check. The current control flow is approved and not blocking.
+5. **CI ergonomics** — pre-existing: the wait-for-server loop could fail earlier/more clearly. Not an AURA-203 blocker.
 
 **AURA-202 non-blocking carry-forwards (from the targeted Opus review; preserved for future tasks, not actioned at merge):**
 1. **FTS index expression/performance mismatch** — DAL search is correct, but the existing GIN index (`to_tsvector('english', coalesce(title_en,''))`) is not used by the query (`to_tsvector('english', title_en)`), so search falls back to a sequential scan. Future migration/performance task; **not** an AURA-202 blocker (the index lives in a pre-existing migration).
@@ -85,14 +94,15 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-106**~~ | Rate-limit service + salted-hash key + TTL cleanup (D-51) | ✅ merged (`dd21edd`) |
 | ~~**AURA-107**~~ | DAL/security/integration live tests in CI (Dockerized stack) — Phase 1 exit gate | ✅ merged (`04d3522`) |
 
-### Phase 2 — Public Website — In progress (2/7)
+### Phase 2 — Public Website — In progress (3/7)
 
 | Task | Description | Status |
 |---|---|---|
 | ~~**AURA-201**~~ | Public layout + header/footer + i18n shell + server-only public settings selector | ✅ merged (`f17b429`) |
 | ~~**AURA-202**~~ | Properties listing + `GET /api/properties` + featured | ✅ merged (`1d4c514`) |
-| **AURA-203** | Property detail + stakeholder visibility | Not started — next; read-only discovery only; requires a new session + per-task discovery/planning approval |
-| AURA-204–207 | Areas, legal, SEO/noindex, about | Not started |
+| ~~**AURA-203**~~ | Property detail + stakeholder visibility | ✅ merged (`b2f6129`) |
+| **AURA-204** | Areas overview — DAL + `GET /api/areas` | Not started — next; read-only discovery only; requires a new session + per-task discovery/planning approval |
+| AURA-205–207 | Legal, SEO/noindex, about | Not started |
 
 ---
 
@@ -180,12 +190,13 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - ~~Do not start AURA-107~~ ✅ AURA-107 merged at `04d3522` (Phase 1 complete)
 - ~~Do not start AURA-201~~ ✅ AURA-201 merged at `f17b429` (Phase 2 started)
 - ~~Do not start AURA-202~~ ✅ AURA-202 merged at `1d4c514` (Phase 2 → 2/7)
+- ~~Do not start AURA-203~~ ✅ AURA-203 merged at `b2f6129` (Phase 2 → 3/7)
 - Do not fix audit without explicit dep-change approval
-- Do not start AURA-203 implementation directly — AURA-203 (Property detail + stakeholder visibility; next Phase 2 task) is **read-only discovery only**; it requires a new session + explicit per-task discovery/planning approval before implementation, and AURA-203 likely requires Opus 4.8 review (public property-detail data boundary + stakeholder visibility)
-- Do not create the AURA-203 branch until discovery is complete and the owner approves
-- Do not modify `develop` branch protection from a code/docs session — branch-protection changes are manual owner actions in GitHub Settings (unchanged by AURA-202; the `db-tests` required check remains in place)
+- Do not start AURA-204 implementation directly — AURA-204 (Areas overview — DAL + `GET /api/areas`; next Phase 2 task) is **read-only discovery only**; it requires a new session + explicit per-task discovery/planning approval before implementation
+- Do not create the AURA-204 branch until discovery is complete and the owner approves
+- Do not modify `develop` branch protection from a code/docs session — branch-protection changes are manual owner actions in GitHub Settings (unchanged by AURA-203; the `db-tests` required check remains in place)
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`
-- Do not implement further public pages (detail/areas/legal/about) without per-task approval (AURA-203+)
+- Do not implement further public pages (areas/legal/about) without per-task approval (AURA-204+)
 - Do not load fonts via next/font without explicit task approval
