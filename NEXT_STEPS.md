@@ -1,7 +1,7 @@
 # Next Steps
 
-**Updated:** 2026-06-23
-**Current Phase:** **Phase 1 — COMPLETE** (AURA-101–AURA-107 all merged); **Phase 2 (Public Website) is IN PROGRESS — AURA-201 + AURA-202 + AURA-203 merged; 3 of 7 done.** AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 merged at `fae3d62`.** **AURA-106 merged at `dd21edd`.** **AURA-107 (Phase 1 exit gate) merged at `04d3522`** (PR #23; Opus 4.8 phase-exit review **APPROVE**, no blocking issues; feature branch deleted). **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) merged at `f17b429`** (PR #25; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted local + remote). **AURA-202 (public properties listing + `GET /api/properties` + `GET /api/properties/featured`) merged at `1d4c514`** (PR #27; merged 2026-06-22; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted). **AURA-203 (public property detail + `GET /api/properties/[slug]` + stakeholder visibility + contact routing + off-plan) merged at `b2f6129`** (PR #29; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch `feature/aura-203-property-detail` deleted). `develop` is the source of truth at `b2f6129`. The next task is **AURA-204 (Areas overview — DAL + `GET /api/areas`)** — not started (read-only discovery only).
+**Updated:** 2026-06-24
+**Current Phase:** **Phase 1 — COMPLETE** (AURA-101–AURA-107 all merged); **Phase 2 (Public Website) is IN PROGRESS — AURA-201 + AURA-202 + AURA-203 + AURA-204 merged; 4 of 7 done.** AURA-101 merged at `95f9df3`. AURA-102 merged at `3657e4f`. AURA-103 merged at `1a35958`. **AURA-104 merged at `44a7fd4`.** **AURA-105 merged at `fae3d62`.** **AURA-106 merged at `dd21edd`.** **AURA-107 (Phase 1 exit gate) merged at `04d3522`** (PR #23; Opus 4.8 phase-exit review **APPROVE**, no blocking issues; feature branch deleted). **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) merged at `f17b429`** (PR #25; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted local + remote). **AURA-202 (public properties listing + `GET /api/properties` + `GET /api/properties/featured`) merged at `1d4c514`** (PR #27; merged 2026-06-22; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch deleted). **AURA-203 (public property detail + `GET /api/properties/[slug]` + stakeholder visibility + contact routing + off-plan) merged at `b2f6129`** (PR #29; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch `feature/aura-203-property-detail` deleted). **AURA-204 (public areas overview — active-only areas DAL + `GET /api/areas` + `/[locale]/areas` overview page + public-safe area DTO + D-44 states) merged at `1fe2798`** (PR #31; targeted Opus 4.8 review **APPROVE**, no blocking issues; feature branch `feature/aura-204-areas-overview` deleted local + remote). `develop` is the source of truth at `1fe2798`. The next task is **AURA-205 (Legal page read — `GET /api/legal/[slug]` + safe Markdown render (D-12))** — not started (read-only discovery only).
 
 ---
 
@@ -13,9 +13,17 @@
 
 **AURA-203 (public property detail + `GET /api/properties/[slug]` + stakeholder visibility + contact routing + off-plan — the third Phase 2 task) is MERGED at `b2f6129`** (PR #29 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; required checks `CodeQL` / `analyze (javascript-typescript)` / `quality` / `e2e` / `db-tests` green before merge; feature branch `feature/aura-203-property-detail` deleted local + remote). Delivered: `GET /api/properties/[slug]` (Zod slug; published-only; `400`/`404`/generic `500`; no service role in handler), the `/[locale]/properties/[slug]` server-rendered page with all D-44 states, a public-safe detail DTO + media gallery (no `storage_path`), price-on-application + conditional off-plan block (D-36), a safe `{ name, type }` public stakeholder projection (internal_only + PII excluded; narrow server-only fail-closed service-role selector), contact routing (property override → agency fallback → never stakeholder), and unit/DAL/security/integration/e2e tests. **The AURA-202 listing DAL (`src/dal/properties.dal.ts`) is untouched — a separate `src/dal/property-detail.dal.ts` was added.** **No migration, no package/`.env`/`config.toml`/CI change, no admin/lead/WhatsApp/media-upload/SEO/similar-properties/cinematic code, no AURA-204+ work.** **Phase 2 is in progress (3 of 7 done).**
 
-**Branch protection (unchanged by AURA-203):** `db-tests` remains required on `develop` — `develop` required checks are: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`. AURA-203 did not change branch protection.
+**AURA-204 (public areas overview + `GET /api/areas` — the fourth Phase 2 task) is MERGED at `1fe2798`** (PR #31 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; required checks `CodeQL` / `analyze (javascript-typescript)` / `quality` / `e2e` / `db-tests` green before merge; feature branch `feature/aura-204-areas-overview` deleted local + remote). Delivered: an active-only areas DAL (anon server client + RLS public-read boundary + DAL active re-assertion + explicit public-safe column allowlist; no service role; inactive areas hidden), `GET /api/areas` (Zod-validated, no query params, envelope `{ data }`, generic errors, `force-dynamic`), the `/[locale]/areas` overview page with all D-44 states (reusing the AURA-201 shell), a presentational `AreaCard`, and the public-safe area DTO `{ slug, name, description, imageUrl }` (no property counts, no property aggregation). **No migration, no package/`.env`/`config.toml`/CI change, no admin/area-detail/legal/SEO/about code, no AURA-205+ work.** **Phase 2 is in progress (4 of 7 done).**
 
-**Immediate next action — AURA-204 read-only discovery only.** The next Phase 2 task is **AURA-204 (Areas overview — DAL + `GET /api/areas`)**: the public areas overview, reusing the AURA-201 layout shell and the AURA-202/203 DAL/domain patterns. It is **not started**. **Do not start AURA-204 implementation directly. Do not create the AURA-204 branch until discovery is complete and the owner approves.** Read-only discovery only; a new session + explicit per-task discovery/planning approval is required before any work begins. AURA-204 likely touches the public areas/listing taxonomy (D-22) and must still follow read-only discovery first.
+**Branch protection (unchanged by AURA-204):** `db-tests` remains required on `develop` — `develop` required checks are: `quality`, `e2e`, `analyze (javascript-typescript)`, `CodeQL`, `db-tests`. AURA-204 did not change branch protection.
+
+**Immediate next action — AURA-205 read-only discovery only.** The next Phase 2 task is **AURA-205 (Legal page read — `GET /api/legal/[slug]` + safe Markdown render (D-12))**: the public legal-page read + safe Markdown render, reusing the AURA-201 layout shell and the AURA-202/203/204 DAL/domain patterns. It is **not started**. **Do not start AURA-205 implementation directly. Do not create the AURA-205 branch until discovery is complete and the owner approves.** Read-only discovery only; a new session + explicit per-task discovery/planning approval is required before any work begins. AURA-205 touches the public legal-content render boundary (D-12 merge blocker — no unsafe/raw HTML; Markdown or sanitized rich text only) and must still follow read-only discovery first.
+
+**AURA-204 non-blocking carry-forwards (preserved for future tasks, not actioned at merge):**
+1. **Inline DAL-error retry affordance** — the `/en/areas` inline caught-DAL-error path renders an inline error without retry; the route `error.tsx` boundary has retry, but the inline caught DAL error does not. Future improvement: either let the DAL error propagate to `error.tsx`, or add a refresh/retry affordance to the inline error.
+2. **Area i18n extraction is English-only** — acceptable for the current `/en` MVP, but needs locale-aware extraction when Arabic / more locales are added.
+3. **`AreaCard` uses a plain `<img>`** instead of `next/image` — acceptable for AURA-204; revisit in AURA-206 / Lighthouse / performance phase.
+4. **AURA-204 docs-sync** now records completion; no status boxes in `docs/TASKS_Project.md` unless the established pattern changes.
 
 **AURA-203 non-blocking carry-forwards (from the targeted Opus review; preserved for future tasks, not actioned at merge):**
 1. **CI e2e coverage** — CI's `e2e` job runs `test:smoke` only; `property-detail.spec.ts` (and AURA-202's `properties.spec.ts`) are full-`test:e2e`/local, not run by CI `e2e`. Future follow-up: decide whether CI should run full `npm run test:e2e`.
@@ -94,15 +102,16 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 | ~~**AURA-106**~~ | Rate-limit service + salted-hash key + TTL cleanup (D-51) | ✅ merged (`dd21edd`) |
 | ~~**AURA-107**~~ | DAL/security/integration live tests in CI (Dockerized stack) — Phase 1 exit gate | ✅ merged (`04d3522`) |
 
-### Phase 2 — Public Website — In progress (3/7)
+### Phase 2 — Public Website — In progress (4/7)
 
 | Task | Description | Status |
 |---|---|---|
 | ~~**AURA-201**~~ | Public layout + header/footer + i18n shell + server-only public settings selector | ✅ merged (`f17b429`) |
 | ~~**AURA-202**~~ | Properties listing + `GET /api/properties` + featured | ✅ merged (`1d4c514`) |
 | ~~**AURA-203**~~ | Property detail + stakeholder visibility | ✅ merged (`b2f6129`) |
-| **AURA-204** | Areas overview — DAL + `GET /api/areas` | Not started — next; read-only discovery only; requires a new session + per-task discovery/planning approval |
-| AURA-205–207 | Legal, SEO/noindex, about | Not started |
+| ~~**AURA-204**~~ | Areas overview — DAL + `GET /api/areas` | ✅ merged (`1fe2798`) |
+| **AURA-205** | Legal page read — `GET /api/legal/[slug]` + safe Markdown render (D-12) | Not started — next; read-only discovery only; requires a new session + per-task discovery/planning approval |
+| AURA-206–207 | SEO/noindex, about | Not started |
 
 ---
 
@@ -191,12 +200,13 @@ Remaining 2 moderate findings via `next@15` internal postcss. Documented excepti
 - ~~Do not start AURA-201~~ ✅ AURA-201 merged at `f17b429` (Phase 2 started)
 - ~~Do not start AURA-202~~ ✅ AURA-202 merged at `1d4c514` (Phase 2 → 2/7)
 - ~~Do not start AURA-203~~ ✅ AURA-203 merged at `b2f6129` (Phase 2 → 3/7)
+- ~~Do not start AURA-204~~ ✅ AURA-204 merged at `1fe2798` (Phase 2 → 4/7)
 - Do not fix audit without explicit dep-change approval
-- Do not start AURA-204 implementation directly — AURA-204 (Areas overview — DAL + `GET /api/areas`; next Phase 2 task) is **read-only discovery only**; it requires a new session + explicit per-task discovery/planning approval before implementation
-- Do not create the AURA-204 branch until discovery is complete and the owner approves
-- Do not modify `develop` branch protection from a code/docs session — branch-protection changes are manual owner actions in GitHub Settings (unchanged by AURA-203; the `db-tests` required check remains in place)
+- Do not start AURA-205 implementation directly — AURA-205 (Legal page read — `GET /api/legal/[slug]` + safe Markdown render, D-12; next Phase 2 task) is **read-only discovery only**; it requires a new session + explicit per-task discovery/planning approval before implementation
+- Do not create the AURA-205 branch until discovery is complete and the owner approves
+- Do not modify `develop` branch protection from a code/docs session — branch-protection changes are manual owner actions in GitHub Settings (unchanged by AURA-204; the `db-tests` required check remains in place)
 - Do not create `.env` / `.env.local` files
 - Do not create Stage 2 skills
 - Do not auto-merge to `main`
-- Do not implement further public pages (areas/legal/about) without per-task approval (AURA-204+)
+- Do not implement further public pages (legal/SEO/about) without per-task approval (AURA-205+)
 - Do not load fonts via next/font without explicit task approval
