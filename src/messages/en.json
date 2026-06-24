@@ -8,7 +8,8 @@
     "properties": "Properties",
     "areas": "Areas",
     "about": "About",
-    "legal": "Legal"
+    "privacy": "Privacy",
+    "terms": "Terms"
   },
   "Footer": {
     "contactHeading": "Contact",
@@ -182,6 +183,17 @@
         "sales_partner": "Sales partner",
         "exclusive_agent": "Exclusive agent"
       }
+    }
+  },
+  "Legal": {
+    "effectiveDate": "Effective {date}",
+    "loading": "Loading…",
+    "error": "We couldn't load this page. Please try again.",
+    "retry": "Retry",
+    "notFound": {
+      "title": "Page not available",
+      "body": "This page is not available right now.",
+      "backHome": "Back to home"
     }
   }
 }

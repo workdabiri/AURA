@@ -12,7 +12,8 @@ const NAV_ITEMS = [
   { key: 'properties', href: 'properties' },
   { key: 'areas', href: 'areas' },
   { key: 'about', href: 'about' },
-  { key: 'legal', href: 'legal' },
+  { key: 'privacy', href: 'privacy' },
+  { key: 'terms', href: 'terms' },
 ] as const
 
 export function Navigation() {
