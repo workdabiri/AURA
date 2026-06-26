@@ -51,14 +51,16 @@ describe('sitemap route', () => {
         `${base}/en`,
         `${base}/en/properties`,
         `${base}/en/areas`,
+        `${base}/en/about`,
         `${base}/en/privacy`,
         `${base}/en/terms`,
       ].sort()
     )
   })
 
-  test('excludes /en/about (AURA-207) and any dynamic property detail URLs', () => {
-    expect(urls.some((u) => u.includes('/about'))).toBe(false)
+  test('includes /en/about (AURA-207) and still excludes any dynamic property detail URLs', () => {
+    // `/en/about` exists as of AURA-207 and is now a static sitemap entry.
+    expect(urls.some((u) => u.endsWith('/en/about'))).toBe(true)
     // Only the listing root `/en/properties` is allowed — never `/en/properties/<slug>`.
     expect(urls.some((u) => /\/en\/properties\/.+/.test(u))).toBe(false)
   })

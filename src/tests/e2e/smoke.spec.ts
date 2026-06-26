@@ -54,3 +54,30 @@ test.describe('SEO noindex (AURA-206 / D-42)', () => {
     await expect(robots).toHaveAttribute('content', /noindex/)
   })
 })
+
+test.describe('public about page (AURA-207)', () => {
+  test('/en/about renders a main landmark, a single visible h1, and the AUTEX disclosure', async ({
+    page,
+  }) => {
+    await page.goto('/en/about')
+
+    const main = page.getByRole('main')
+    await expect(main).toBeVisible()
+
+    // Accessible heading structure: exactly one level-1 heading, and it is visible.
+    const h1 = page.getByRole('heading', { level: 1 })
+    await expect(h1).toHaveCount(1)
+    await expect(h1).toBeVisible()
+
+    // Q-13: the AUTEX public disclosure is present in the page body (consistent with the
+    // footer copy, which reuses the same `Footer.disclosure` string).
+    await expect(main).toContainText(/fictional demonstration brand/i)
+  })
+
+  test('/en/about is noindex by default (AURA-206 / D-42)', async ({ page }) => {
+    await page.goto('/en/about')
+    // The static About page reuses the AURA-206 SEO helper, so it emits `noindex` by default.
+    const robots = page.locator('meta[name="robots"]')
+    await expect(robots).toHaveAttribute('content', /noindex/)
+  })
+})

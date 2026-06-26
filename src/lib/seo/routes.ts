@@ -27,6 +27,11 @@ export const publicRouteSeo = {
     title: 'Areas | AUTEX Estates Dubai',
     description: 'Explore the prime Dubai neighbourhoods where we list luxury properties.',
   },
+  about: {
+    title: 'About | AUTEX Estates Dubai',
+    description:
+      'About AUTEX Estates Dubai — a premium Dubai real estate advisory demo built to showcase the AURA website engine.',
+  },
   privacy: {
     title: 'Privacy Policy | AUTEX Estates Dubai',
     description: 'How AUTEX Estates Dubai handles and protects your personal information.',

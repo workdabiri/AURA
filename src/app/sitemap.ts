@@ -5,10 +5,10 @@ import { featureFlags } from '@/config/feature-flags'
 /**
  * `/sitemap.xml` route (AURA-206).
  *
- * Lists ONLY the existing static public routes (AURA-206 owner decision). Deliberately
- * excludes `/en/about` (owned by AURA-207, does not exist yet) and any dynamic property
- * detail URLs (no DAL/database read from metadata — D-42). The base URL is the
- * source-controlled demo-safe `publicSiteUrl`; no env or deployment config is required.
+ * Lists ONLY the existing static public routes. `/en/about` is now included (it exists as of
+ * AURA-207); dynamic property detail URLs remain excluded (no DAL/database read from metadata —
+ * D-42). The base URL is the source-controlled demo-safe `publicSiteUrl`; no env or deployment
+ * config is required.
  */
 export const dynamic = 'force-static'
 
@@ -17,6 +17,7 @@ export const PUBLIC_SITEMAP_PATHS = [
   '/en',
   '/en/properties',
   '/en/areas',
+  '/en/about',
   '/en/privacy',
   '/en/terms',
 ] as const
