@@ -11,10 +11,15 @@ import { Header } from '@/components/layout/Header'
 import { getPublicSettings } from '@/dal/settings.dal'
 import { getLocaleDirection } from '@/lib/i18n/direction'
 import { routing } from '@/lib/i18n/routing'
+import { publicRobots } from '@/lib/seo/metadata'
 
+// Global default metadata for every public route (AURA-206). `robots` defaults to
+// `noindex` (D-42) so the AUTEX demo is never indexed unless source config explicitly
+// enables it; individual pages override title/description and re-assert robots.
 export const metadata: Metadata = {
   title: 'AUTEX Estates Dubai',
   description: 'Exclusive Dubai luxury real estate.',
+  robots: publicRobots(),
 }
 
 // The footer is settings-driven (read at request time via the server-only safe

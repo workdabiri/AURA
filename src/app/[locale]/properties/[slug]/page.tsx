@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 
@@ -9,6 +10,14 @@ import { PropertySpecs } from '@/components/real-estate/PropertySpecs'
 import { PropertyStakeholders } from '@/components/real-estate/PropertyStakeholders'
 import { getPublishedPropertyBySlug } from '@/dal/property-detail.dal'
 import { isValidSlug } from '@/domain/properties/detail'
+import { publicRouteMetadata } from '@/lib/seo/routes'
+
+// AURA-206: GENERIC SEO metadata only — title/description are static and the robots
+// directive defaults to `noindex` (D-42). Deliberately NO DAL/database read here: dynamic
+// per-property SEO is out of AURA-206 scope.
+export function generateMetadata(): Metadata {
+  return publicRouteMetadata('propertyDetail')
+}
 
 /**
  * Public property detail — AURA-203.
@@ -19,8 +28,9 @@ import { isValidSlug } from '@/domain/properties/detail'
  * DAL/DB error propagates to `error.tsx`. Inherits `dynamic = 'force-dynamic'` from the
  * `[locale]` layout, so the DB is read at request time only.
  *
- * No lead form (AURA-401), no WhatsApp tracking (AURA-405), no similar properties, no SEO/noindex
- * (AURA-206), no cinematic/GSAP (AURA-502) — out of AURA-203 scope.
+ * No lead form (AURA-401), no WhatsApp tracking (AURA-405), no similar properties, no
+ * cinematic/GSAP (AURA-502) — out of AURA-203 scope. Generic SEO metadata is added by
+ * AURA-206 via `generateMetadata` below (no per-property DAL read).
  */
 export default async function PropertyDetailPage({
   params,
