@@ -49,10 +49,13 @@ steps:
 
 ### Advisory Checks (From Phase 2 — Do Not Block PR)
 
+**Enabled in AURA-206 (`a106fe8`).** `.github/workflows/lighthouse.yml` runs as a non-blocking advisory job on PRs to `develop`, using `treosh/lighthouse-ci-action` (GitHub Action tooling; **no npm Lighthouse dependency**), with `continue-on-error: true` and **no score thresholds**. It is **not** a required branch-protection check and never blocks a PR. Hard-gating is deferred to the production release gate (AURA-505).
+
 ```yaml
 steps:
-  - Lighthouse CI (advisory only from Phase 2 when first public pages exist)
-    # Reports scores; does not block PR until release gate
+  - Lighthouse CI (advisory; enabled AURA-206 on PRs to develop)
+    # continue-on-error: true; no thresholds; not a required check
+    # Reports scores; does not block PR until the release gate (AURA-505)
 ```
 
 ### Required Branch Protection Rules
@@ -66,7 +69,7 @@ steps:
 
 ## Lighthouse Timing
 
-**Advisory CI job:** Runs automatically from Phase 2 (first public pages). Generates a score report but does not block the PR.
+**Advisory CI job:** Runs automatically from Phase 2 (first public pages). **Enabled in AURA-206** (`.github/workflows/lighthouse.yml`) on PRs to `develop` with `continue-on-error: true` and no thresholds; **not a required branch-protection check**. Generates a score report but does not block the PR.
 
 **Hard release gate:** At production release, Lighthouse scores must meet:
 - Desktop PageSpeed > 90

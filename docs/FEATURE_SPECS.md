@@ -195,6 +195,21 @@ aggregation**. Raw rows never leave the DAL; output is a key-only projection.
 
 ---
 
+## Feature Spec: SEO & Indexing
+
+**Goal:** Public pages carry basic SEO metadata while the AUTEX demo stays out of search indexes by default (D-42).
+
+**Implemented (AURA-206, merged `a106fe8`):**
+- **Source-controlled config** — `src/config/feature-flags.ts`: `featureFlags.publicIndexingEnabled` (default **`false`** → AUTEX `noindex` by default, D-42) and a demo-safe `publicSiteUrl` (`https://autex.example`, reserved `.example` host). These are compile-time source constants, **not** env/deployment config; real-client indexing is a deliberate future config change + owner approval.
+- **Public route metadata** — pure SEO helpers (`src/lib/seo/metadata.ts`, `src/lib/seo/routes.ts`) build per-route `title` / `description` / `robots`. The robots directive **fails closed to `noindex, nofollow`** unless indexing is explicitly enabled. Metadata is present on `/en`, `/en/properties`, `/en/properties/[slug]` (generic, **no DAL read**), `/en/areas`, `/en/privacy`, `/en/terms`; the `[locale]` layout sets the global default-`noindex`. Scope is title + description + robots only — **no canonical, no OpenGraph, no Twitter cards** (deferred).
+- **`robots.txt`** (`src/app/robots.ts`) — **allows crawl** (`allow: '/'`, **no `Disallow: /`**) so crawlers can fetch pages and observe the per-page `noindex`; advertises the sitemap.
+- **`sitemap.xml`** (`src/app/sitemap.ts`) — lists **only the existing static public routes** (`/en`, `/en/properties`, `/en/areas`, `/en/privacy`, `/en/terms`); **excludes `/en/about`** (AURA-207, not yet built) and **dynamic property-detail URLs**; no DAL/database reads.
+- **Lighthouse advisory CI** — `.github/workflows/lighthouse.yml` runs as a **non-blocking advisory** on PRs to `develop` (`continue-on-error: true`, `treosh/lighthouse-ci-action`, no npm dependency, no score thresholds); it is **not** a required branch-protection check. The hard score gate is deferred to release / AURA-505.
+
+**Not in scope yet:** real-client indexing (stays `noindex`), canonical URLs, OpenGraph/Twitter cards, admin-editable SEO fields (`seo_title`/`seo_description` exist in the Settings model but are not wired to public metadata in AURA-206), the About page (`/en/about`, AURA-207), and dynamic per-property sitemap URLs.
+
+---
+
 ## Feature Spec: Settings
 
 **Goal:** Admin-editable operational content without allowing template mutation.
