@@ -1,8 +1,13 @@
+import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import { listActiveAreas } from '@/dal/areas.dal'
+import { publicRouteMetadata } from '@/lib/seo/routes'
 
 import { AreaCard } from './_components/AreaCard'
+
+// AURA-206: static SEO metadata (title/description + default-`noindex` robots, D-42).
+export const metadata: Metadata = publicRouteMetadata('areas')
 
 /**
  * Public areas overview — AURA-204.

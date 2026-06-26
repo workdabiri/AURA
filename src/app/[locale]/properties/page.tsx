@@ -1,10 +1,15 @@
+import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import { PropertyCard } from '@/components/real-estate/PropertyCard'
 import { parseListingQuery, type ListingQuery } from '@/domain/properties/query'
 import { listPublishedProperties } from '@/dal/properties.dal'
+import { publicRouteMetadata } from '@/lib/seo/routes'
 
 import { PropertyFilters } from './_components/PropertyFilters'
+
+// AURA-206: static SEO metadata (title/description + default-`noindex` robots, D-42).
+export const metadata: Metadata = publicRouteMetadata('properties')
 
 /**
  * Public properties listing — AURA-202.

@@ -1,8 +1,13 @@
+import type { Metadata } from 'next'
 import { setRequestLocale } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 
 import { LegalPageView } from '@/components/legal/LegalPageView'
 import { getPublishedLegalPage } from '@/dal/legal.dal'
+import { publicRouteMetadata } from '@/lib/seo/routes'
+
+// AURA-206: static SEO metadata (title/description + default-`noindex` robots, D-42).
+export const metadata: Metadata = publicRouteMetadata('terms')
 
 /**
  * Public terms of service — AURA-205.
@@ -14,7 +19,8 @@ import { getPublishedLegalPage } from '@/dal/legal.dal'
  * `[locale]` layout, so the DB is read at request time only.
  *
  * Content is rendered with the sanitized Markdown renderer (D-12). No admin controls, no lead
- * form, no SEO/noindex (AURA-206), no cinematic/GSAP — out of AURA-205 scope.
+ * form, no cinematic/GSAP — out of AURA-205 scope. SEO metadata (default-`noindex`) is added
+ * by AURA-206 via the static `metadata` export above.
  */
 export default async function TermsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params

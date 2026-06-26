@@ -43,3 +43,14 @@ test.describe('public layout (AURA-201)', () => {
     await expect(page.locator('html')).toHaveAttribute('dir', 'ltr')
   })
 })
+
+test.describe('SEO noindex (AURA-206 / D-42)', () => {
+  test('/en emits a robots noindex meta tag by default', async ({ page }) => {
+    await page.goto('/en')
+    // AUTEX is noindex by default: the rendered page must carry
+    // `<meta name="robots" content="noindex, ...">`. Data-independent — asserts the SEO
+    // metadata only, never page content.
+    const robots = page.locator('meta[name="robots"]')
+    await expect(robots).toHaveAttribute('content', /noindex/)
+  })
+})
