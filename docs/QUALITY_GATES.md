@@ -55,7 +55,7 @@ Must be in place before release:
 | Knip | Unused code detection |
 | dependency-cruiser | Architecture boundary enforcement |
 | npm audit | Dependency vulnerability scanning |
-| Lighthouse | Performance audit (advisory from Phase 2; hard gate at release — see `CI_CD_STRATEGY.md`) |
+| Lighthouse | Performance audit — **advisory CI enabled in AURA-206** (`.github/workflows/lighthouse.yml`; PRs to `develop`; `continue-on-error: true`; non-blocking; **not a required check**). Hard gate deferred to production release / AURA-505 — see `CI_CD_STRATEGY.md` |
 | Sentry | Runtime error tracking |
 | Vercel Analytics | Public traffic and conversion |
 
