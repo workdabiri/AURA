@@ -1,7 +1,55 @@
 # Session Handoff
 
-**Last Updated:** 2026-06-24
-**Branch:** `develop` — source of truth at `1fe2798`. **Phase 1 is COMPLETE; Phase 2 (Public Website) is IN PROGRESS (4 of 7).** **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) MERGED at `f17b429`** (PR #25 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-201-public-layout-i18n-shell` deleted local + remote). **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) MERGED at `04d3522`** (PR #23 squash-merged; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-107-dal-security-ci-harness` deleted). AURA-106 merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. **AURA-202 (public properties listing + `GET /api/properties` + featured) MERGED at `1d4c514`** (PR #27 squash-merged; merged 2026-06-22T12:54:55Z; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch deleted). **AURA-203 (public property detail + `GET /api/properties/[slug]` + stakeholder visibility + contact routing + off-plan) MERGED at `b2f6129`** (PR #29 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-203-property-detail` deleted local + remote). **AURA-204 (public areas overview + `GET /api/areas` + `/[locale]/areas` overview page + public-safe area DTO + D-44 states) MERGED at `1fe2798`** (PR #31 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-204-areas-overview` deleted local + remote). **Next task: AURA-205 (Legal page read — `GET /api/legal/[slug]` + safe Markdown render (D-12)) — not started; read-only discovery only, requires its own per-task discovery/planning approval.**
+**Last Updated:** 2026-06-26
+**Branch:** `develop` — source of truth at `3d6a7e0`. **Phase 1 is COMPLETE; Phase 2 (Public Website) is IN PROGRESS (5 of 7).** **AURA-205 (public legal page read — published-only legal DAL + `GET /api/legal/[slug]` + `/en/privacy` + `/en/terms` + safe Markdown render under D-12) MERGED at `3d6a7e0`** (PR #33 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; D-12 merge blocker satisfied; feature branch `feature/aura-205-legal-page-read` deleted local + remote). **AURA-201 (public `/[locale]` layout + header/footer/navigation + minimal next-intl v4 i18n shell + server-only public settings selector) MERGED at `f17b429`** (PR #25 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-201-public-layout-i18n-shell` deleted local + remote). **AURA-107 (live DAL/security/integration tests in CI via Dockerized Supabase — Phase 1 exit gate) MERGED at `04d3522`** (PR #23 squash-merged; Opus 4.8 phase-exit review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-107-dal-security-ci-harness` deleted). AURA-106 merged at `dd21edd`; AURA-105 at `fae3d62`; AURA-104 at `44a7fd4`; AURA-103 at `1a35958`; AURA-102 at `3657e4f`. **AURA-202 (public properties listing + `GET /api/properties` + featured) MERGED at `1d4c514`** (PR #27 squash-merged; merged 2026-06-22T12:54:55Z; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch deleted). **AURA-203 (public property detail + `GET /api/properties/[slug]` + stakeholder visibility + contact routing + off-plan) MERGED at `b2f6129`** (PR #29 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-203-property-detail` deleted local + remote). **AURA-204 (public areas overview + `GET /api/areas` + `/[locale]/areas` overview page + public-safe area DTO + D-44 states) MERGED at `1fe2798`** (PR #31 squash-merged; targeted Opus 4.8 review **APPROVE**, merge recommendation **YES**, no blocking issues; feature branch `feature/aura-204-areas-overview` deleted local + remote). **Next task: AURA-206 (SEO basics + AUTEX noindex (D-42) + enable Lighthouse advisory CI) — not started; read-only discovery only, requires its own per-task discovery/planning approval.**
+
+---
+
+## AURA-205 — MERGED (`3d6a7e0`) — **PHASE 2 (5/7)**
+
+**AURA-205: Public legal page read + safe Markdown render (D-12).** The fifth Phase 2 task: the public legal pages (Privacy / Terms) — a **published-only** legal read through an anon-client DAL behind the RLS public-read boundary, a Zod-validated public API route, the `/en/privacy` and `/en/terms` pages (reusing the AURA-201 layout shell) with full D-44 states, and **safe Markdown rendering under the D-12 boundary**. This is the first task to render admin-authored content, so it establishes the public D-12 safe-render path (no unsafe/raw HTML). **No migration, no `.env`/`supabase/config.toml` change, no CI change, no admin legal editing, no SEO/noindex/Lighthouse, no About page, no AURA-206+ work.** Two **approved** dependencies were added (`react-markdown`, `rehype-sanitize`).
+
+Merged via PR #33 (squash) into `develop` at `3d6a7e0 feat: add public legal page read`. Feature branch `feature/aura-205-legal-page-read` deleted (local + remote). **Targeted Opus 4.8 review (PR #33): APPROVE, merge recommendation YES, no blocking issues; D-12 merge blocker satisfied** (five non-blocking carry-forwards preserved below). Required checks passed before merge: `CodeQL`, `analyze (javascript-typescript)`, `quality`, `e2e`, `db-tests`. Current source of truth is `develop` at `3d6a7e0`.
+
+### Implementation summary
+
+- **Public published-only legal DAL** — `src/dal/legal.dal.ts` (`import 'server-only'`): reads **published legal pages only** via the **anon server client** + RLS (DAL also re-asserts `status = 'published'` as defence in depth); explicit public-safe column allowlist (never `select('*')`); raw rows never leave the DAL.
+- **`GET /api/legal/[slug]`** — `src/app/api/legal/[slug]/route.ts`: Zod-validated slug; published-only; `{ data }` envelope; `400`/`404`/generic `500`; no service role in the handler; `force-dynamic`. Draft/archived/missing → **404 publicly**.
+- **`/en/privacy` + `/en/terms`** — server-rendered; call the DAL directly; full D-44 states (loading / error + retry / not-found / success).
+- **Safe Markdown render (D-12)** — `SafeMarkdown.tsx` via **`react-markdown` + `rehype-sanitize`**; **no `dangerouslySetInnerHTML`, no `rehype-raw`, no `marked`, no DOMPurify, no unsafe raw HTML path**. `LegalPageView.tsx` is the presentational view.
+- **Public DTO fields only** — `slug`, `title`, `content`, `effectiveDate` (`content` is raw Markdown, rendered safely at the render layer).
+- **Navigation** changed from the dead `/legal` link to `Privacy` and `Terms`.
+- **Tests** — unit (`legal-page`, `safe-markdown`), live-DB DAL (`legal.dal`), security boundary (`legal-public-boundary`), integration (`legal-api`), e2e (`legal`).
+
+### Opus review summary
+
+- Verdict **APPROVE**
+- Merge Recommendation **YES**
+- Blocking Issues **None**
+- **D-12 merge blocker satisfied** — safe Markdown + sanitizer; no raw HTML; no `dangerouslySetInnerHTML`/`rehype-raw`.
+
+### Tests / gates summary
+
+- PR checks green (`CodeQL`, `analyze (javascript-typescript)`, `quality`, `e2e`, `db-tests`).
+- Live-DB DAL / security / integration suites passed per the implementation report (published-only reads; anon cannot read draft/archived legal pages).
+- The D-12 adversarial Opus review passed (no raw-HTML render path).
+
+### Public data-boundary summary
+
+- **Anon server client** (not service-role) → RLS scopes anon legal reads to **published** pages → the DAL re-asserts published + an explicit public-safe column allowlist → key-only DTO projection (`{ slug, title, content, effectiveDate }`) → Markdown rendered through `react-markdown` + `rehype-sanitize` (no raw-HTML path).
+- **Draft/archived/missing legal pages are never exposed** to the public (→ `404`); no admin/version/status metadata leaks.
+
+### Next safe action
+
+**AURA-206 (SEO basics + AUTEX noindex (D-42) + enable Lighthouse advisory CI) — read-only discovery only.** Not started; requires a new session + explicit per-task discovery/planning approval before any work begins. **Do not start AURA-206 implementation** and **do not create the AURA-206 branch** until discovery is complete and the owner approves. AURA-206 owns SEO/noindex/Lighthouse.
+
+### Carry-forward / non-blocking (from the targeted Opus review; preserved for future tasks, not actioned at merge)
+
+1. **Legal page `force-dynamic` comment accuracy** — the legal page comments say they inherit `force-dynamic` from the `[locale]` layout; route-segment config does **not** inherit parent→child, so the comment is inaccurate-but-harmless (actual dynamic behavior is still safe — the DAL reads cookies and the layout has `force-dynamic`). Future cleanup: clarify the comment.
+2. **Legal e2e is a liveness smoke** — it does not distinguish article-rendered vs not-found-rendered. Acceptable for AURA-205 (live DAL/security/integration cover data behavior); a future improvement may add a seeded happy-path e2e.
+3. **SafeMarkdown payload tests** — add committed `SafeMarkdown` tests for `data:` and `vbscript:` payloads in a future hardening patch.
+4. **Default sanitize schema permits remote Markdown images** — acceptable for trusted admin legal content; future hardening may drop images or pin a custom schema if untrusted content ever flows through the renderer.
+5. **Empty title JSONB may render an empty `<h1>`** — a content-quality issue, not security; a future validation/admin workflow should prevent this.
 
 ---
 

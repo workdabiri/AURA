@@ -191,6 +191,8 @@ aggregation**. Raw rows never leave the DAL; output is a key-only projection.
 
 **Public access:** Only the current `status = published` version is publicly visible.
 
+**Public read (AURA-205, merged `3d6a7e0`):** the public legal pages are live at `/en/privacy` and `/en/terms`, backed by `GET /api/legal/[slug]`. Supported slugs: `privacy`, `terms`. Reads are **published-only** (draft/archived/missing → `404` publicly) through an anon-client DAL behind the RLS public-read boundary (the DAL re-asserts published; explicit public-safe column allowlist). The public DTO is `{ slug, title, content, effectiveDate }` only — `content` is raw Markdown in the DTO and is rendered safely **server-side via `react-markdown` + `rehype-sanitize`** (no `rehype-raw`, no `dangerouslySetInnerHTML`, no unsafe raw HTML path), honoring D-12. **No admin legal editing and no SEO/noindex in AURA-205** — admin draft→publish→archive editing is AURA-307; SEO/noindex is AURA-206.
+
 ---
 
 ## Feature Spec: Settings
