@@ -185,6 +185,53 @@
       }
     }
   },
+  "About": {
+    "eyebrow": "About AUTEX Estates Dubai",
+    "title": "A premium Dubai real estate advisory demo",
+    "intro": "AUTEX Estates Dubai is a premium real estate advisory concept created to showcase the AURA website engine. It demonstrates how a refined Dubai property experience can look and feel — curated listings, a clear client journey, and a calm, considered interface — without representing a licensed brokerage or a real offer of property.",
+    "pillars": {
+      "heading": "What AUTEX represents",
+      "dubaiFocus": {
+        "title": "Dubai-focused advisory",
+        "body": "A considered point of view on Dubai's prime residential communities, framed around how a boutique advisory would guide its clients."
+      },
+      "curated": {
+        "title": "Curated property presentation",
+        "body": "Every property is presented with clarity and restraint — the essential details, beautifully organised, without noise or pressure."
+      },
+      "journey": {
+        "title": "Clear client journey",
+        "body": "From first impression to enquiry, the experience is structured and unhurried, so the next step always feels obvious."
+      },
+      "transparent": {
+        "title": "Transparent demo environment",
+        "body": "AUTEX is openly a demonstration brand. Nothing shown here is a real listing, price, or offer of property."
+      }
+    },
+    "principles": {
+      "heading": "How we approach the experience",
+      "intro": "AUTEX is built around a few simple principles that shape every screen.",
+      "clarity": {
+        "title": "Clarity",
+        "body": "Information is presented plainly and honestly, so it is easy to understand what a property is — and what it is not."
+      },
+      "trust": {
+        "title": "Trust",
+        "body": "A calm, consistent interface that treats the visitor's attention and privacy with respect."
+      },
+      "discretion": {
+        "title": "Discretion",
+        "body": "A premium, understated tone — confident without overstatement, and free of pressure tactics."
+      },
+      "discovery": {
+        "title": "Structured discovery",
+        "body": "A logical path through communities and properties that makes considered exploration effortless."
+      }
+    },
+    "disclosure": {
+      "heading": "Important disclosure"
+    }
+  },
   "Legal": {
     "effectiveDate": "Effective {date}",
     "loading": "Loading…",

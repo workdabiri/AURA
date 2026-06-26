@@ -59,9 +59,16 @@ describe('publicRouteMetadata', () => {
     expect(meta.robots).toEqual({ index: false, follow: false })
   })
 
-  test('covers the public routes in scope (home, properties, propertyDetail, areas, privacy, terms)', () => {
+  test('covers the public routes in scope (home, properties, propertyDetail, areas, about, privacy, terms)', () => {
     expect(keys.sort()).toEqual(
-      ['areas', 'home', 'privacy', 'properties', 'propertyDetail', 'terms'].sort()
+      ['about', 'areas', 'home', 'privacy', 'properties', 'propertyDetail', 'terms'].sort()
     )
+  })
+
+  test('the about route (AURA-207) returns its title/description and default-noindex robots', () => {
+    const meta = publicRouteMetadata('about')
+    expect(meta.title).toBe(publicRouteSeo.about.title)
+    expect(meta.description).toBe(publicRouteSeo.about.description)
+    expect(meta.robots).toEqual({ index: false, follow: false })
   })
 })
