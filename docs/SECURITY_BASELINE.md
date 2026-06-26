@@ -122,6 +122,8 @@ Legal content must be:
 
 This is a merge blocker. Any PR rendering raw legal HTML is blocked.
 
+**Implemented (AURA-205, merged `3d6a7e0`) — public read boundary:** the public legal pages (`/en/privacy`, `/en/terms`, `GET /api/legal/[slug]`) render published legal content through the D-12 safe path — Markdown via `react-markdown` + `rehype-sanitize`, with **no `rehype-raw`, no `dangerouslySetInnerHTML`, and no unsafe raw HTML path**. Public legal reads are **published-only** (draft/archived hidden publicly → `404`) via the anon client + RLS public-read boundary; the public read uses **no service-role**. This does not relax the rule: raw unrestricted HTML remains banned, and **D-12 remains a merge blocker for any future legal rendering change** (including admin legal editing, AURA-307).
+
 ---
 
 ## Data Privacy Rules
