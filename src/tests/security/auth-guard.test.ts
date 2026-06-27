@@ -171,3 +171,58 @@ describe('admin login surface — AURA-301 auth/security boundary', () => {
     }
   })
 })
+
+describe('admin dashboard shell — guarded location + no data boundary (AURA-302)', () => {
+  const dashboardPage = 'src/app/admin/(protected)/dashboard/page.tsx'
+  const adminIndex = 'src/app/admin/(protected)/page.tsx'
+  const adminComponents = walk('src/components/admin')
+
+  test('the dashboard lives UNDER the guarded (protected) group', () => {
+    // Inside `(protected)`, so the AURA-301 layout guard wraps it server-side.
+    expect(fs.existsSync(path.resolve(dashboardPage))).toBe(true)
+  })
+
+  test('no UNGUARDED dashboard route exists outside the (protected) group', () => {
+    // A sibling `src/app/admin/dashboard/**` would NOT inherit the `(protected)` layout
+    // guard and would be publicly reachable — it must never exist (owner decision #4).
+    expect(fs.existsSync(path.resolve('src/app/admin/dashboard'))).toBe(false)
+  })
+
+  test('/admin redirects to /admin/dashboard (still inside the guard)', () => {
+    expect(read(adminIndex)).toMatch(/redirect\(\s*['"]\/admin\/dashboard['"]\s*\)/)
+  })
+
+  test('admin shell components exist and are presentational only', () => {
+    expect(adminComponents.length).toBeGreaterThan(0)
+    for (const file of adminComponents) {
+      const content = read(file)
+      // No data layer, no Supabase, no services, no service-role anywhere in admin UI.
+      expect(content, file).not.toMatch(/@\/dal\b/)
+      expect(content, file).not.toMatch(/@\/services\b/)
+      expect(content, file).not.toMatch(/@\/lib\/supabase/)
+      expect(content, file).not.toMatch(/getSupabaseServiceRole/)
+      expect(content, file).not.toMatch(/createSupabaseServerClient/)
+      expect(content, file).not.toMatch(/SUPABASE_SERVICE_ROLE_KEY/)
+    }
+  })
+
+  test('admin shell does NOT reuse the next-intl public layout components', () => {
+    // Admin is non-localized: it must not IMPORT next-intl or the public Header/Nav/Footer.
+    // (Matches import sources only, so doc-comment mentions of "next-intl" are not flagged.)
+    for (const file of adminComponents) {
+      const content = read(file)
+      expect(content, file).not.toMatch(/from\s+['"]next-intl['"]/)
+      expect(content, file).not.toMatch(
+        /from\s+['"]@\/components\/layout\/(Header|Navigation|Footer)/
+      )
+    }
+  })
+
+  test('the dashboard page performs no data reads (no DAL / Supabase / services import)', () => {
+    const page = read(dashboardPage)
+    expect(page).not.toMatch(/@\/dal\b/)
+    expect(page).not.toMatch(/@\/services\b/)
+    expect(page).not.toMatch(/@\/lib\/supabase/)
+    expect(page).not.toMatch(/getSupabaseServiceRole/)
+  })
+})

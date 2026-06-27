@@ -1,22 +1,14 @@
+import { redirect } from 'next/navigation'
+
 /**
- * Admin landing (`/admin`) — AURA-301.
+ * Admin index (`/admin`) — AURA-302.
  *
- * Minimal guarded placeholder whose only job is to PROVE the session + role guard wires
- * up: reaching this page means the `(protected)` layout authorized the request. The real
- * dashboard shell, navigation, metrics, and any data reads are out of scope here and are
- * owned by AURA-302 onward. Intentionally renders no navigation, cards, or admin data.
+ * `/admin` is not a page in its own right: it forwards to the dashboard. It stays INSIDE
+ * the `(protected)` group, so the AURA-301 layout guard runs FIRST — an unauthenticated
+ * request is sent to `/admin/login` by the guard before this redirect is ever reached, and
+ * an authorized request is forwarded on to `/admin/dashboard`. There is no second dashboard
+ * shell rendered here (AURA-302 owns a single shell, at `/admin/dashboard`).
  */
-export default function AdminHomePage() {
-  return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-4 px-6 py-16">
-      <h1 className="text-2xl font-semibold">Admin</h1>
-      <p className="text-sm text-text-secondary">
-        You are signed in to the AUTEX Estates Dubai admin area.
-      </p>
-      <p className="text-sm text-text-secondary">
-        The dashboard shell and its content are delivered separately (AURA-302). This page confirms
-        the login, session, and role guard are working.
-      </p>
-    </main>
-  )
+export default function AdminIndexPage() {
+  redirect('/admin/dashboard')
 }

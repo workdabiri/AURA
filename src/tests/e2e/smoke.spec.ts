@@ -109,6 +109,17 @@ test.describe('admin login + guard (AURA-301)', () => {
   test('unauthenticated /admin redirects to the login page', async ({ page }) => {
     await page.goto('/admin')
     // The server-side guard denies an unauthenticated request and sends it to login.
+    // (`/admin` would forward to `/admin/dashboard`, but the guard runs first.)
+    await expect(page).toHaveURL(/\/admin\/login(\?.*)?$/)
+  })
+})
+
+test.describe('admin dashboard shell (AURA-302)', () => {
+  test('unauthenticated /admin/dashboard redirects to the login page', async ({ page }) => {
+    await page.goto('/admin/dashboard')
+    // The dashboard sits under the (protected) group, so the AURA-301 guard turns away an
+    // unauthenticated request before any shell renders. The full authenticated shell render
+    // is asserted in the gated admin-login.spec.ts (requires a seeded admin, skipped in CI).
     await expect(page).toHaveURL(/\/admin\/login(\?.*)?$/)
   })
 })
