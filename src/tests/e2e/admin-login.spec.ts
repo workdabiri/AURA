@@ -37,24 +37,68 @@ test.describe('admin guard cannot be bypassed', () => {
   test('direct navigation to /admin while unauthenticated → /admin/login', async ({ page }) => {
     await page.goto('/admin')
     await expect(page).toHaveURL(/\/admin\/login(\?.*)?$/)
-    // The protected landing copy must not have rendered.
-    await expect(page.getByText(/signed in to the AUTEX/i)).toHaveCount(0)
+    // The dashboard shell must not have rendered: we are on the login form, not the shell.
+    await expect(page.locator('input[name="password"]')).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Admin' })).toHaveCount(0)
+  })
+
+  test('direct navigation to /admin/dashboard while unauthenticated → /admin/login', async ({
+    page,
+  }) => {
+    await page.goto('/admin/dashboard')
+    await expect(page).toHaveURL(/\/admin\/login(\?.*)?$/)
+    await expect(page.getByRole('navigation', { name: 'Admin' })).toHaveCount(0)
   })
 })
 
-test.describe('successful admin login (gated — requires a seeded admin)', () => {
+test.describe('successful admin login → dashboard shell (gated — requires a seeded admin)', () => {
   const email = process.env.ADMIN_E2E_EMAIL
   const password = process.env.ADMIN_E2E_PASSWORD
 
   test.skip(!email || !password, 'Set ADMIN_E2E_EMAIL and ADMIN_E2E_PASSWORD to run')
 
-  test('a seeded admin can sign in and reach /admin', async ({ page }) => {
+  test('a seeded admin signs in, lands on /admin/dashboard, and sees the shell', async ({
+    page,
+  }) => {
     await page.goto('/admin/login')
     await page.locator('input[name="email"]').fill(email!)
     await page.locator('input[name="password"]').fill(password!)
     await page.getByRole('button', { name: /sign in/i }).click()
 
-    await expect(page).toHaveURL(/\/admin$/)
-    await expect(page.getByText(/signed in to the AUTEX/i)).toBeVisible()
+    // The login action redirects to /admin, which forwards to /admin/dashboard.
+    await expect(page).toHaveURL(/\/admin\/dashboard$/)
+
+    // Shell structure: a main landmark, a single h1, and a labelled admin nav.
+    await expect(page.getByRole('main')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
+    const nav = page.getByRole('navigation', { name: 'Admin' })
+    await expect(nav).toBeVisible()
+
+    // Nav links for every future admin section are present.
+    for (const href of [
+      '/admin/properties',
+      '/admin/leads',
+      '/admin/areas',
+      '/admin/settings',
+      '/admin/legal',
+    ]) {
+      await expect(nav.locator(`a[href="${href}"]`)).toHaveCount(1)
+    }
+
+    // Admin must never be indexable.
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
+  })
+
+  test('navigating straight to /admin redirects an authenticated admin to /admin/dashboard', async ({
+    page,
+  }) => {
+    await page.goto('/admin/login')
+    await page.locator('input[name="email"]').fill(email!)
+    await page.locator('input[name="password"]').fill(password!)
+    await page.getByRole('button', { name: /sign in/i }).click()
+    await expect(page).toHaveURL(/\/admin\/dashboard$/)
+
+    await page.goto('/admin')
+    await expect(page).toHaveURL(/\/admin\/dashboard$/)
   })
 })
