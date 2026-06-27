@@ -163,11 +163,12 @@ describe('AURA-203 stays in scope (no lead/WhatsApp/admin routes added)', () => 
     expect(route).not.toMatch(/lead|whatsapp|admin/i)
   })
 
-  test('no lead / WhatsApp / admin route directories exist', () => {
+  test('no lead / WhatsApp public route directories exist (Phase 4)', () => {
     expect(existsSync(resolve(process.cwd(), 'src/app/api/leads'))).toBe(false)
     expect(existsSync(resolve(process.cwd(), 'src/app/api/whatsapp-clicks'))).toBe(false)
-    // The admin UI surface (src/app/admin) is introduced by AURA-301, not this public task;
-    // assert only that AURA-203 added no admin API routes.
-    expect(existsSync(resolve(process.cwd(), 'src/app/api/admin'))).toBe(false)
+    // Admin API routes (`src/app/api/admin`) are introduced by AURA-303 (property CRUD), not by
+    // this public detail task; the assertion that matters here is that the PUBLIC properties
+    // surface still hosts no admin handlers nested under it.
+    expect(existsSync(resolve(process.cwd(), 'src/app/api/properties/admin'))).toBe(false)
   })
 })
