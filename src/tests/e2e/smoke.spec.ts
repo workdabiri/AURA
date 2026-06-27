@@ -81,3 +81,34 @@ test.describe('public about page (AURA-207)', () => {
     await expect(robots).toHaveAttribute('content', /noindex/)
   })
 })
+
+test.describe('admin login + guard (AURA-301)', () => {
+  test('/admin/login loads, is NOT locale-prefixed, and shows a login-only form', async ({
+    page,
+  }) => {
+    await page.goto('/admin/login')
+
+    // Non-localized: the URL must stay /admin/login (never rewritten to /en/admin/login).
+    await expect(page).toHaveURL(/\/admin\/login$/)
+
+    const main = page.getByRole('main')
+    await expect(main).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
+
+    // Login-only: email + password fields, no signup / password-reset affordances.
+    await expect(page.locator('input[name="email"]')).toBeVisible()
+    await expect(page.locator('input[name="password"]')).toBeVisible()
+    await expect(page.getByText(/sign ?up|register|forgot|reset password/i)).toHaveCount(0)
+  })
+
+  test('/admin is noindex (admin must never be indexed)', async ({ page }) => {
+    await page.goto('/admin/login')
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
+  })
+
+  test('unauthenticated /admin redirects to the login page', async ({ page }) => {
+    await page.goto('/admin')
+    // The server-side guard denies an unauthenticated request and sends it to login.
+    await expect(page).toHaveURL(/\/admin\/login(\?.*)?$/)
+  })
+})

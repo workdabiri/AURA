@@ -49,24 +49,29 @@
   //   AURA-201 note: service-role.ts was an entry; REMOVED here because
   //                  src/dal/settings.dal.ts now statically imports it, reached by
   //                  the public `[locale]` layout via getPublicSettings().
-  // AURA-104 — the admin auth guard + bootstrap script have no route consumer yet.
-  //   guard.ts / index.ts — first admin Route Handler / admin layout (AURA-301) will
-  //                         import the guard; remove these entries then.
-  //   scripts/seed-admin.ts — operator-run bootstrap entry (executed directly).
+  // AURA-104 — the admin auth guard.
+  //   guard.ts — REMOVED here in AURA-301: it now has a real route consumer
+  //              (src/app/admin/(protected)/layout.tsx + the login server action import
+  //              `getCurrentAdmin`/`resolveAdminAccess` through the `index.ts` barrel).
+  //   index.ts — KEPT as the declared auth public surface. AURA-301 consumes only part of
+  //              it; the remaining exports (getCurrentUser / requireAdmin /
+  //              requireSuperAdmin, etc.) are the stable surface that later Phase 3 admin
+  //              route handlers consume. Removing it here would make Knip flag those
+  //              not-yet-wired re-exports; the entry holds the surface until they land.
+  //   scripts/seed-admin.ts — operator-run bootstrap entry (executed directly). KEPT.
   // AURA-105 — the media validation/path contract + storage policy contract have no route
   //   consumer yet. The media upload route + storage operations (AURA-304) are their first
   //   real importers; remove these entries then. (Their tests already import them.)
   //   src/domain/properties/media.ts — pure validation + storage-path contract.
   //   src/services/storage/policy.ts — storage bucket/policy contract surface.
-  // AURA-106 — the rate-limit service has no route consumer yet. The lead / whatsapp /
-  //   login Route Handlers (Phases 3-4) are its first real importers; remove this entry
-  //   then. The barrel re-exports the server-only runtime (limit.ts) and the pure policy
-  //   (key.ts), so listing index.ts keeps the whole service reachable. (key.ts is also
-  //   imported directly by the unit test.)
+  // AURA-106 — the rate-limit service surface. KEPT as an entry: the AURA-301 login action
+  //   now consumes `enforceRateLimit` (the `login` rule), but the barrel also re-exports the
+  //   pure policy (RATE_LIMIT_RULES / getRateLimitRule / hashRateLimitKey / isRateLimitRoute)
+  //   that the Phase 4 lead + whatsapp routes consume. Holding the entry keeps that surface
+  //   reachable until then. (key.ts is also imported directly by the unit test.)
   //   src/services/rate-limit/index.ts — server-only rate-limit service surface.
   "entry": [
     "src/lib/supabase/client.ts",
-    "src/services/auth/guard.ts",
     "src/services/auth/index.ts",
     "scripts/seed-admin.ts",
     "src/domain/properties/media.ts",

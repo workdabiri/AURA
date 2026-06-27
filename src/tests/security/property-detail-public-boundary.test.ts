@@ -166,6 +166,8 @@ describe('AURA-203 stays in scope (no lead/WhatsApp/admin routes added)', () => 
   test('no lead / WhatsApp / admin route directories exist', () => {
     expect(existsSync(resolve(process.cwd(), 'src/app/api/leads'))).toBe(false)
     expect(existsSync(resolve(process.cwd(), 'src/app/api/whatsapp-clicks'))).toBe(false)
-    expect(existsSync(resolve(process.cwd(), 'src/app/admin'))).toBe(false)
+    // The admin UI surface (src/app/admin) is introduced by AURA-301, not this public task;
+    // assert only that AURA-203 added no admin API routes.
+    expect(existsSync(resolve(process.cwd(), 'src/app/api/admin'))).toBe(false)
   })
 })

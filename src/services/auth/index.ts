@@ -5,7 +5,13 @@
  * from server code only (Route Handlers, Server Components). Tests that need the
  * pure logic import `./policy` / `./types` directly to avoid the server-only guard.
  */
-export { getCurrentUser, getCurrentAdmin, requireAdmin, requireSuperAdmin } from './guard'
+export {
+  getCurrentUser,
+  getCurrentAdmin,
+  requireAdmin,
+  requireSuperAdmin,
+  resolveAdminAccess,
+} from './guard'
 export { isAdminRole, isSuperAdminRole, evaluateAccess } from './policy'
 export { AuthorizationError } from './types'
 export type {
