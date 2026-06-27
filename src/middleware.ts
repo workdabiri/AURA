@@ -16,5 +16,8 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
+  // `admin` is excluded so the non-localized admin surface (`/admin`, `/admin/login`)
+  // is never rewritten to a locale prefix by next-intl (AURA-301). API, Next internals,
+  // Vercel internals, and files-with-extensions stay excluded as before.
+  matcher: ['/((?!api|admin|_next|_vercel|.*\\..*).*)'],
 }

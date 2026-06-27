@@ -190,7 +190,9 @@ describe('AURA-205 stays in scope (no admin legal / extra routes added)', () => 
 
   test('no admin legal route directories exist', () => {
     expect(existsSync(resolve(process.cwd(), 'src/app/api/admin/legal'))).toBe(false)
-    expect(existsSync(resolve(process.cwd(), 'src/app/admin'))).toBe(false)
+    // The admin UI surface (src/app/admin) is introduced by AURA-301 (login only); legal
+    // admin is AURA-307. Assert no legal admin route was added here.
+    expect(existsSync(resolve(process.cwd(), 'src/app/admin/legal'))).toBe(false)
   })
 
   test('no /legal index route directory was created', () => {

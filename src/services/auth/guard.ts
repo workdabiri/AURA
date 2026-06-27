@@ -61,6 +61,24 @@ export async function getCurrentUser(): Promise<VerifiedUser> {
 }
 
 /**
+ * Resolve admin access for an ALREADY-verified user on an EXISTING request-scoped
+ * client, without throwing. Fetches the caller's own profile (RLS own-row) and delegates
+ * the allow/deny decision to the pure policy.
+ *
+ * Used both by {@link getCurrentAdmin} (after `getUser()`) and by the login action
+ * (immediately after a successful `signInWithPassword`, whose returned user is verified),
+ * so authorization stays centralised in one place — auth alone is never sufficient.
+ */
+export async function resolveAdminAccess(
+  supabase: ServerClient,
+  userId: string,
+  requirement: RoleRequirement = 'admin'
+): Promise<AccessResult> {
+  const profile = await fetchOwnProfile(supabase, userId)
+  return evaluateAccess({ userId, profile, requirement })
+}
+
+/**
  * Resolve the caller's admin access without throwing. `requirement` defaults to
  * `'admin'` (either MVP admin role); pass `'super_admin'` to require super_admin.
  */
@@ -75,8 +93,7 @@ export async function getCurrentAdmin(
     return evaluateAccess({ userId: null, profile: null, requirement })
   }
 
-  const profile = await fetchOwnProfile(supabase, user.id)
-  return evaluateAccess({ userId: user.id, profile, requirement })
+  return resolveAdminAccess(supabase, user.id, requirement)
 }
 
 /**
