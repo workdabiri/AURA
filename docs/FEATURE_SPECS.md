@@ -128,6 +128,13 @@ aggregation**. Raw rows never leave the DAL; output is a key-only projection.
 | `/admin/legal` | Legal pages |
 | `/admin/areas` | Simple areas admin |
 
+**Implementation status (AURA-301, merged `97c9548`):** `/admin/login` is **implemented** (login
+only — no signup, no password reset; server-side login action with Zod validation; AURA-106 login
+rate-limit at 5 / 15 min / key; AURA-104 role guard) and `/admin` exists as a **minimal guarded
+placeholder** behind the protected admin layout (verified session + `user_profiles` row + admin role;
+admin is hard `noindex`). The dashboard shell is deferred to **AURA-302**; the remaining admin routes
+above (properties / leads / settings / legal / areas) are **not yet implemented** (AURA-303–307).
+
 ---
 
 ## Feature Spec: Property Management

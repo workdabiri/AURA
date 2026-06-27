@@ -57,6 +57,13 @@ Admin access requires all of:
 
 **No public admin self-signup.** First `super_admin` created via Supabase Auth + seed/admin script (D-40).
 
+**Implementation status (AURA-301, merged `97c9548`):** the first admin login + session + role-guard
+surface is now wired — `/admin/login` (login only; **no signup, no password reset**), a server-side
+login action (Zod-validated), the AURA-104 guard verifying `auth.getUser()` + `user_profiles` row +
+role (auth alone is never sufficient), and a minimal guarded `/admin` placeholder. No service-role
+key in the client bundle; no raw IP persisted/logged. Opus 4.8 review: **APPROVE**, no blockers; the
+D-40 no-self-signup boundary is satisfied.
+
 ---
 
 ## Secrets and Environment
@@ -92,6 +99,14 @@ Rate-limit key = `salted-hash(IP + route)` — server-side only. Raw IP is never
 | Admin login route | 5 / 15 min per key |
 
 MVP implementation: table-based (`rate_limits` table with 24-hour TTL + scheduled cleanup). Future option: Upstash/Vercel KV (D-39).
+
+**Status:** the admin login route consumes this service (AURA-301): the `login` rule (5 / 15 min /
+key) is enforced **before** any auth attempt, keyed by `salted-hash(IP + route)`; the raw IP is used
+in-memory only and never stored or logged.
+
+**Carry-forward (hardening):** the login IP is currently derived from the leftmost `x-forwarded-for`
+hop, which is client-spoofable on a proxied platform — a future task should prefer a trusted source
+(e.g. `x-real-ip` / the rightmost trusted hop) so the login throttle cannot be trivially bypassed.
 
 ---
 
