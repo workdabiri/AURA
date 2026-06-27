@@ -118,6 +118,15 @@ non-locale-prefixed, unauthenticated `/admin` → login, admin `noindex`). **Fol
 successful-login happy-path e2e is gated on `ADMIN_E2E_EMAIL`/`ADMIN_E2E_PASSWORD` and skipped in CI;
 seeding an admin to run it in CI remains a tracked follow-up.
 
+**Status (AURA-302):** the admin **dashboard shell** test suite now exists — unit (`admin-shell`:
+CI-safe static render — exactly one `<main>` landmark, a labelled admin `<nav>` with links to all five
+future sections, placeholder panels), security (`auth-guard` AURA-302 block: the dashboard lives under
+the guarded `(protected)` group, **no unguarded `src/app/admin/dashboard/**`**, `/admin` redirects to
+`/admin/dashboard`, and the admin UI imports no DAL/Supabase/services/service-role/next-intl/public-layout
+components), and e2e/smoke (unauthenticated `/admin/dashboard` → `/admin/login`). **Follow-up:** the
+full **authenticated** dashboard render e2e is gated on `ADMIN_E2E_EMAIL`/`ADMIN_E2E_PASSWORD` and
+skipped in CI — the same seeded-admin happy-path follow-up as AURA-301.
+
 Test that these are blocked:
 - Public cannot read leads (`GET /api/admin/leads` without auth → 401)
 - Public cannot read draft/archived properties (`GET /api/properties/[slug]` for draft → 404)

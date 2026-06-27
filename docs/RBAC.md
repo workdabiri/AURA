@@ -29,7 +29,7 @@ Authentication alone is not sufficient. Admin access requires all of:
 
 Failing any check: return `401` (not authenticated) or `403` (not authorized).
 
-### Implementation status (AURA-301)
+### Implementation status (AURA-301, AURA-302)
 
 Admin access for `/admin/**` **pages** is now wired (AURA-301, merged `97c9548`): the protected
 admin layout (`src/app/admin/(protected)/layout.tsx`) enforces the full AURA-104 guard server-side
@@ -37,9 +37,16 @@ admin layout (`src/app/admin/(protected)/layout.tsx`) enforces the full AURA-104
 login server action re-authorizes the just-signed-in user before redirecting and signs out any
 authenticated-but-unprivileged session. `401` → `/admin/login`; `403` → `/admin/login?error=unauthorized`.
 
+The **admin dashboard shell** `/admin/dashboard` (AURA-302, merged `df4523c`) is now protected by this
+same guard — it lives **inside** the `(protected)` group (`src/app/admin/(protected)/dashboard/**`),
+so it inherits the layout guard with no auth logic of its own; there is no unguarded admin dashboard
+route. `/admin` redirects to `/admin/dashboard` from inside the guard. In AURA-302 **both `super_admin`
+and `client_admin` see the same dashboard shell** (no role-conditional navigation; the shell is a
+navigation surface with placeholder panels only — no resource-specific admin pages exist yet).
+
 **Note (route handlers):** the layout guard protects **pages**, not Route Handlers. Future
-`/api/admin/*` handlers (AURA-302+) must each call `requireAdmin()` / `requireSuperAdmin()`
-individually — being under `/admin` does not auto-protect an API route.
+`/api/admin/*` handlers (AURA-303+) must each call `requireAdmin()` / `requireSuperAdmin()`
+individually — being under `/admin` does not auto-protect an API route. (AURA-302 added no API routes.)
 
 ---
 

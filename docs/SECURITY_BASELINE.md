@@ -64,6 +64,16 @@ role (auth alone is never sufficient), and a minimal guarded `/admin` placeholde
 key in the client bundle; no raw IP persisted/logged. Opus 4.8 review: **APPROVE**, no blockers; the
 D-40 no-self-signup boundary is satisfied.
 
+**Implementation status (AURA-302, merged `df4523c`):** the admin **dashboard shell** (`/admin/dashboard`)
+**consumes the existing AURA-301 `(protected)` layout guard** and introduces **no new auth/security
+boundary**. The shell is guarded server-side (fail-closed) and lives **inside** the `(protected)` group
+(`src/app/admin/(protected)/dashboard/**`); there is **no unguarded** `src/app/admin/dashboard/**`
+route. `/admin` redirects to `/admin/dashboard` from inside the guard. The admin shell components are
+presentational only — **no service-role/DAL/Supabase/services import in the admin UI** (service-role
+remains server-only and never reaches the client bundle), no data reads, no admin API routes. The D-40
+no-self-signup boundary is unchanged (no signup/reset path added). Opus review was **not required** for
+AURA-302.
+
 ---
 
 ## Secrets and Environment
