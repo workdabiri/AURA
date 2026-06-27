@@ -128,12 +128,20 @@ aggregation**. Raw rows never leave the DAL; output is a key-only projection.
 | `/admin/legal` | Legal pages |
 | `/admin/areas` | Simple areas admin |
 
-**Implementation status (AURA-301, merged `97c9548`):** `/admin/login` is **implemented** (login
-only — no signup, no password reset; server-side login action with Zod validation; AURA-106 login
-rate-limit at 5 / 15 min / key; AURA-104 role guard) and `/admin` exists as a **minimal guarded
-placeholder** behind the protected admin layout (verified session + `user_profiles` row + admin role;
-admin is hard `noindex`). The dashboard shell is deferred to **AURA-302**; the remaining admin routes
-above (properties / leads / settings / legal / areas) are **not yet implemented** (AURA-303–307).
+**Implementation status (AURA-301, merged `97c9548`; AURA-302, merged `df4523c`):** `/admin/login` is
+**implemented** (login only — no signup, no password reset; server-side login action with Zod
+validation; AURA-106 login rate-limit at 5 / 15 min / key; AURA-104 role guard). `/admin/dashboard` is
+**implemented** (AURA-302) — an authenticated **dashboard shell** behind the protected admin layout:
+a separate **non-localized** sidebar + top-bar admin shell (`src/components/admin/**`; static copy,
+luxury-dark tokens; not the public Header/Footer/Navigation, no next-intl), navigation links to the
+future admin sections, and **placeholder panels only — no metrics, no real cards, no aggregation, no
+data reads, no CRUD, no admin API routes**. The dashboard lives **inside** the `(protected)` group
+(`src/app/admin/(protected)/dashboard/**`); there is **no unguarded** `src/app/admin/dashboard/**`.
+`/admin` now **redirects to `/admin/dashboard`** (still inside the guard: unauthenticated → `/admin/login`;
+authenticated → `/admin/dashboard`). Both `super_admin` and `client_admin` see the same shell. Admin
+is hard `noindex`. The remaining admin routes above (properties / leads / settings / legal / areas) are
+**not yet implemented** — their dashboard nav links 404 until built (AURA-303–307); **no placeholder
+route files were created** for them.
 
 ---
 
