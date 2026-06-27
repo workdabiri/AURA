@@ -29,6 +29,18 @@ Authentication alone is not sufficient. Admin access requires all of:
 
 Failing any check: return `401` (not authenticated) or `403` (not authorized).
 
+### Implementation status (AURA-301)
+
+Admin access for `/admin/**` **pages** is now wired (AURA-301, merged `97c9548`): the protected
+admin layout (`src/app/admin/(protected)/layout.tsx`) enforces the full AURA-104 guard server-side
+(verified `auth.getUser()` + `user_profiles` row + role in `super_admin` / `client_admin`); the
+login server action re-authorizes the just-signed-in user before redirecting and signs out any
+authenticated-but-unprivileged session. `401` → `/admin/login`; `403` → `/admin/login?error=unauthorized`.
+
+**Note (route handlers):** the layout guard protects **pages**, not Route Handlers. Future
+`/api/admin/*` handlers (AURA-302+) must each call `requireAdmin()` / `requireSuperAdmin()`
+individually — being under `/admin` does not auto-protect an API route.
+
 ---
 
 ## Permission Matrix

@@ -110,6 +110,14 @@ Fast tests for pre-release verification:
 
 ## Security Negative Tests
 
+**Status (AURA-301):** the admin login + guard test suite now exists — unit (`admin-login` login
+schema), security (`auth-guard`: server-only guard, `getUser` not `getSession`, no service-role in
+client, no self-signup, role-guard wiring), integration (`admin-login`: login rate-limit rule +
+allow/deny contract + live-DB gated own-row RLS read), and e2e/smoke (`/admin/login` login-only +
+non-locale-prefixed, unauthenticated `/admin` → login, admin `noindex`). **Follow-up:** the
+successful-login happy-path e2e is gated on `ADMIN_E2E_EMAIL`/`ADMIN_E2E_PASSWORD` and skipped in CI;
+seeding an admin to run it in CI remains a tracked follow-up.
+
 Test that these are blocked:
 - Public cannot read leads (`GET /api/admin/leads` without auth → 401)
 - Public cannot read draft/archived properties (`GET /api/properties/[slug]` for draft → 404)
