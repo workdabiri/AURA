@@ -3,17 +3,19 @@ import Link from 'next/link'
 
 import { AdminShell } from '@/components/admin/AdminShell'
 import { PropertyForm } from '@/components/admin/PropertyForm'
+import { PropertyMediaManager } from '@/components/admin/PropertyMediaManager'
 import { PropertyStatusBadge } from '@/components/admin/PropertyStatusBadge'
 import { getAdminPropertyById } from '@/dal/admin-properties.dal'
+import { listAdminPropertyMedia } from '@/dal/admin-property-media.dal'
 import { robotsDirective } from '@/lib/seo/metadata'
 
 /**
- * Edit property (`/admin/properties/[id]/edit`) — AURA-303.
+ * Edit property (`/admin/properties/[id]/edit`) — AURA-303 + AURA-304.
  *
- * Inside the guarded `(protected)` group. Loads the property (any status) via the admin DAL
- * (admin session + RLS; no service role) and hydrates the edit form. Slug + reference number
- * are shown read-only — they are fixed after creation (A-06 / D-47). Publishing and archiving
- * go through the role-guarded API routes. Media upload is out of scope (AURA-304).
+ * Inside the guarded `(protected)` group. Loads the property (any status) and its media via the
+ * admin DAL (admin session + RLS; no service role) and hydrates the edit form + media manager.
+ * Slug + reference number are shown read-only — they are fixed after creation (A-06 / D-47).
+ * Publishing, archiving, and all media mutations go through the role-guarded API routes.
  *
  * `force-dynamic`: per-request, session-scoped admin data — never statically rendered.
  */
@@ -29,6 +31,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export default async function EditPropertyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const property = UUID_RE.test(id) ? await getAdminPropertyById(id) : null
+  const media = property ? await listAdminPropertyMedia(property.id) : []
 
   if (!property) {
     return (
@@ -62,8 +65,13 @@ export default async function EditPropertyPage({ params }: { params: Promise<{ i
           </p>
         </div>
       </div>
-      <div className="mt-6">
+      <div className="mt-6 flex flex-col gap-10">
         <PropertyForm mode="edit" property={property} />
+        <PropertyMediaManager
+          propertyId={property.id}
+          initialMedia={media}
+          archived={property.publish_status === 'archived'}
+        />
       </div>
     </AdminShell>
   )
