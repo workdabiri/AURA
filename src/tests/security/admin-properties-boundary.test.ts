@@ -38,10 +38,13 @@ function walk(rel: string): string[] {
 
 const adminPropertyApiFiles = walk('src/app/api/admin/properties')
 const routeFiles = adminPropertyApiFiles.filter((f) => /route\.ts$/.test(f))
+// AURA-304 added two `…/media*` routes that legitimately expose DELETE (media hard-delete is
+// allowed). The CRUD-lifecycle routes below remain delete-free (D-32: archive, never delete).
+const crudRouteFiles = routeFiles.filter((f) => !f.includes(`${path.sep}media${path.sep}`))
 
 describe('every admin property Route Handler enforces the admin guard (RBAC.md)', () => {
-  test('there are four route files (list/create, update, duplicate, archive)', () => {
-    expect(routeFiles.length).toBe(4)
+  test('the four CRUD-lifecycle route files exist (list/create, update, duplicate, archive)', () => {
+    expect(crudRouteFiles.length).toBe(4)
   })
 
   test('each route file runs its handler through withAdmin (→ requireAdmin)', () => {
@@ -133,9 +136,11 @@ describe('audit writer — append-only, server-only, service-role (D-38)', () =>
   })
 })
 
-describe('no hard delete (D-32: archive, never delete)', () => {
-  test('no admin property route exports a DELETE handler', () => {
-    for (const file of routeFiles) {
+describe('no hard delete of PROPERTIES (D-32: archive, never delete)', () => {
+  test('no property CRUD-lifecycle route exports a DELETE handler', () => {
+    // The media routes (AURA-304) DELETE media objects/rows, which is allowed; the property
+    // lifecycle routes must still never hard-delete a property.
+    for (const file of crudRouteFiles) {
       const content = read(file)
       expect(content, file).not.toMatch(/export\s+(async\s+)?function\s+DELETE/)
       expect(content, file).not.toMatch(/export\s+const\s+DELETE/)
