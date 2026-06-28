@@ -109,6 +109,8 @@ These are merge blockers (D-05).
 - No public exposure of internal stakeholders unless explicitly public
 - Off-plan fields displayed only when `market_type = off_plan`
 
+> **AURA-303 lifecycle (merged `a6cb178`):** the publish checklist above is enforced at `draft → published` (pure logic in `src/domain/properties/publish.ts`). The MVP lifecycle is one-way — `draft → published → archived`. **There is no `published → draft` (unpublish) path**; archiving (`publish_status = archived`, the MVP way to remove a listing from public view, D-32) is the way to take a published property out of public view. **No hard delete** is exposed in the UI or API (no `DELETE` endpoint, no DELETE RLS policy on `properties`). The slug is immutable after publish (A-06); the reference number defaults to `AUTEX-NNNNN` with an optional validated override (A-05 / D-47). Media upload is **not** part of AURA-303 — the cover-image rule reads existing `property_media` rows only (upload is AURA-304).
+
 ---
 
 ## `property_media`
@@ -266,7 +268,9 @@ Append-only. Public cannot read or write (D-38).
 | `metadata` | JSONB | Sanitized context. |
 | `created_at` | timestamptz | Auto. |
 
-**Minimum audited actions:** `property_created`, `property_updated`, `property_published`, `property_archived`, `lead_status_updated`, `lead_archived`, `lead_exported`, `settings_updated`, `legal_page_created`, `legal_page_published`, `legal_page_archived`, `area_created`, `area_updated`, `admin_access_denied`.
+**Minimum audited actions:** `property_created`, `property_updated`, `property_published`, `property_archived`, `property_duplicated`, `lead_status_updated`, `lead_archived`, `lead_exported`, `settings_updated`, `legal_page_created`, `legal_page_published`, `legal_page_archived`, `area_created`, `area_updated`, `admin_access_denied`.
+
+> **AURA-303 (merged `a6cb178`):** the property lifecycle is now implemented via the admin write DAL (`src/dal/admin-properties.dal.ts`, caller session + RLS) and the server-only audit writer (`src/dal/audit-logs.dal.ts`, service-role, insert-only). `property_created`, `property_updated`, `property_published`, `property_archived`, and `property_duplicated` are all emitted (`property_duplicated` added to the list above). The writer throws on insert failure so a missing audit is loud, never silently swallowed. **Known ordering caveat:** the property mutation commits before the audit insert (no shared transaction yet); an audit-insert failure surfaces as a generic 500 but does not roll back the committed change — a future hardening may move both into one transaction/RPC.
 
 ---
 

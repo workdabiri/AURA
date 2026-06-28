@@ -164,6 +164,8 @@ All `/api/admin/*` routes require:
 
 ### Properties
 
+> **Status:** Implemented in **AURA-303** (merged `a6cb178`) — `GET/POST /api/admin/properties`, `PATCH /api/admin/properties/[id]`, `POST /api/admin/properties/[id]/duplicate`, and `PATCH /api/admin/properties/[id]/archive`. Every route calls `requireAdmin()` directly (both `super_admin` and `client_admin`; the `(protected)` layout guards pages, not Route Handlers). Property writes use the caller's own admin session + RLS (no service role); the only service-role path is the append-only audit-log write. **Media endpoints below (`…/media`) remain deferred to AURA-304 and are NOT implemented.**
+
 #### `GET /api/admin/properties`
 List all properties (all statuses).
 - **Auth:** Admin
@@ -186,6 +188,7 @@ Update property.
 #### `POST /api/admin/properties/[id]/duplicate`
 Duplicate property as draft.
 - **Behavior:** Copy editable fields; new slug/reference; `publish_status = draft`; do not copy `views_count` or timestamps
+- **Audit:** `property_duplicated`
 - **Test cases:** Duplicate is draft; original unchanged
 
 #### `PATCH /api/admin/properties/[id]/archive`
@@ -195,7 +198,7 @@ Archive property.
 - **Test cases:** Archived property returns 404 publicly
 
 #### `POST /api/admin/properties/[id]/media`
-Upload/register property media.
+Upload/register property media. **(Deferred to AURA-304 — not implemented in AURA-303.)**
 - **Validation:** `image/jpeg`, `image/png`, `image/webp` only; 10MB max; safe UUID-based storage path; alt text required
 - **Test cases:** Unsupported file blocked; public upload blocked
 

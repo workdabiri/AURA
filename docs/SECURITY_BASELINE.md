@@ -165,7 +165,7 @@ This is a merge blocker. Any PR rendering raw legal HTML is blocked.
 ## Audit Logging
 
 Required for (D-38):
-- `property_created`, `property_updated`, `property_published`, `property_archived`
+- `property_created`, `property_updated`, `property_published`, `property_archived`, `property_duplicated`
 - `lead_status_updated`, `lead_archived`, `lead_exported`
 - `settings_updated`
 - `legal_page_created`, `legal_page_published`, `legal_page_archived`
@@ -176,6 +176,12 @@ Rules:
 - Public cannot read or write audit logs
 - Append-only from application perspective
 - Do not store service-role keys, full lead exports, or unnecessary PII in snapshots
+
+**Implemented (AURA-303, merged `a6cb178`) — admin property write boundary:**
+- The admin property routes (`GET/POST /api/admin/properties`, `PATCH /api/admin/properties/[id]`, `POST /api/admin/properties/[id]/duplicate`, `PATCH /api/admin/properties/[id]/archive`) each call **`requireAdmin()` directly** (the `(protected)` layout guards pages, not Route Handlers). Both `super_admin` and `client_admin` may manage properties; no property action is super-admin-only.
+- **Property writes use the caller's own authenticated admin session + existing RLS — never the service role** (`src/dal/admin-properties.dal.ts`). The **only** service-role path is the append-only audit-log writer (`src/dal/audit-logs.dal.ts`, `import 'server-only'`); no service-role import/key reaches any client/UI component (enforced by the `no-client-to-service-role` dependency-cruiser rule).
+- The writer emits `property_created`, `property_updated`, `property_published`, `property_archived`, `property_duplicated`, with non-PII curated snapshots, and **throws on insert failure** so a missing audit is loud, never silently swallowed. (Ordering caveat: the property mutation commits before the audit insert; an audit failure surfaces as a generic 500 without rolling back the change — a future hardening may use one transaction/RPC.)
+- **No hard delete** — there is no `DELETE` endpoint and no DELETE RLS policy on `properties`; archiving (`publish_status = archived`) is the MVP way to remove a listing from public view. **Draft and archived properties stay non-public** (anon RLS = published-only); publish makes a valid property public only after the checklist passes. `audit_logs` remains RLS-protected (super_admin SELECT only; no `authenticated` insert).
 
 ---
 
