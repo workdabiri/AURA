@@ -145,3 +145,5 @@ A-01–A-11 range; they are retained here under fresh IDs so no information is l
 | 2026-06-13 | A-11 | Ratified: AED-only display, no FX in MVP | Opus 4.8 review |
 | 2026-06-13 | A-02 | Ratified: test DB = Supabase CLI local stack | Opus 4.8 review |
 | 2026-06-13 | A-01–A-11 | RF-1: reconciled IDs to match `OPUS_REVIEW_HANDOFF.md`; displaced ratifications moved to A-12–A-16 | Opus 4.8 audit |
+| 2026-06-28 | D-32 | Clarified (AURA-303, merged `a6cb178`): the property lifecycle is one-way `draft → published → archived`. There is **no `published → draft` (unpublish)** path in MVP; **archiving** (`publish_status = archived`) is the way to remove a published property from public view. Hard delete stays outside the UI/API (no `DELETE` endpoint, no DELETE RLS policy). | Opus 4.8 review (PR #43) |
+| 2026-06-28 | D-38 | Clarified (AURA-303, merged `a6cb178`): added `property_duplicated` to the controlled/minimum audited actions; the admin property writer is service-role + server-only + append-only and fails loud on audit-insert error (mutation-then-audit ordering caveat noted in `DATA_MODEL.md`). | Opus 4.8 review (PR #43) |

@@ -147,6 +147,8 @@ route files were created** for them.
 
 ## Feature Spec: Property Management
 
+> **Status (AURA-303, merged `a6cb178`):** admin property **CRUD is implemented** — create / edit / publish / archive / duplicate via guarded `/admin/properties` pages and the role-guarded `/api/admin/properties*` routes (both `super_admin` and `client_admin`). The **publish checklist** (cover image + alt text + required fields + taxonomy + off-plan + price-visibility + bedrooms-by-type) and the **duplicate** and **archive** flows are implemented and audit-logged. **Media upload is deferred to AURA-304** — the publish checklist only reads existing `property_media` rows; the admin form does not upload media. **Stakeholder management is not implemented.** No hard delete and no `published → draft` unpublish (archive is the MVP way to remove a listing from public view, D-32).
+
 **Goal:** Allow admins to create, edit, duplicate, publish, archive, and manage property media.
 
 **Required canonical taxonomy** (D-36):

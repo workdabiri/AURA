@@ -48,6 +48,8 @@ navigation surface with placeholder panels only — no resource-specific admin p
 `/api/admin/*` handlers (AURA-303+) must each call `requireAdmin()` / `requireSuperAdmin()`
 individually — being under `/admin` does not auto-protect an API route. (AURA-302 added no API routes.)
 
+**Implemented (AURA-303, merged `a6cb178`):** the first admin Route Handlers exist — `GET/POST /api/admin/properties`, `PATCH /api/admin/properties/[id]`, `POST /api/admin/properties/[id]/duplicate`, `PATCH /api/admin/properties/[id]/archive`. **Each calls `requireAdmin()` directly** (via a shared `withAdmin` helper), honoring the note above. Property management uses the **any-admin** guard, so **both `super_admin` and `client_admin`** can create / edit / publish / archive / duplicate properties (matching the matrix below); **no property action is super-admin-only**. The guarded admin property pages live under `src/app/admin/(protected)/properties/**`; there is no unguarded `src/app/admin/properties/**` route.
+
 ---
 
 ## Permission Matrix
