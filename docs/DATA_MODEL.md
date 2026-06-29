@@ -136,6 +136,8 @@ MVP: images and floorplan images only. Native video, 360, and virtual tours are 
 
 **Allowed MIME types:** `image/jpeg`, `image/png`, `image/webp`
 
+> **AURA-304 media lifecycle (merged `631bd29`):** the admin **upload / update / delete** lifecycle for `property_media` is now implemented. The existing `property_media` table was **reused — no migration was added**, and no Supabase config change. `POST` creates a storage object + a `property_media` row; `PATCH` edits `alt_text` and/or `is_cover`; `DELETE` removes the row **and** the storage object. Storage paths are **server-built and UUID-based** (extension derived from MIME; original filename never trusted). The **single-cover rule is enforced in app logic** (not a DB constraint), as are floorplan-cannot-be-cover and image-only-cover; deleting the cover does **not** auto-pick another (the publish checklist re-blocks publish until another cover image with alt text exists). Storage writes use a **request-scoped authenticated admin Supabase client + existing RLS — no service role**. Public media read stays **published-parent-only** (the AURA-103 anon RLS policy); draft/archived property media is not public. The **public-read bucket CDN-revocation gap** (a retained object URL stays fetchable after unpublish/archive) remains the deferred signed-URL/CDN follow-up. **Future hardening (Opus follow-up, not implemented):** a DB-level single-cover guarantee — e.g. a partial unique index on `(property_id) where is_cover` — could replace the app-level rule if multi-admin write concurrency becomes a concern.
+
 ---
 
 ## `property_stakeholders`

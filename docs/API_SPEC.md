@@ -164,7 +164,7 @@ All `/api/admin/*` routes require:
 
 ### Properties
 
-> **Status:** Implemented in **AURA-303** (merged `a6cb178`) — `GET/POST /api/admin/properties`, `PATCH /api/admin/properties/[id]`, `POST /api/admin/properties/[id]/duplicate`, and `PATCH /api/admin/properties/[id]/archive`. Every route calls `requireAdmin()` directly (both `super_admin` and `client_admin`; the `(protected)` layout guards pages, not Route Handlers). Property writes use the caller's own admin session + RLS (no service role); the only service-role path is the append-only audit-log write. **Media endpoints below (`…/media`) remain deferred to AURA-304 and are NOT implemented.**
+> **Status:** Implemented in **AURA-303** (merged `a6cb178`) — `GET/POST /api/admin/properties`, `PATCH /api/admin/properties/[id]`, `POST /api/admin/properties/[id]/duplicate`, and `PATCH /api/admin/properties/[id]/archive`. Every route calls `requireAdmin()` directly (both `super_admin` and `client_admin`; the `(protected)` layout guards pages, not Route Handlers). Property writes use the caller's own admin session + RLS (no service role); the only service-role path is the append-only audit-log write. **Media endpoints below (`…/media`) are now implemented in AURA-304 (merged `631bd29`) — see the media status note.**
 
 #### `GET /api/admin/properties`
 List all properties (all statuses).
@@ -197,15 +197,25 @@ Archive property.
 - **Audit:** `property_archived`
 - **Test cases:** Archived property returns 404 publicly
 
+> **Status:** Implemented in **AURA-304** (merged `631bd29`). The media routes are admin-only — each calls `requireAdmin()` directly via `withAdmin` (both `super_admin` and `client_admin`). Uploads use a **request-scoped authenticated admin Supabase client + existing RLS — no service role** (`src/dal/admin-property-media.dal.ts` + the server-only storage service `src/services/storage/property-media.ts`). Single-file uploads only; allowed MIME `image/jpeg` / `image/png` / `image/webp`; 10MB max; **no video / 360 / virtual-tour**. The storage path is **server-built and UUID-based** (extension derived from MIME; the original filename is never trusted; no enumeration). Archived properties reject media mutation; media must belong to the property. The single-cover rule, floorplan-cannot-be-cover, and image-only-cover are enforced in app logic. **No media audit actions, no signed URLs, no CDN revocation, no image processing/resizing, no manual reordering, no multi-file upload in AURA-304.**
+
 #### `POST /api/admin/properties/[id]/media`
-Upload/register property media. **(Deferred to AURA-304 — not implemented in AURA-303.)**
-- **Validation:** `image/jpeg`, `image/png`, `image/webp` only; 10MB max; safe UUID-based storage path; alt text required
-- **Test cases:** Unsupported file blocked; public upload blocked
+Upload property media — creates a storage object **and** a `property_media` row. **(Implemented — AURA-304.)**
+- **Auth:** Admin (`requireAdmin()` directly)
+- **Validation:** single file only; `image/jpeg`, `image/png`, `image/webp` only; 10MB max; server-built UUID-based storage path (MIME-derived extension; original filename never trusted); alt text required before publish
+- **Test cases:** Unsupported MIME blocked; oversize blocked; public upload blocked; archived property rejects upload
+
+#### `PATCH /api/admin/properties/[id]/media/[mediaId]`
+Edit media metadata. **(Implemented — AURA-304.)**
+- **Auth:** Admin (`requireAdmin()` directly)
+- **Behavior:** update `alt_text` and/or `is_cover`; only an image can be cover (floorplan cannot be cover); the single-cover rule is enforced in app logic
+- **Test cases:** Floorplan cannot be set as cover; setting a new cover clears the previous cover; archived property rejects mutation; media must belong to the property
 
 #### `DELETE /api/admin/properties/[id]/media/[mediaId]`
-Remove media from property.
-- **Behavior:** Remove DB row + storage object if authorized
-- **Test cases:** Only admin can remove; cover image consistency preserved
+Remove media from property. **(Implemented — AURA-304.)**
+- **Auth:** Admin (`requireAdmin()` directly)
+- **Behavior:** remove the `property_media` row **and** the storage object; deleting the cover does **not** auto-pick another cover (the publish checklist then blocks publish until another cover image with alt text exists)
+- **Test cases:** Only admin can remove; archived property rejects deletion; cover deletion leaves no cover (publish re-blocked)
 
 ---
 
