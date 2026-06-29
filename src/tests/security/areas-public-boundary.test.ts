@@ -128,13 +128,15 @@ describe('AURA-204 area card UI never imports Supabase / DAL / services', () => 
   })
 })
 
-describe('AURA-204 added no admin / area-management route', () => {
-  test('no admin areas route directory exists', () => {
-    expect(existsSync(resolve(process.cwd(), 'src/app/api/admin/areas'))).toBe(false)
+describe('admin area-management routes are non-localized and never under [locale]', () => {
+  // AURA-305 added the admin areas routes; their auth/security boundary is covered by
+  // src/tests/security/admin-areas-boundary.test.ts. Here we only re-assert that admin never
+  // leaked into the public next-intl `[locale]` tree (a public-surface regression guard).
+  test('no admin tree exists under [locale]', () => {
     expect(existsSync(resolve(process.cwd(), 'src/app/[locale]/admin'))).toBe(false)
   })
 
-  test('no area detail route exists (informational overview only)', () => {
+  test('no PUBLIC area detail route exists (informational overview only — AURA-204 scope)', () => {
     expect(existsSync(resolve(process.cwd(), 'src/app/[locale]/areas/[slug]'))).toBe(false)
   })
 })
