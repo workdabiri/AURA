@@ -167,11 +167,13 @@ MVP: images and floorplan images only. Native video, 360, and virtual tours are 
 | `slug` | text UNIQUE | Unique. |
 | `name` | JSONB | i18n-ready. |
 | `description` | JSONB | i18n-ready. |
-| `image_url` | text? | Nullable. |
+| `image_url` | text? | Nullable. Stores the **representative area/community image public URL** (AURA-305). |
 | `is_active` | bool | Default true. |
-| `sort_order` | int | Display order. |
+| `sort_order` | int | Display order. Editable in the admin form (AURA-305). |
 | `created_at` | timestamptz | Auto. |
 | `updated_at` | timestamptz | Auto. |
+
+> **AURA-305 areas admin (merged `aee1fda`):** the admin **add / edit / deactivate / reactivate** lifecycle for `areas` is now implemented (**no hard delete**). The existing `areas` table was **reused — no migration was added**, and no Supabase config change. `areas.image_url` now stores the **representative area/community image public URL**; the image is uploaded to the **existing `property-media` bucket** under the **server-built, UUID-only** path `areas/{area_id}/{image_id}.{ext}` (extension derived from MIME; original filename never trusted; `upsert: false`) — **there is no area media table, no gallery, and no multi-upload.** The **slug is editable only at create** (`PATCH` cannot change it). **Area property counts** (`totalProperties`, `publishedProperties`) are **computed on read** from `properties.area_id` + `publish_status` for the admin surface only — **not stored** and **never exposed publicly**. Area CRUD + image upload run under a **request-scoped authenticated admin Supabase client + existing RLS — no service role** (the only service-role path remains the AURA-303 audit writer). Public reads stay **active-only** (the AURA-103 anon RLS policy); inactive areas are not public. The **public-read bucket CDN-revocation gap** (a known UUID image URL stays fetchable after deactivation; old-image cleanup is best-effort because only the public URL is stored) remains the deferred signed-URL / object-revocation / storage-GC follow-up.
 
 ---
 
