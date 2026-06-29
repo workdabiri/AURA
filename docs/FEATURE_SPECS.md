@@ -110,7 +110,23 @@ aggregation**. Raw rows never leave the DAL; output is a key-only projection.
   errors only; `force-dynamic`.
 - **Page states (D-44):** loading / empty / error (+ retry) / success.
 - **Not in AURA-204:** no area detail page (`/en/areas/[slug]`), no property counts/aggregation by
-  area, no admin area management (AURA-305).
+  area. **Admin area management is now implemented in AURA-305 (merged `aee1fda`) — see below.**
+
+> **Status (AURA-305, merged `aee1fda`):** admin **areas management is implemented** — **add / edit /
+> deactivate / reactivate only (no hard delete)** via guarded `/admin/areas`, `/admin/areas/new`, and
+> `/admin/areas/[id]/edit` pages and the admin-only `GET/POST /api/admin/areas` + `PATCH
+> /api/admin/areas/[id]` routes (each calls `requireAdmin()` directly; both `super_admin` and
+> `client_admin`). The admin form exposes `sort_order` and active/inactive status, the **slug is editable
+> only at create** (`PATCH` cannot change it), and deactivate uses an **inline two-step confirmation**.
+> One **representative area/community image** can be uploaded (single image) to the existing
+> `property-media` bucket under `areas/{area_id}/{image_id}.{ext}` (server-built UUID path; MIME allowlist
+> `image/jpeg` / `image/png` / `image/webp`; 10MB max; `upsert: false`; original filename never trusted);
+> the public URL is stored in `areas.image_url`. Admin list rows carry **admin-only property counts**
+> (`totalProperties`, `publishedProperties`). Area CRUD + image upload use a request-scoped authenticated
+> admin Supabase client + RLS (no service role). **Out of scope / deferred:** no area media table, no
+> gallery, no multi-upload, no drag-drop, no image processing/resizing/transcoding, no public property
+> counts, no public areas redesign, and no public area-detail pages. The public `/api/areas` surface is
+> unchanged (active-only; inactive areas hidden).
 
 ---
 
@@ -139,8 +155,10 @@ data reads, no CRUD, no admin API routes**. The dashboard lives **inside** the `
 (`src/app/admin/(protected)/dashboard/**`); there is **no unguarded** `src/app/admin/dashboard/**`.
 `/admin` now **redirects to `/admin/dashboard`** (still inside the guard: unauthenticated → `/admin/login`;
 authenticated → `/admin/dashboard`). Both `super_admin` and `client_admin` see the same shell. Admin
-is hard `noindex`. The remaining admin routes above (properties / leads / settings / legal / areas) are
-**not yet implemented** — their dashboard nav links 404 until built (AURA-303–307); **no placeholder
+is hard `noindex`. The admin **properties** routes (AURA-303, merged `a6cb178`) and admin property
+**media** routes (AURA-304, merged `631bd29`) and admin **areas** routes (AURA-305, merged `aee1fda`)
+are now **implemented**; the remaining admin routes above (**leads / settings / legal**) are **not yet
+implemented** — their dashboard nav links 404 until built (AURA-306–307 + leads); **no placeholder
 route files were created** for them.
 
 ---

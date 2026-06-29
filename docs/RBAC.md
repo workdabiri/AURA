@@ -52,6 +52,8 @@ individually — being under `/admin` does not auto-protect an API route. (AURA-
 
 **Implemented (AURA-304, merged `631bd29`):** the admin property **media** Route Handlers exist — `POST /api/admin/properties/[id]/media`, `PATCH /api/admin/properties/[id]/media/[mediaId]`, `DELETE /api/admin/properties/[id]/media/[mediaId]`. **Each calls `requireAdmin()` directly** via `withAdmin`, so **both `super_admin` and `client_admin`** can upload / update / delete property media (matching the Media rows in the matrix below); **no media action is super-admin-only**. **Public cannot upload / update / delete media** (no anon write path). Published-property media remains **publicly readable only through published-parent visibility** (the AURA-103 anon RLS policy); **draft / archived property media is not public**.
 
+**Implemented (AURA-305, merged `aee1fda`):** the admin **areas** Route Handlers exist — `GET /api/admin/areas`, `POST /api/admin/areas`, `PATCH /api/admin/areas/[id]`. **Each calls `requireAdmin()` directly** via `withAdmin` (not `requireSuperAdmin()`), so **both `super_admin` and `client_admin`** can list, create, edit, deactivate / reactivate areas, and upload / replace the one representative area image (matching the Areas rows in the matrix below); **no area action is super-admin-only**. **Add / edit / deactivate / reactivate only — no hard delete.** **Public cannot create / edit / deactivate / reactivate areas** (no anon write path); the public `/api/areas` surface stays **active-only** and inactive areas stay hidden. The admin-only per-area **property counts** (`totalProperties`, `publishedProperties`) are never exposed publicly.
+
 ---
 
 ## Permission Matrix

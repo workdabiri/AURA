@@ -299,19 +299,27 @@ Archive legal version.
 
 ### Areas
 
+> **Status:** Implemented in **AURA-305** (merged `aee1fda`). The admin areas routes are admin-only — each calls `requireAdmin()` directly via `withAdmin` (both `super_admin` and `client_admin`; the `(protected)` layout guards pages, not Route Handlers). Area CRUD and the one representative area image upload use a **request-scoped authenticated admin Supabase client + existing RLS — no service role** (`src/dal/admin-areas.dal.ts` + the server-only storage service `src/services/storage/area-image.ts`); the only service-role path remains the AURA-303 append-only audit writer. **Add / edit / deactivate / reactivate only — no hard delete** (no `DELETE` endpoint). **Slug is editable only at create — `PATCH` cannot update the slug.** The representative image **reuses the existing `property-media` bucket** under `areas/{area_id}/{image_id}.{ext}` (server-built, UUID-only path; MIME allowlist `image/jpeg` / `image/png` / `image/webp`; 10MB max; `upsert: false`; original filename never trusted), with the public URL stored in `areas.image_url` — **no migration, no Supabase config change, no area media table, no gallery, no multi-upload, no drag-drop, no image processing/resizing/transcoding.** Admin list responses include **admin-only property counts** per area (`totalProperties`, `publishedProperties`, computed from `properties.area_id` + `publish_status`); these are **never** exposed publicly. Public `/api/areas` is **unchanged** (active-only). **No public property counts, no public areas redesign, no public area-detail pages in AURA-305.**
+
 #### `GET /api/admin/areas`
-List all areas (active and inactive).
+List all areas (active and inactive). **(Implemented — AURA-305.)**
+- **Auth:** Admin (`requireAdmin()` directly)
+- **Behavior:** returns all areas regardless of `is_active`, each with admin-only `totalProperties` / `publishedProperties` counts; ordered for the admin table
+- **Test cases:** unauthenticated → 401; authenticated no-role → 403; property counts admin-only
 
 #### `POST /api/admin/areas`
-Create area.
-- **Validation:** Slug unique; `name` JSONB; `description` JSONB
+Create area. **(Implemented — AURA-305.)**
+- **Auth:** Admin (`requireAdmin()` directly)
+- **Validation:** Slug unique and **set only at create**; `name` JSONB; `description` JSONB; optional `sort_order`; optional representative image (multipart upload — `image/jpeg` / `image/png` / `image/webp`, 10MB max, server-built UUID path, `upsert: false`, public URL stored in `areas.image_url`)
 - **Audit:** `area_created`
+- **Test cases:** public create blocked; duplicate slug rejected; unsupported MIME / oversize image rejected
 
 #### `PATCH /api/admin/areas/[id]`
-Edit or deactivate area.
-- **Behavior:** `is_active = false` for deactivate
-- **Audit:** `area_updated`
-- **Test cases:** Inactive area hidden publicly
+Edit, deactivate, or reactivate area. **(Implemented — AURA-305.)**
+- **Auth:** Admin (`requireAdmin()` directly)
+- **Behavior:** update `name` / `description` / `sort_order` / representative image; `is_active = false` deactivates (inline two-step confirm in the admin UI) and `is_active = true` reactivates; **`PATCH` cannot change the slug**; **no hard delete**
+- **Audit:** `area_updated` (deactivate/reactivate logged as `area_updated` with metadata)
+- **Test cases:** Inactive area hidden publicly; public edit/deactivate blocked; slug update rejected
 
 ---
 
