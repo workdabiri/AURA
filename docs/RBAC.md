@@ -50,6 +50,8 @@ individually — being under `/admin` does not auto-protect an API route. (AURA-
 
 **Implemented (AURA-303, merged `a6cb178`):** the first admin Route Handlers exist — `GET/POST /api/admin/properties`, `PATCH /api/admin/properties/[id]`, `POST /api/admin/properties/[id]/duplicate`, `PATCH /api/admin/properties/[id]/archive`. **Each calls `requireAdmin()` directly** (via a shared `withAdmin` helper), honoring the note above. Property management uses the **any-admin** guard, so **both `super_admin` and `client_admin`** can create / edit / publish / archive / duplicate properties (matching the matrix below); **no property action is super-admin-only**. The guarded admin property pages live under `src/app/admin/(protected)/properties/**`; there is no unguarded `src/app/admin/properties/**` route.
 
+**Implemented (AURA-304, merged `631bd29`):** the admin property **media** Route Handlers exist — `POST /api/admin/properties/[id]/media`, `PATCH /api/admin/properties/[id]/media/[mediaId]`, `DELETE /api/admin/properties/[id]/media/[mediaId]`. **Each calls `requireAdmin()` directly** via `withAdmin`, so **both `super_admin` and `client_admin`** can upload / update / delete property media (matching the Media rows in the matrix below); **no media action is super-admin-only**. **Public cannot upload / update / delete media** (no anon write path). Published-property media remains **publicly readable only through published-parent visibility** (the AURA-103 anon RLS policy); **draft / archived property media is not public**.
+
 ---
 
 ## Permission Matrix

@@ -183,6 +183,12 @@ Rules:
 - The writer emits `property_created`, `property_updated`, `property_published`, `property_archived`, `property_duplicated`, with non-PII curated snapshots, and **throws on insert failure** so a missing audit is loud, never silently swallowed. (Ordering caveat: the property mutation commits before the audit insert; an audit failure surfaces as a generic 500 without rolling back the change — a future hardening may use one transaction/RPC.)
 - **No hard delete** — there is no `DELETE` endpoint and no DELETE RLS policy on `properties`; archiving (`publish_status = archived`) is the MVP way to remove a listing from public view. **Draft and archived properties stay non-public** (anon RLS = published-only); publish makes a valid property public only after the checklist passes. `audit_logs` remains RLS-protected (super_admin SELECT only; no `authenticated` insert).
 
+**Implemented (AURA-304, merged `631bd29`) — admin property media write boundary:**
+- The media routes (`POST /api/admin/properties/[id]/media`, `PATCH …/media/[mediaId]`, `DELETE …/media/[mediaId]`) each call **`requireAdmin()` directly** via `withAdmin` (both `super_admin` and `client_admin`). **No public upload / update / delete** — there is no anon path to write media.
+- **Storage writes use a request-scoped authenticated admin Supabase client + existing RLS — never the service role** (`src/dal/admin-property-media.dal.ts` + the server-only storage service `src/services/storage/property-media.ts`). The AURA-303 service-role boundary is unchanged: the **only** service-role path remains the append-only audit-log writer, and no service-role import/key reaches any client/UI component (`no-client-to-service-role` dependency-cruiser rule).
+- **Upload validation:** single file only; allowed MIME `image/jpeg` / `image/png` / `image/webp`; 10MB max; **no video / 360 / virtual-tour**. The storage path is **server-built and UUID-based** (extension derived from MIME; the original filename is never trusted) — **no storage enumeration**. Archived properties reject media mutation; media must belong to the property.
+- **Deferred (signed URLs / CDN revocation):** media `url` is still a public CDN URL; a retained object URL stays fetchable after a property is unpublished/archived. Full revocation needs signed URLs, deferred out of MVP. **Non-blocking Opus follow-up:** consider magic-byte / content sniffing on upload as defense-in-depth (MIME is currently trusted from the request).
+
 ---
 
 ## Merge Blockers (Security)
