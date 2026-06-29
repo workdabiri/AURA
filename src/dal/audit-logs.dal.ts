@@ -32,8 +32,15 @@ type PropertyAuditAction =
  */
 type AreaAuditAction = 'area_created' | 'area_updated'
 
-/** The controlled audit-action union (extended per task; no audit refactor — AURA-305). */
-type AuditAction = PropertyAuditAction | AreaAuditAction
+/**
+ * Controlled audit action emitted by AURA-306 (settings admin). Metadata carries the changed key
+ * NAMES only (`changed_keys`) — never the new/old values, since phone/email/WhatsApp/address can
+ * be sensitive (owner decision).
+ */
+type SettingsAuditAction = 'settings_updated'
+
+/** The controlled audit-action union (extended per task; no audit refactor — AURA-306). */
+type AuditAction = PropertyAuditAction | AreaAuditAction | SettingsAuditAction
 
 interface WriteAuditLogInput {
   /** The acting admin's user id (auth uid), when available. */
