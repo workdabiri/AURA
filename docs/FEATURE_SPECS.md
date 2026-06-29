@@ -155,11 +155,11 @@ data reads, no CRUD, no admin API routes**. The dashboard lives **inside** the `
 (`src/app/admin/(protected)/dashboard/**`); there is **no unguarded** `src/app/admin/dashboard/**`.
 `/admin` now **redirects to `/admin/dashboard`** (still inside the guard: unauthenticated → `/admin/login`;
 authenticated → `/admin/dashboard`). Both `super_admin` and `client_admin` see the same shell. Admin
-is hard `noindex`. The admin **properties** routes (AURA-303, merged `a6cb178`) and admin property
-**media** routes (AURA-304, merged `631bd29`) and admin **areas** routes (AURA-305, merged `aee1fda`)
-are now **implemented**; the remaining admin routes above (**leads / settings / legal**) are **not yet
-implemented** — their dashboard nav links 404 until built (AURA-306–307 + leads); **no placeholder
-route files were created** for them.
+is hard `noindex`. The admin **properties** routes (AURA-303, merged `a6cb178`), admin property
+**media** routes (AURA-304, merged `631bd29`), admin **areas** routes (AURA-305, merged `aee1fda`),
+and admin **settings** routes/page (AURA-306, merged `86e8b36`) are now **implemented**; the remaining
+admin routes above (**leads / legal**) are **not yet implemented** — their dashboard nav links 404 until
+built (AURA-307 + leads); **no placeholder route files were created** for them.
 
 ---
 
@@ -266,9 +266,11 @@ route files were created** for them.
 
 **Goal:** Admin-editable operational content without allowing template mutation.
 
-**Editable fields:** agency_name, logo_url, whatsapp, phone, email, office_address, social_links, footer_content, footer_links, contact_us_content, seo_title, seo_description, office_registration_number, broker_license_number, years_in_market, verified_badge_enabled.
+**Editable fields (full target model):** agency_name, logo_url, whatsapp, phone, email, office_address, social_links, footer_content, footer_links, contact_us_content, seo_title, seo_description, office_registration_number, broker_license_number, years_in_market, verified_badge_enabled.
 
 **Admin cannot edit:** Core layout, motion system, template architecture, component behavior, section structure, design system architecture.
+
+> **Status (AURA-306, merged `86e8b36`, PR #49):** admin settings management is **implemented** for **exactly the seven existing public footer keys** — `agency_name`, `agency_phone`, `agency_email`, `agency_whatsapp`, `agency_address`, `footer_tagline`, `social_links` (canonical key names; the same set the public footer selector projects). Delivered: a guarded admin settings page at `/admin/settings` (under the `(protected)` group), the admin-only `GET /api/admin/settings` + `PATCH /api/admin/settings` (each calls `requireAdmin()` directly via `withAdmin`; both `super_admin` and `client_admin`), per-key Zod validation, a **partial-batch** PATCH (one or more allowed keys; unknown keys rejected, deferred keys rejected, empty patch rejected), **immediate** update behaviour (no draft/publish flow), the public footer reflecting updated values on the next request, the `settings_updated` audit (changed key **names** only), a **request-scoped authenticated admin client + RLS** (no service role for admin GET/PATCH), and **no settings delete path / no public settings API / no migration / no Supabase config change**. **Deferred / NOT in AURA-306:** `logo_url`, `seo_title`, `seo_description`, `office_registration_number`, `broker_license_number`, `years_in_market`, `verified_badge_enabled`, `footer_content`, `footer_links`, `contact_us_content`, logo upload, SEO public-metadata wiring, legal admin, design-token / theme / layout / motion editing, and trust/license claims.
 
 ---
 

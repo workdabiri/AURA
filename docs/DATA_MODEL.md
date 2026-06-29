@@ -235,6 +235,8 @@ Rules:
 - Each allowed key has a corresponding per-key Zod schema for value validation
 - Changes are audit-logged per D-38
 
+> **AURA-306 settings admin (merged `86e8b36`, PR #49):** the admin **read + update** path for `settings` is now implemented. The existing `settings` table was **reused — no migration was added**, and no Supabase config change. The schema is unchanged: `key` (text PK) + `value` (jsonb) + `updated_by` (uuid FK, server-set to the acting admin) + `updated_at` (timestamptz, DB-managed via the `settings_set_updated_at` trigger). The editable allowlist is **exactly the seven existing public footer keys** (`agency_name`, `agency_phone`, `agency_email`, `agency_whatsapp`, `agency_address`, `footer_tagline`, `social_links`) — the same set the public projection surfaces; unknown / deferred keys are rejected by the strict per-key Zod schema before any write. `PATCH` is a **partial batch** (one or more allowed keys; empty patch rejected) and writes via an **`upsert(onConflict: 'key')`**. Admin GET/PATCH run under a **request-scoped authenticated admin Supabase client + RLS — no service role** (the existing public safe selector keeps the service role; the audit writer keeps the service role). **There is no settings DELETE path** (no DELETE policy on `settings`; the DAL issues no row deletion). Public reads stay through the **existing AURA-201 server selector** (`getPublicSettings`, projected through the public allowlist) — the public footer reflects an updated value on the next request (no cache/revalidation system; `force-dynamic` layout). Audit: `settings_updated` (entity type `settings`; metadata carries the changed key **names** only — never phone/email/WhatsApp/address values).
+
 ---
 
 ## `legal_pages`
