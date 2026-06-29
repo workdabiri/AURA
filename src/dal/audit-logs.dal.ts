@@ -26,12 +26,21 @@ type PropertyAuditAction =
   | 'property_archived'
   | 'property_duplicated'
 
+/**
+ * Controlled audit actions emitted by AURA-305 (areas admin). Deactivate/reactivate are recorded
+ * as `area_updated` with metadata indicating the active-state change (owner decision).
+ */
+type AreaAuditAction = 'area_created' | 'area_updated'
+
+/** The controlled audit-action union (extended per task; no audit refactor — AURA-305). */
+type AuditAction = PropertyAuditAction | AreaAuditAction
+
 interface WriteAuditLogInput {
   /** The acting admin's user id (auth uid), when available. */
   actorUserId: string | null
   /** The acting admin's role (`super_admin` | `client_admin`), or `system`. */
   actorRole: string
-  action: PropertyAuditAction
+  action: AuditAction
   /** Entity class, e.g. `property`. */
   entityType: string
   /** Affected entity id (the property UUID), or null. */
