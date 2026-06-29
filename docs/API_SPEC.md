@@ -256,15 +256,17 @@ Return dashboard metrics.
 
 ### Settings
 
+> **Status:** Implemented in **AURA-306** (merged `86e8b36`, PR #49). Both `GET /api/admin/settings` and `PATCH /api/admin/settings` are admin-only — each calls `requireAdmin()` directly via `withAdmin` (both `super_admin` and `client_admin`; the `(protected)` layout guards pages, not Route Handlers). Admin GET/PATCH use a **request-scoped authenticated admin Supabase client + RLS — no service role** (`src/dal/settings.dal.ts` `getAdminSettings` / `updateAdminSettings`); the existing public settings safe selector (`getPublicSettings`) keeps the service role, and the only other service-role path remains the AURA-303 append-only audit writer. The editable allowlist is **exactly the seven existing public footer keys** — `agency_name`, `agency_phone`, `agency_email`, `agency_whatsapp`, `agency_address`, `footer_tagline`, `social_links` (the same set the public selector projects; canonical key names — not renamed to `phone`/`email`/`whatsapp`/`office_address`). `PATCH` is a **partial batch** (one or more allowed keys per request); the strict per-key Zod schema **rejects unknown keys and deferred keys** and an **empty patch is rejected (400)**; updates are **immediate** (no draft/publish flow). **No settings DELETE path. No public settings API. No migration / Supabase config change.** Deferred (NOT implemented in AURA-306): `logo_url`, `seo_title`, `seo_description`, `office_registration_number`, `broker_license_number`, `years_in_market`, `verified_badge_enabled`, `footer_content`, `footer_links`, `contact_us_content`, logo upload, SEO public-metadata wiring, legal admin, design-token/theme/layout/motion editing, and trust/license claims.
+
 #### `GET /api/admin/settings`
-Read editable settings.
+Read editable settings. **(Implemented — AURA-306.)**
 - **Response:** Typed settings object (allowed keys only)
 
 #### `PATCH /api/admin/settings`
-Update allowed operational settings.
-- **Validation:** Allowed keys only; per-key Zod schema
-- **Audit:** `settings_updated`
-- **Test cases:** Forbidden keys rejected; design architecture cannot be changed
+Update allowed operational settings (partial batch — one or more allowed keys). **(Implemented — AURA-306.)**
+- **Validation:** Allowed keys only (the seven footer keys); per-key Zod schema; unknown/deferred keys rejected; empty patch rejected (400)
+- **Audit:** `settings_updated` (entity type `settings`; metadata records the changed key **names** only — never the values)
+- **Test cases:** Forbidden/unknown keys rejected; empty patch rejected; design architecture cannot be changed; 401 unauth / 403 no-role
 
 ---
 
