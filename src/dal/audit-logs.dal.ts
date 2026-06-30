@@ -39,8 +39,15 @@ type AreaAuditAction = 'area_created' | 'area_updated'
  */
 type SettingsAuditAction = 'settings_updated'
 
-/** The controlled audit-action union (extended per task; no audit refactor — AURA-306). */
-type AuditAction = PropertyAuditAction | AreaAuditAction | SettingsAuditAction
+/**
+ * Controlled audit actions emitted by AURA-307 (legal pages admin). Metadata carries safe
+ * identifiers only (slug, status transition, version) — never the legal title or body (owner
+ * decision). `legal_page_updated` is intentionally NOT included (draft PATCH is not audited).
+ */
+type LegalAuditAction = 'legal_page_created' | 'legal_page_published' | 'legal_page_archived'
+
+/** The controlled audit-action union (extended per task; no audit refactor — AURA-307). */
+type AuditAction = PropertyAuditAction | AreaAuditAction | SettingsAuditAction | LegalAuditAction
 
 interface WriteAuditLogInput {
   /** The acting admin's user id (auth uid), when available. */
