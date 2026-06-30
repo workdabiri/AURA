@@ -219,6 +219,23 @@ describe('POST /api/admin/legal (create draft)', () => {
     expect(auditMock).not.toHaveBeenCalled()
   })
 
+  test('201 on realistic privacy prose containing "data:" — reaches createLegalDraft (D-12 no false positive)', async () => {
+    asAdmin()
+    createMock.mockResolvedValue({ ok: true, page: DETAIL })
+    const content = 'We collect the following data: name, email, and phone number.'
+    const res = await createPOST(
+      jsonReq('http://localhost/api/admin/legal', 'POST', {
+        slug: 'privacy',
+        title: 'Privacy Policy',
+        content,
+        effective_date: '2026-06-30',
+      })
+    )
+    expect(res.status).toBe(201)
+    expect(createMock).toHaveBeenCalledTimes(1)
+    expect(createMock.mock.calls[0]?.[0]?.content).toBe(content)
+  })
+
   test('400 on invalid JSON body', async () => {
     asAdmin()
     const res = await createPOST(

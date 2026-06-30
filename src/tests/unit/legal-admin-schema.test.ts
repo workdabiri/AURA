@@ -64,6 +64,15 @@ describe('containsUnsafeLegalHtml (D-12 write-time guard)', () => {
     expect(containsUnsafeLegalHtml('Inequality 5<10 holds.')).toBe(false)
   })
 
+  test('accepts ordinary prose containing "data:" / "metadata:" (not a link target)', () => {
+    // The protocol guard fires only in a URL/link context, so privacy-policy prose is safe.
+    expect(
+      containsUnsafeLegalHtml('We collect the following data: name, email, and phone number.')
+    ).toBe(false)
+    expect(containsUnsafeLegalHtml('Your personal data: how we use it.')).toBe(false)
+    expect(containsUnsafeLegalHtml('Effective metadata: see appendix.')).toBe(false)
+  })
+
   test('rejects a <script> tag', () => {
     expect(containsUnsafeLegalHtml('Hello <script>alert(1)</script>')).toBe(true)
   })
@@ -74,6 +83,14 @@ describe('containsUnsafeLegalHtml (D-12 write-time guard)', () => {
 
   test('rejects a javascript: protocol in a link', () => {
     expect(containsUnsafeLegalHtml('[bad](javascript:alert(1))')).toBe(true)
+  })
+
+  test('rejects dangerous protocols in a link target (markdown link + autolink)', () => {
+    expect(containsUnsafeLegalHtml('[x](vbscript:msgbox(1))')).toBe(true)
+    expect(containsUnsafeLegalHtml('[x](data:text/html;base64,PHNjcmlwdD4=)')).toBe(true)
+    expect(containsUnsafeLegalHtml('<javascript:alert(1)>')).toBe(true)
+    // Whitespace between the link target and the protocol is still caught.
+    expect(containsUnsafeLegalHtml('[x]( javascript:alert(1))')).toBe(true)
   })
 
   test('rejects inline event handlers', () => {
@@ -134,6 +151,17 @@ describe('legalCreateSchema', () => {
   test('accepts comparison content like 5 < 10', () => {
     expect(
       legalCreateSchema.safeParse({ ...valid, content: 'When 5 < 10 we proceed.' }).success
+    ).toBe(true)
+  })
+
+  test('accepts realistic privacy prose containing "data:" (not a link target)', () => {
+    expect(
+      legalCreateSchema.safeParse({
+        slug: 'privacy',
+        title: 'Privacy Policy',
+        content: 'We collect the following data: name, email, and phone number.',
+        effective_date: '2026-01-01',
+      }).success
     ).toBe(true)
   })
 

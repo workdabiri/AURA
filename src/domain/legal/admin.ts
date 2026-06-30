@@ -61,8 +61,11 @@ const TITLE_MAX_LENGTH = 200
  * Markdown links `[text](https://x.com)` — is NEVER flagged:
  *   - a raw HTML TAG requires `<` (or `</`) IMMEDIATELY followed by a letter, so `5 < 10`,
  *     `a < b`, and `5<10` (digit after `<`) do not match;
- *   - `javascript:` / `vbscript:`/`data:` script protocols are blocked (matches the render-layer
- *     sanitizer, which also strips them) so a Markdown link can never carry a script URL;
+ *   - `javascript:` / `vbscript:`/`data:` script protocols are blocked ONLY in a URL/link
+ *     CONTEXT — inside a Markdown link target `](javascript:…)` or an angle-bracket autolink
+ *     `<javascript:…>` — so a link can never carry a script URL, while ordinary prose like
+ *     `We collect the following data: …`, `personal data:`, or `metadata:` is NEVER flagged
+ *     (the render-layer sanitizer also strips these protocols from real link hrefs);
  *   - inline event-handler attributes (`onclick=`, `onload=`, …) are blocked as belt-and-braces
  *     even though any tag carrying them is already blocked by the tag rule;
  *   - HTML comments (`<!-- -->`) are blocked.
@@ -71,7 +74,10 @@ const UNSAFE_MARKUP_PATTERNS: { name: string; pattern: RegExp }[] = [
   { name: 'script tag', pattern: /<\s*script\b/i },
   { name: 'iframe tag', pattern: /<\s*iframe\b/i },
   { name: 'style tag', pattern: /<\s*style\b/i },
-  { name: 'script protocol', pattern: /(?:javascript|vbscript|data)\s*:/i },
+  // Dangerous protocol inside a Markdown link target, e.g. [x](javascript:alert(1)).
+  { name: 'script protocol markdown link', pattern: /\]\(\s*(?:javascript|vbscript|data)\s*:/i },
+  // Dangerous protocol inside an angle-bracket autolink target, e.g. <javascript:alert(1)>.
+  { name: 'script protocol autolink', pattern: /<\s*(?:javascript|vbscript|data)\s*:/i },
   { name: 'event handler', pattern: /\son[a-z]+\s*=/i },
   { name: 'html comment', pattern: /<!--/ },
   // Any raw HTML element — opening or closing — e.g. <div>, <p>, <img …>, <a …>, <span>, </p>.
