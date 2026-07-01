@@ -255,6 +255,8 @@ Rules:
 | `updated_at` | timestamptz | Auto. |
 | `published_at` | timestamptz? | Set on publish. |
 
+> **AURA-307 legal admin (merged `74da365`, PR #51) — Phase 3 exit gate:** the admin **create / edit / publish / archive** path for `legal_pages` is now implemented. The existing table was **reused — no migration was added**, and no Supabase config change. The **row-per-version** model uses the pre-existing partial unique index `legal_pages(slug)` WHERE `status = 'published'` (at most one published row per slug): publishing **archives the currently published row for the same slug first**, then promotes the selected draft with `version = max(existing version for slug) + 1` and `published_at = now()`. Only `draft` rows are editable; `slug` is set at create only (allowlist `privacy` / `terms`) and never updated; `title` / `content` are i18n JSONB (English-only in MVP) and `content` is **Markdown only — raw/unsafe HTML is rejected at write time** (never stored). Admin reads/writes run under a **request-scoped authenticated admin Supabase client + RLS — no service role** (`src/dal/legal.dal.ts`; the public `getPublishedLegalPage` selector is intact; the audit writer keeps the service role). **There is no legal DELETE path** (no DELETE policy on `legal_pages`; the DAL issues no row deletion — removal is archive only). Audit: `legal_page_created` / `legal_page_published` / `legal_page_archived` (entity type `legal_page`; metadata carries slug / status transition / version only — never the legal title or body). The publish + audit writes are **non-atomic (owner-accepted; fail loud, tested)** — no DB RPC.
+
 ---
 
 ## `audit_logs`
