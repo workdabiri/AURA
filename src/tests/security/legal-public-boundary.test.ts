@@ -17,10 +17,15 @@ import { asRole, LOCAL_TESTS } from './rls-test-utils'
  *      (the shared seed has a published `seed-privacy` and a draft `seed-terms`).
  *   2. SANITIZATION (always runs): the safe Markdown renderer neutralizes script/iframe/event
  *      handlers / `javascript:` URLs.
- *   3. STATIC CODE (always runs): the legal production code never selects `*`, never uses the
- *      service role, the UI/renderer imports no Supabase/DAL/services, no unsafe raw-HTML path
- *      exists (no dangerouslySetInnerHTML / rehype-raw / marked / DOMPurify / innerHTML), and no
- *      admin legal route was added.
+ *   3. STATIC CODE (always runs): the PUBLIC legal production code never selects `*`, never uses the
+ *      service role, the UI/renderer imports no Supabase/DAL/services, and no unsafe raw-HTML path
+ *      exists (no dangerouslySetInnerHTML / rehype-raw / marked / DOMPurify / innerHTML).
+ *
+ * AURA-307 update: the admin legal surface (`src/app/api/admin/legal/**`, guarded UI under
+ * `src/app/admin/(protected)/legal/**`) now EXISTS. This suite still guards the PUBLIC boundary;
+ * the admin surface's own D-12 / service-role / no-delete guarantees live in
+ * `src/tests/security/admin-legal-boundary.test.ts`. Here we only assert the public renderer is
+ * unchanged and that NO UNGUARDED `src/app/admin/legal` route was added.
  */
 
 // --- Layer 1: live DB anon boundary ---------------------------------------------
@@ -138,9 +143,12 @@ describe('AURA-205 DAL uses the anon client and re-asserts published-only', () =
     expect(dal).toContain("'published'")
   })
 
-  test('queries only legal_pages', () => {
+  test('queries only legal_pages (public + admin paths all target legal_pages)', () => {
     const fromTargets = [...dal.matchAll(/\.from\(\s*['"`]([a-z_]+)['"`]/g)].map((m) => m[1])
-    expect(fromTargets).toEqual(['legal_pages'])
+    // AURA-307 added admin reads/writes to the same DAL; every `.from(...)` must still be
+    // legal_pages — the DAL never reaches into any other table.
+    expect(fromTargets.length).toBeGreaterThan(0)
+    expect(fromTargets.every((t) => t === 'legal_pages')).toBe(true)
   })
 })
 
@@ -180,19 +188,25 @@ describe('AURA-205 UI/renderer imports no Supabase / DAL / services', () => {
   })
 })
 
-describe('AURA-205 stays in scope (no admin legal / extra routes added)', () => {
-  test('legal route only handles GET and references no admin work', () => {
+describe('public legal surface stays public-read-only (AURA-205 regression)', () => {
+  test('the PUBLIC legal route only handles GET and references no admin work', () => {
     const route = codeOnly(readSrc(LEGAL_ROUTE))
     expect(route).toContain('export async function GET')
     expect(route).not.toMatch(/export async function (POST|PUT|PATCH|DELETE)/)
     expect(route).not.toMatch(/admin/i)
   })
 
-  test('no admin legal route directories exist', () => {
-    expect(existsSync(resolve(process.cwd(), 'src/app/api/admin/legal'))).toBe(false)
-    // The admin UI surface (src/app/admin) is introduced by AURA-301 (login only); legal
-    // admin is AURA-307. Assert no legal admin route was added here.
+  test('NO UNGUARDED admin legal route exists (admin legal lives under (protected) — AURA-307)', () => {
+    // The admin legal API + guarded UI ARE added in AURA-307, but only under the (protected) group.
+    // An unguarded src/app/admin/legal would bypass the AURA-301 layout guard → must NOT exist.
     expect(existsSync(resolve(process.cwd(), 'src/app/admin/legal'))).toBe(false)
+  })
+
+  test('the guarded admin legal API + pages exist in their expected locations (AURA-307)', () => {
+    expect(existsSync(resolve(process.cwd(), 'src/app/api/admin/legal/route.ts'))).toBe(true)
+    expect(existsSync(resolve(process.cwd(), 'src/app/admin/(protected)/legal/page.tsx'))).toBe(
+      true
+    )
   })
 
   test('no /legal index route directory was created', () => {
